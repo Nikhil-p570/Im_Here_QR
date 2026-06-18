@@ -1532,16 +1532,129 @@ function App() {
 
     // Default main landing page (no ID query parameter)
     return (
-      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
-        <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-          <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '8px' }} />
-          <h1 style={{ fontSize: '3.5rem', fontWeight: 900, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 70%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
-            I'm here
+      <div className="app-container" style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px' }}>
+        <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+          {/* Logo with glow effect */}
+          <div style={{ position: 'relative', marginBottom: '8px' }}>
+            <div style={{
+              position: 'absolute',
+              top: '-15px',
+              left: '-15px',
+              right: '-15px',
+              bottom: '-15px',
+              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%)',
+              borderRadius: '24px',
+              filter: 'blur(16px)',
+              zIndex: -1
+            }} />
+            <img 
+              src="/I'm here logo.png" 
+              alt="I'm here Logo" 
+              style={{ 
+                width: '180px', 
+                height: 'auto', 
+                borderRadius: '16px', 
+                boxShadow: '0 12px 36px rgba(0,0,0,0.65)', 
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' 
+              }} 
+              onMouseEnter={(e) => e.target.style.transform = 'scale(1.06) rotate(1deg)'}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1) rotate(0deg)'}
+            />
+          </div>
+          
+          <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+            Smart QR Item Tags
           </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '480px', lineHeight: '1.6' }}>
-            Your digital presence, mapped.
+          
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '540px', lineHeight: '1.6', margin: '0 auto' }}>
+            Securely connect your physical belongings to your digital space. No apps to download. Just scan, claim, and protect your items.
           </p>
         </header>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', margin: '8px 0' }}>
+          <a
+            href="/admin1226"
+            className="btn btn-primary"
+            style={{
+              padding: '14px 28px',
+              fontSize: '1rem',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.35)',
+              borderRadius: '10px',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 6px 24px rgba(99, 102, 241, 0.55)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'none';
+              e.currentTarget.style.boxShadow = '0 4px 20px rgba(99, 102, 241, 0.35)';
+            }}
+          >
+            <ShieldCheck size={18} />
+            Go to Admin Cockpit
+          </a>
+        </div>
+
+        {/* Feature Cards Grid */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: '20px', 
+          width: '100%', 
+          marginTop: '20px' 
+        }}>
+          {/* Card 1 */}
+          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
+              <Sparkles size={20} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Design Branded QRs</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
+              Create stunning, high-contrast QR codes matching your personal style with custom colors, frame text, and photo backgrounds.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
+              <Lock size={20} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Scan & Claim Tag</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
+              Unregistered physical tags can be instantly claimed by finders or owners. Secure details with your personal password.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
+              <Globe size={20} />
+            </div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Unified Find Card</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
+              Displays clean, glassmorphic owner profile cards with phone triggers and secure socials to get returned items back home.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <footer style={{ marginTop: '24px', fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
+          © 2026 I'm here QR Tagging System. Powered by Firestore & Vite.
+        </footer>
       </div>
     );
   }
