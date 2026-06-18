@@ -692,3 +692,120 @@ body {
     padding: 12px;
   }
 }
+
+/* Dynamic Social Row Layouts & Desktop/Mobile Responsiveness */
+.social-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+
+.social-dropdown-wrapper {
+  position: relative;
+  min-width: 120px;
+}
+
+.social-dropdown-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.social-dropdown-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.social-title-input {
+  flex: 0.4;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.8rem;
+  outline: none;
+  min-width: 100px;
+  transition: all 0.2s ease;
+}
+
+.social-title-input:focus {
+  border-color: var(--accent-indigo);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.social-value-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.8rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.social-value-input:focus {
+  border-color: var(--accent-indigo);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.social-delete-btn {
+  padding: 10px !important;
+  border-radius: 8px !important;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 480px) {
+  .social-input-row {
+    display: grid;
+    grid-template-columns: 1fr 42px;
+    gap: 8px;
+    border: 1px solid var(--border-light);
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.01);
+  }
+  
+  .social-dropdown-wrapper {
+    grid-column: 1;
+    min-width: 100%;
+  }
+  
+  .social-title-input {
+    grid-column: 1;
+    width: 100%;
+    flex: none;
+  }
+  
+  .social-value-input {
+    grid-column: 1;
+    width: 100%;
+    flex: none;
+  }
+  
+  .social-delete-btn {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: center;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+  }
+}

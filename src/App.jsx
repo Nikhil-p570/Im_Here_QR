@@ -1,21 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
 import { initializeFirebase } from './firebase';
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  setDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
+  setDoc,
   deleteDoc,
   getDocs
 } from 'firebase/firestore';
-import { 
-  Globe, 
-  Sparkles, 
-  Copy, 
-  Check, 
-  Trash2, 
-  AlertTriangle, 
-  CheckCircle2, 
+import {
+  Globe,
+  Sparkles,
+  Copy,
+  Check,
+  Trash2,
+  AlertTriangle,
+  CheckCircle2,
   Database,
   Lock,
   LogOut,
@@ -32,8 +32,8 @@ import {
 const PRESETS = [
   { name: 'Black on White', dot: '#000000', bg: '#ffffff' },
   { name: 'White on Black', dot: '#ffffff', bg: '#000000' },
-  { name: 'Red on White',   dot: '#e8402c', bg: '#ffffff' },
-  { name: 'Navy on Cream',  dot: '#1b2a4a', bg: '#f4f1ea' },
+  { name: 'Red on White', dot: '#e8402c', bg: '#ffffff' },
+  { name: 'Navy on Cream', dot: '#1b2a4a', bg: '#f4f1ea' },
 ];
 
 const BrandIcon = ({ type, size = 16, className, style }) => {
@@ -334,10 +334,10 @@ function App() {
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
       if (!cropState.showCropStep) return;
-      
+
       const tag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
       if (tag === 'input' || tag === 'textarea') return;
-      
+
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
         e.preventDefault();
         const step = 1;
@@ -498,7 +498,7 @@ function App() {
     let unique = false;
     let newId = '';
     let attempts = 0;
-    
+
     while (!unique && attempts < 15) {
       newId = generateRandomCode();
       const docRef = doc(firestoreDb, 'links', newId);
@@ -673,7 +673,7 @@ function App() {
     setAdminSuccess("");
     try {
       const querySnapshot = await getDocs(collection(firestoreDb, 'links'));
-      
+
       if (querySnapshot.empty) {
         setAdminSuccess("Database is already empty!");
         setShowConfirm(false);
@@ -1102,7 +1102,7 @@ function App() {
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                   <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    You're the first one to scan me! Claim me! 😘
+                    You're the first one to scan me! Claim me!
                   </h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px', lineHeight: '1.5' }}>
                     This physical tag is unclaimed and waiting for you. Claim me first to link your contact details, set up your profile, and make sure your gear is always connected to you!
@@ -1121,11 +1121,11 @@ function App() {
                     <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>Name (Optional)</label>
                     <div className="input-wrapper">
                       <User className="input-icon" size={18} />
-                      <input 
+                      <input
                         id="regNameInput"
-                        type="text" 
-                        className="text-input" 
-                        placeholder="e.g. Nikhil P." 
+                        type="text"
+                        className="text-input"
+                        placeholder="e.g. Nikhil P."
                         value={regName}
                         onChange={(e) => setRegName(e.target.value)}
                         disabled={savingReg}
@@ -1138,11 +1138,11 @@ function App() {
                     <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Phone Number (Required)</label>
                     <div className="input-wrapper">
                       <Phone className="input-icon" size={18} />
-                      <input 
+                      <input
                         id="regNumberInput"
-                        type="tel" 
-                        className="text-input" 
-                        placeholder="10-digit mobile number" 
+                        type="tel"
+                        className="text-input"
+                        placeholder="10-digit mobile number"
                         value={regNumber}
                         onChange={(e) => setRegNumber(e.target.value)}
                         disabled={savingReg}
@@ -1155,11 +1155,11 @@ function App() {
                     <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Password (Remember it so in case you want to change your details in the future - Required)</label>
                     <div className="input-wrapper">
                       <Lock className="input-icon" size={18} />
-                      <input 
+                      <input
                         id="regPasswordInput"
-                        type="password" 
-                        className="text-input" 
-                        placeholder="Password to update details later" 
+                        type="password"
+                        className="text-input"
+                        placeholder="Password to update details later"
                         value={regPassword}
                         onChange={(e) => setRegPassword(e.target.value)}
                         disabled={savingReg}
@@ -1172,10 +1172,10 @@ function App() {
                   <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                       <span className="form-label" style={{ fontSize: '0.72rem', margin: 0 }}>Where else can I find you? (Optional Contacts)</span>
-                      <button 
-                        type="button" 
-                        onClick={handleAddSocial} 
-                        className="btn" 
+                      <button
+                        type="button"
+                        onClick={handleAddSocial}
+                        className="btn"
                         style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', borderRadius: '6px' }}
                         disabled={savingReg}
                       >
@@ -1186,34 +1186,20 @@ function App() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {socials.map((social, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <div style={{ position: 'relative', minWidth: '120px' }}>
+                        <div key={idx} className="social-input-row">
+                          <div className="social-dropdown-wrapper">
                             <button
                               type="button"
                               onClick={(e) => { e.stopPropagation(); setOpenDropdownIdx(openDropdownIdx === idx ? null : idx); }}
                               disabled={savingReg}
-                              style={{
-                                width: '100%',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid var(--border-light)',
-                                color: 'var(--text-primary)',
-                                borderRadius: '8px',
-                                padding: '10px 12px',
-                                fontSize: '0.8rem',
-                                textAlign: 'left',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                outline: 'none'
-                              }}
+                              className="social-dropdown-btn"
                             >
                               <span>{social.type}</span>
                               <span style={{ fontSize: '0.6rem', opacity: 0.5, marginLeft: '6px' }}>▼</span>
                             </button>
-                            
+
                             {openDropdownIdx === idx && (
-                              <div 
+                              <div
                                 style={{
                                   position: 'absolute',
                                   top: '100%',
@@ -1255,48 +1241,29 @@ function App() {
                           </div>
 
                           {social.type === 'Custom Link' && (
-                            <input 
-                              type="text" 
-                              placeholder="Title (e.g. YouTube)" 
+                            <input
+                              type="text"
+                              placeholder="Title (e.g. YouTube)"
                               value={social.label}
                               onChange={(e) => handleSocialFieldChange(idx, 'label', e.target.value)}
-                              style={{ 
-                                flex: '0.4', 
-                                background: 'rgba(255,255,255,0.03)', 
-                                border: '1px solid var(--border-light)', 
-                                color: 'var(--text-primary)', 
-                                borderRadius: '8px', 
-                                padding: '10px', 
-                                fontSize: '0.8rem',
-                                outline: 'none'
-                              }}
+                              className="social-title-input"
                               disabled={savingReg}
                             />
                           )}
 
-                          <input 
-                            type={social.type === 'Email' ? 'email' : 'text'} 
-                            placeholder={social.type === 'Email' ? 'owner@mail.com' : 'profile link or username'} 
+                          <input
+                            type={social.type === 'Email' ? 'email' : 'text'}
+                            placeholder={social.type === 'Email' ? 'owner@mail.com' : 'profile link or username'}
                             value={social.value}
                             onChange={(e) => handleSocialFieldChange(idx, 'value', e.target.value)}
-                            style={{ 
-                              flex: '1', 
-                              background: 'rgba(255,255,255,0.03)', 
-                              border: '1px solid var(--border-light)', 
-                              color: 'var(--text-primary)', 
-                              borderRadius: '8px', 
-                              padding: '10px', 
-                              fontSize: '0.8rem',
-                              outline: 'none'
-                            }}
+                            className="social-value-input"
                             disabled={savingReg}
                           />
 
-                          <button 
-                            type="button" 
-                            onClick={() => handleRemoveSocial(idx)} 
-                            className="btn btn-danger-outline" 
-                            style={{ padding: '10px', borderRadius: '8px' }}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSocial(idx)}
+                            className="btn btn-danger-outline social-delete-btn"
                             disabled={savingReg}
                           >
                             <Trash2 size={14} />
@@ -1320,9 +1287,9 @@ function App() {
                     </div>
                   )}
 
-                  <button 
-                    type="submit" 
-                    className="btn btn-primary" 
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
                     disabled={savingReg || regSuccess}
                     style={{ width: '100%', marginTop: '10px' }}
                   >
@@ -1371,13 +1338,13 @@ function App() {
                       <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
                         {customerData.number.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
                       </span>
-                      <a 
+                      <a
                         href={`tel:${customerData.number}`}
-                        className="btn" 
-                        style={{ 
-                          padding: '6px 12px', 
-                          fontSize: '0.8rem', 
-                          background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)', 
+                        className="btn"
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: '0.8rem',
+                          background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
                           color: 'white',
                           borderRadius: '6px',
                           textDecoration: 'none'
@@ -1397,22 +1364,22 @@ function App() {
                         {customerData.socials.map((social, idx) => {
                           const isEmail = social.type === 'Email';
                           const linkHref = isEmail ? `mailto:${social.value}` : social.value;
-                          
+
                           return (
-                            <a 
+                            <a
                               key={idx}
                               href={linkHref}
                               target={isEmail ? '_self' : '_blank'}
                               rel="noopener noreferrer"
-                              style={{ 
-                                textDecoration: 'none', 
-                                display: 'flex', 
-                                alignItems: 'center', 
+                              style={{
+                                textDecoration: 'none',
+                                display: 'flex',
+                                alignItems: 'center',
                                 justifySelf: 'stretch',
-                                gap: '12px', 
-                                background: 'rgba(255,255,255,0.03)', 
-                                border: '1px solid var(--border-light)', 
-                                borderRadius: '10px', 
+                                gap: '12px',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: '10px',
                                 padding: '12px 16px',
                                 color: 'var(--text-primary)',
                                 transition: 'all 0.2s ease'
@@ -1541,15 +1508,15 @@ function App() {
         <div className="admin-header-actions">
           {/* Compact Clear DB Control */}
           {!showConfirm ? (
-            <button 
-              type="button" 
-              className="btn btn-danger-outline" 
+            <button
+              type="button"
+              className="btn btn-danger-outline"
               onClick={() => { setShowConfirm(true); setCountdown(3); }}
               disabled={loading || clearing}
-              style={{ 
-                padding: '8px 14px', 
-                fontSize: '0.85rem', 
-                border: '1px solid rgba(244, 63, 94, 0.2)', 
+              style={{
+                padding: '8px 14px',
+                fontSize: '0.85rem',
+                border: '1px solid rgba(244, 63, 94, 0.2)',
                 color: 'var(--accent-rose)',
                 borderRadius: '8px',
                 display: 'flex',
@@ -1564,29 +1531,29 @@ function App() {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 8px', borderRadius: '8px' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-rose)' }}>Wipe DB?</span>
-              <button 
+              <button
                 type="button"
-                className="btn-confirm-no" 
+                className="btn-confirm-no"
                 onClick={() => { setShowConfirm(false); setCountdown(0); }}
                 disabled={clearing}
                 style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
               >
                 No
               </button>
-              <button 
+              <button
                 type="button"
-                className="btn-confirm-yes" 
+                className="btn-confirm-yes"
                 onClick={handleClearDatabase}
                 disabled={clearing || countdown > 0}
-                style={{ 
-                  padding: '4px 8px', 
-                  fontSize: '0.75rem', 
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
                   borderRadius: '4px',
                   border: 'none',
                   background: 'var(--accent-rose)',
                   color: 'white',
                   fontWeight: 'bold',
-                  opacity: countdown > 0 ? 0.6 : 1, 
+                  opacity: countdown > 0 ? 0.6 : 1,
                   cursor: countdown > 0 ? 'not-allowed' : 'pointer'
                 }}
               >
@@ -1596,15 +1563,15 @@ function App() {
           )}
 
           {/* Logout Button */}
-          <button 
+          <button
             type="button"
-            onClick={handleLogout} 
-            className="btn" 
-            style={{ 
-              padding: '8px 14px', 
-              fontSize: '0.85rem', 
-              background: 'rgba(255, 255, 255, 0.03)', 
-              border: '1px solid var(--border-light)', 
+            onClick={handleLogout}
+            className="btn"
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border-light)',
               color: 'var(--text-secondary)',
               borderRadius: '8px',
               display: 'flex',
@@ -1639,10 +1606,10 @@ function App() {
 
       {/* Two-Column Cockpit Layout */}
       <div className="dashboard-grid">
-        
+
         {/* Left Column: Configuration Forms */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
+
           {/* Card 1: ID Generator Input */}
           <main className="glass-panel card-content">
             <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
@@ -1663,7 +1630,7 @@ function App() {
                   style={{ opacity: 0.8, cursor: 'not-allowed' }}
                 />
               </div>
-              
+
               {error && (
                 <div className="status-msg status-msg-error">
                   <AlertTriangle size={18} style={{ flexShrink: 0 }} />
@@ -1671,8 +1638,8 @@ function App() {
                 </div>
               )}
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="btn btn-primary"
                 disabled={loading || clearing}
               >
@@ -1726,9 +1693,9 @@ function App() {
                   onChange={handleImageUpload}
                   style={{ display: 'none' }}
                 />
-                <button 
-                  type="button" 
-                  className="btn btn-danger-outline" 
+                <button
+                  type="button"
+                  className="btn btn-danger-outline"
                   style={{ width: '100%', borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onClick={() => document.getElementById('qrImageInput').click()}
                 >
@@ -1740,24 +1707,24 @@ function App() {
               {/* Cropper step */}
               {cropState.showCropStep && (
                 <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)' }}>
-                  <div 
-                    style={{ 
-                      position: 'relative', 
-                      margin: '10px auto', 
-                      borderRadius: '8px', 
-                      overflow: 'hidden', 
-                      width: `${cropState.dispW}px`, 
+                  <div
+                    style={{
+                      position: 'relative',
+                      margin: '10px auto',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      width: `${cropState.dispW}px`,
                       height: `${cropState.dispH}px`,
                       touchAction: 'none'
                     }}
                   >
                     <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
-                    <div 
+                    <div
                       onPointerDown={handleCropBoxDown}
                       onPointerMove={handleCropBoxMove}
                       onPointerUp={handleCropBoxUp}
                       onPointerCancel={handleCropBoxUp}
-                      style={{ 
+                      style={{
                         position: 'absolute',
                         border: '2.5px dashed #e8402c',
                         background: 'rgba(232, 64, 44, 0.18)',
@@ -1770,7 +1737,7 @@ function App() {
                       }}
                     />
                   </div>
-                  
+
                   <p className="hint" style={{ textAlign: 'center', fontSize: '0.75rem' }}>
                     Drag the dashed square to select the logo.
                   </p>
@@ -1780,12 +1747,12 @@ function App() {
                       <span>Selection crop size:</span>
                       <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
                     </label>
-                    <input 
-                      type="range" 
-                      min="30" 
-                      max={Math.min(cropState.dispW, cropState.dispH)} 
-                      value={cropState.size} 
-                      onChange={handleCropSizeChange} 
+                    <input
+                      type="range"
+                      min="30"
+                      max={Math.min(cropState.dispW, cropState.dispH)}
+                      value={cropState.size}
+                      onChange={handleCropSizeChange}
                       style={{ width: '100%', accentColor: '#e8402c' }}
                     />
                   </div>
@@ -1795,12 +1762,12 @@ function App() {
                       <span>Logo scale on QR:</span>
                       <span style={{ color: 'var(--accent-cyan)' }}>{logoScale}%</span>
                     </label>
-                    <input 
-                      type="range" 
-                      min="14" 
-                      max="30" 
-                      value={logoScale} 
-                      onChange={(e) => setLogoScale(parseInt(e.target.value))} 
+                    <input
+                      type="range"
+                      min="14"
+                      max="30"
+                      value={logoScale}
+                      onChange={(e) => setLogoScale(parseInt(e.target.value))}
                       style={{ width: '100%', accentColor: '#e8402c' }}
                     />
                   </div>
@@ -1812,20 +1779,20 @@ function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '14px' }}>
               <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                 <div className="color-field">
-                  <input 
-                    type="color" 
-                    value={dotColor} 
-                    onChange={(e) => setDotColor(e.target.value)} 
+                  <input
+                    type="color"
+                    value={dotColor}
+                    onChange={(e) => setDotColor(e.target.value)}
                     className="color-picker-input"
                   />
                   <label className="color-picker-label">Dot Color</label>
                 </div>
 
                 <div className="color-field">
-                  <input 
-                    type="color" 
-                    value={bgColor} 
-                    onChange={(e) => setBgColor(e.target.value)} 
+                  <input
+                    type="color"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
                     className="color-picker-input"
                   />
                   <label className="color-picker-label">Background</label>
@@ -1882,12 +1849,12 @@ function App() {
                     <span>Image overlay darkness:</span>
                     <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
                   </label>
-                  <input 
-                    type="range" 
-                    min="0" 
-                    max="80" 
-                    value={overlayDarkness} 
-                    onChange={(e) => setOverlayDarkness(parseInt(e.target.value))} 
+                  <input
+                    type="range"
+                    min="0"
+                    max="80"
+                    value={overlayDarkness}
+                    onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
                     style={{ width: '100%', accentColor: '#e8402c' }}
                   />
                 </div>
@@ -1895,11 +1862,11 @@ function App() {
 
               {bgMode !== 'image' && (
                 <div className="checkbox-row" style={{ marginTop: '4px' }}>
-                  <input 
-                    type="checkbox" 
-                    id="reactLogoChipToggle" 
-                    checked={showLogoChip} 
-                    onChange={(e) => setShowLogoChip(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    id="reactLogoChipToggle"
+                    checked={showLogoChip}
+                    onChange={(e) => setShowLogoChip(e.target.checked)}
                   />
                   <label htmlFor="reactLogoChipToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Show logo chip in center</label>
                 </div>
@@ -1911,12 +1878,12 @@ function App() {
                   <span>Dot Size:</span>
                   <span style={{ color: 'var(--accent-cyan)' }}>{dotSize}%</span>
                 </label>
-                <input 
-                  type="range" 
-                  min="35" 
-                  max="100" 
-                  value={dotSize} 
-                  onChange={(e) => setDotSize(parseInt(e.target.value))} 
+                <input
+                  type="range"
+                  min="35"
+                  max="100"
+                  value={dotSize}
+                  onChange={(e) => setDotSize(parseInt(e.target.value))}
                   style={{ width: '100%', accentColor: '#e8402c' }}
                 />
               </div>
@@ -1957,11 +1924,11 @@ function App() {
 
               {/* Frame toggle */}
               <div className="checkbox-row" style={{ marginTop: '4px' }}>
-                <input 
-                  type="checkbox" 
-                  id="reactFrameToggle" 
-                  checked={hasFrame} 
-                  onChange={(e) => setHasFrame(e.target.checked)} 
+                <input
+                  type="checkbox"
+                  id="reactFrameToggle"
+                  checked={hasFrame}
+                  onChange={(e) => setHasFrame(e.target.checked)}
                 />
                 <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add frame text below</label>
               </div>
@@ -1970,31 +1937,31 @@ function App() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
                   <div className="form-group">
                     <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
-                    <input 
-                      type="text" 
-                      id="reactFrameText" 
+                    <input
+                      type="text"
+                      id="reactFrameText"
                       className="text-input"
-                      value={frameText} 
-                      onChange={(e) => setFrameText(e.target.value)} 
+                      value={frameText}
+                      onChange={(e) => setFrameText(e.target.value)}
                     />
                   </div>
 
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                     <div className="color-field">
-                      <input 
-                        type="color" 
-                        value={frameBgColor} 
-                        onChange={(e) => setFrameBgColor(e.target.value)} 
+                      <input
+                        type="color"
+                        value={frameBgColor}
+                        onChange={(e) => setFrameBgColor(e.target.value)}
                         className="color-picker-input"
                       />
                       <label className="color-picker-label">Frame Bg</label>
                     </div>
 
                     <div className="color-field">
-                      <input 
-                        type="color" 
-                        value={frameTextColor} 
-                        onChange={(e) => setFrameTextColor(e.target.value)} 
+                      <input
+                        type="color"
+                        value={frameTextColor}
+                        onChange={(e) => setFrameTextColor(e.target.value)}
                         className="color-picker-input"
                       />
                       <label className="color-picker-label">Frame Text</label>
@@ -2004,15 +1971,15 @@ function App() {
               )}
             </div>
 
-            <button 
-              type="button" 
-              onClick={handleGenerateQR} 
+            <button
+              type="button"
+              onClick={handleGenerateQR}
               className="btn btn-primary"
-              style={{ 
-                marginTop: '20px', 
-                width: '100%', 
-                background: 'linear-gradient(135deg, #e8402c 0%, #7a2118 100%)', 
-                boxShadow: '0 4px 15px rgba(232, 64, 44, 0.3)' 
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                background: 'linear-gradient(135deg, #e8402c 0%, #7a2118 100%)',
+                boxShadow: '0 4px 15px rgba(232, 64, 44, 0.3)'
               }}
               disabled={generatingQR}
             >
@@ -2040,7 +2007,7 @@ function App() {
 
         {/* Right Column: Previews & Results */}
         <div className="sticky-column">
-          
+
           {/* Card 1: Generated ID URL Link output */}
           <div className="glass-panel card-content">
             <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
@@ -2054,9 +2021,9 @@ function App() {
                 </div>
                 <div className="output-link-box">
                   <div className="output-link-text">{result.url}</div>
-                  <button 
-                    onClick={handleCopyLink} 
-                    className="btn-copy" 
+                  <button
+                    onClick={handleCopyLink}
+                    className="btn-copy"
                     title="Copy Link"
                   >
                     {copied ? <Check size={18} style={{ color: '#10b981' }} /> : <Copy size={18} />}
@@ -2088,38 +2055,38 @@ function App() {
             </h2>
             {qrImageUrl ? (
               <div style={{ textAlign: 'center' }}>
-                <img 
-                  src={qrImageUrl} 
-                  alt="Resulting QR Code" 
-                  style={{ 
-                    maxWidth: '100%', 
-                    borderRadius: '10px', 
-                    display: 'block', 
-                    margin: '12px auto', 
+                <img
+                  src={qrImageUrl}
+                  alt="Resulting QR Code"
+                  style={{
+                    maxWidth: '100%',
+                    borderRadius: '10px',
+                    display: 'block',
+                    margin: '12px auto',
                     border: '1px solid var(--border-light)',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-                  }} 
+                  }}
                 />
-                
-                <button 
-                  type="button" 
-                  onClick={handleDownload} 
-                  className="btn" 
-                  style={{ 
-                    width: '100%', 
-                    background: 'transparent', 
-                    border: '1px solid var(--accent-rose)', 
-                    color: 'var(--accent-rose)', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    gap: '8px' 
+
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  className="btn"
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid var(--accent-rose)',
+                    color: 'var(--accent-rose)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
                   }}
                 >
                   <Download size={18} />
                   DOWNLOAD PNG
                 </button>
-                
+
                 {downloadError && (
                   <p className="hint" style={{ color: 'var(--accent-rose)', marginTop: '8px' }}>{downloadError}</p>
                 )}
