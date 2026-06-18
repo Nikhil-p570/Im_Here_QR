@@ -192,6 +192,8 @@ function App() {
   const [customerLoading, setCustomerLoading] = useState(false);
   const [customerError, setCustomerError] = useState("");
   const [customerData, setCustomerData] = useState(null);
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState("");
 
   // Registration Form States
   const [regName, setRegName] = useState("");
@@ -644,6 +646,45 @@ function App() {
     } finally {
       setSavingReg(false);
     }
+  };
+
+  const handleDropLocation = () => {
+    setLocLoading(true);
+    setLocError("");
+
+    if (!navigator.geolocation) {
+      setLocError("Geolocation is not supported by your browser.");
+      setLocLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const messageText = `Hi there! I just scanned your I'm Here smart QR tag and found your missing item.\n\nHere is my current location so you can retrieve it:\nhttps://maps.google.com/?q=${lat},${lng}`;
+        const waUrl = `https://wa.me/${customerData.number}?text=${encodeURIComponent(messageText)}`;
+        setLocLoading(false);
+        window.open(waUrl, '_blank');
+      },
+      (error) => {
+        setLocLoading(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocError("Location permission denied. Please allow location access.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocError("Location information is unavailable.");
+            break;
+          case error.TIMEOUT:
+            setLocError("Location request timed out.");
+            break;
+          default:
+            setLocError("An unknown error occurred while fetching location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -1441,6 +1482,57 @@ function App() {
                         Make a call
                       </a>
                     </div>
+                  </div>
+
+                  {/* Drop Location Card */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '2px' }}>Drop Location</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Using "Drop Location" service, you can easily send your current GPS location to the owner via WhatsApp to help them find their lost item.
+                      </span>
+                    </div>
+
+                    {locError && (
+                      <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '8px 12px', margin: 0 }}>
+                        <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                        <span>{locError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleDropLocation}
+                      disabled={locLoading}
+                      className="btn"
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '0.85rem',
+                        background: 'linear-gradient(135deg, var(--accent-emerald) 0%, #059669 100%)',
+                        color: 'white',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        width: '100%',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                      }}
+                    >
+                      {locLoading ? (
+                        <>
+                          <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', borderTopColor: '#ffffff' }}></div>
+                          Fetching location...
+                        </>
+                      ) : (
+                        <>
+                          <Globe size={14} />
+                          Drop Location 📍
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* Social links (if any exist) */}
