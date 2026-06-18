@@ -157,9 +157,9 @@ function App() {
   const [bgColor, setBgColor] = useState("#000000");
   const [bgMode, setBgMode] = useState("image"); // solid, image
   const [hasBeenGeneratedOnce, setHasBeenGeneratedOnce] = useState(false);
-  const [overlayDarkness, setOverlayDarkness] = useState(30);
+  const [overlayDarkness, setOverlayDarkness] = useState(40);
   const [showLogoChip, setShowLogoChip] = useState(false);
-  const [dotSize, setDotSize] = useState(60);
+  const [dotSize, setDotSize] = useState(80);
   const [dotShape, setDotShape] = useState("circle"); // square, rounded, circle
   const [cornerShape, setCornerShape] = useState("circle"); // square, rounded, circle
   const [hasFrame, setHasFrame] = useState(true);
@@ -1228,9 +1228,9 @@ function App() {
     setBgColor("#000000");
     setBgMode("image");
     setHasBeenGeneratedOnce(false);
-    setOverlayDarkness(30);
+    setOverlayDarkness(40);
     setShowLogoChip(false);
-    setDotSize(60);
+    setDotSize(80);
     setDotShape("circle");
     setCornerShape("circle");
     setHasFrame(true);
