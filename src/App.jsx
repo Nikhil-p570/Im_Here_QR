@@ -1100,10 +1100,10 @@ function App() {
                     <Lock style={{ color: 'var(--accent-indigo)' }} size={28} />
                   </div>
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Don't leave me hanging. Claim me! 😘
+                    You're the first one to scan me! Claim me! 😘
                   </h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px', lineHeight: '1.5' }}>
-                    This physical tag is single, unclaimed, and waiting for you. Give me a purpose—link your gear, share your socials, or just make sure your lost items find their way back to you. Let's lock it in.
+                    This physical tag is unclaimed and waiting for you. Claim me first to link your contact details, set up your profile, and make sure your gear is always connected to you!
                   </p>
                 </div>
 
