@@ -134,8 +134,10 @@ function App() {
   const [dotSize, setDotSize] = useState(60);
   const [dotShape, setDotShape] = useState("circle"); // square, rounded, circle
   const [cornerShape, setCornerShape] = useState("circle"); // square, rounded, circle
-  const [hasFrame, setHasFrame] = useState(false);
-  const [frameText, setFrameText] = useState("SCAN ME");
+  const [hasFrame, setHasFrame] = useState(true);
+  const [frameText, setFrameText] = useState("SCAN ME TO FIND ME");
+  const [frameBgColor, setFrameBgColor] = useState("#000000");
+  const [frameTextColor, setFrameTextColor] = useState("#ffffff");
   const [logoScale, setLogoScale] = useState(22);
 
   // QR Cropper State
@@ -309,6 +311,8 @@ function App() {
     cornerShape,
     hasFrame,
     frameText,
+    frameBgColor,
+    frameTextColor,
     logoScale,
     cropState.x,
     cropState.y,
@@ -882,16 +886,16 @@ function App() {
     ctx.restore();
   };
 
-  const drawBanner = (ctx, qrSize, bannerH, text, dColor, bColor) => {
-    ctx.fillStyle = dColor;
-    ctx.fillRect(0, 0, qrSize, bannerH);
-    ctx.fillStyle = bColor;
+  const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerTextColor, offsetY) => {
+    ctx.fillStyle = bannerBgColor;
+    ctx.fillRect(0, offsetY, qrSize, bannerH);
+    ctx.fillStyle = bannerTextColor;
     ctx.font = "bold 26px ui-monospace, Menlo, Consolas, monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, qrSize / 2, bannerH / 2);
+    ctx.fillText(text, qrSize / 2, offsetY + bannerH / 2);
 
-    ctx.strokeStyle = dColor;
+    ctx.strokeStyle = bannerBgColor;
     ctx.lineWidth = 6;
     ctx.strokeRect(3, 3, qrSize - 6, qrSize + bannerH - 6);
   };
@@ -964,10 +968,10 @@ function App() {
     let bgImageMissing = false;
     if (bgMode === 'image') {
       if (logoCanvas) {
-        ctx.drawImage(logoCanvas, 0, bannerH, qrSize, qrSize);
+        ctx.drawImage(logoCanvas, 0, 0, qrSize, qrSize);
         if (overlayDarkness > 0) {
           ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
-          ctx.fillRect(0, bannerH, qrSize, qrSize);
+          ctx.fillRect(0, 0, qrSize, qrSize);
         }
       } else {
         bgImageMissing = true;
@@ -979,24 +983,24 @@ function App() {
       for (let col = 0; col < moduleCount; col++) {
         if (isFinderArea(row, col, moduleCount)) continue;
         if (qr.isDark(row, col)) {
-          drawDot(ctx, row, col, margin, moduleSize, dotColor, dotShape, bannerH, dotSize / 100);
+          drawDot(ctx, row, col, margin, moduleSize, dotColor, dotShape, 0, dotSize / 100);
         }
       }
     }
 
     // Draw corners
-    drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
-    drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
-    drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
+    drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
+    drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
+    drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
 
     // Draw Logo Chip
     if (logoCanvas && showLogoChip) {
-      drawLogo(ctx, logoCanvas, qrSize, bannerH, logoScale / 100, bgColor);
+      drawLogo(ctx, logoCanvas, qrSize, 0, logoScale / 100, bgColor);
     }
 
-    // Draw banner frame
+    // Draw banner frame (below QR code)
     if (hasFrame) {
-      drawBanner(ctx, qrSize, bannerH, frameText, dotColor, bgColor);
+      drawBanner(ctx, qrSize, bannerH, frameText, frameBgColor, frameTextColor, qrSize);
     }
 
     // Warnings and notes mapping
@@ -1967,19 +1971,43 @@ function App() {
                   checked={hasFrame} 
                   onChange={(e) => setHasFrame(e.target.checked)} 
                 />
-                <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add "SCAN ME" frame</label>
+                <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add frame text below</label>
               </div>
 
               {hasFrame && (
-                <div className="form-group">
-                  <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
-                  <input 
-                    type="text" 
-                    id="reactFrameText" 
-                    className="text-input"
-                    value={frameText} 
-                    onChange={(e) => setFrameText(e.target.value)} 
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                  <div className="form-group">
+                    <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
+                    <input 
+                      type="text" 
+                      id="reactFrameText" 
+                      className="text-input"
+                      value={frameText} 
+                      onChange={(e) => setFrameText(e.target.value)} 
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                    <div className="color-field">
+                      <input 
+                        type="color" 
+                        value={frameBgColor} 
+                        onChange={(e) => setFrameBgColor(e.target.value)} 
+                        className="color-picker-input"
+                      />
+                      <label className="color-picker-label">Frame Bg</label>
+                    </div>
+
+                    <div className="color-field">
+                      <input 
+                        type="color" 
+                        value={frameTextColor} 
+                        onChange={(e) => setFrameTextColor(e.target.value)} 
+                        className="color-picker-input"
+                      />
+                      <label className="color-picker-label">Frame Text</label>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
