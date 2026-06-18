@@ -292,10 +292,13 @@ function App() {
     }
   }, [result]);
 
-  // Auto-regenerate QR code on any layout/style/parameter change once generated
+  // Auto-regenerate QR code on any layout/style/parameter change
   useEffect(() => {
-    if (hasBeenGeneratedOnce && qrUrl.trim()) {
+    if (qrUrl.trim()) {
       handleGenerateQR();
+    } else {
+      setQrImageUrl("");
+      setQrNoteText("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -316,8 +319,7 @@ function App() {
     logoScale,
     cropState.x,
     cropState.y,
-    cropState.size,
-    hasBeenGeneratedOnce
+    cropState.size
   ]);
 
   // Render crop preview canvas
@@ -657,6 +659,8 @@ function App() {
         url: generatedUrl,
         isSavedToDb: false
       });
+      setQrUrl(generatedUrl);
+      handleGenerateQR(generatedUrl);
     } catch (err) {
       console.error(err);
       setError(`Error: ${err.message}.`);
@@ -966,8 +970,9 @@ function App() {
     throw new Error('Text too long to encode as a QR code.');
   };
 
-  const handleGenerateQR = async () => {
-    if (!qrUrl.trim()) {
+  const handleGenerateQR = async (urlOverride) => {
+    const activeUrl = urlOverride || qrUrl;
+    if (!activeUrl.trim()) {
       setQrNoteText("Enter a URL or generate a customer ID link first.");
       setQrNoteClass("note warn");
       return;
@@ -987,7 +992,7 @@ function App() {
 
     let qrResult;
     try {
-      qrResult = makeQR(qrUrl.trim());
+      qrResult = makeQR(activeUrl.trim());
     } catch (err) {
       setQrNoteText(err.message);
       setQrNoteClass("note warn");
@@ -1110,6 +1115,49 @@ function App() {
   const handlePresetSelect = (preset) => {
     setDotColor(preset.dot);
     setBgColor(preset.bg);
+  };
+
+  const handleNew = () => {
+    // Reset ID generation results
+    setResult(null);
+    setCopied(false);
+    setError("");
+
+    // Reset QR configuration states
+    setQrUrl("");
+    setUploadedImg(null);
+    setDotColor("#ffffff");
+    setBgColor("#000000");
+    setBgMode("image");
+    setHasBeenGeneratedOnce(false);
+    setOverlayDarkness(30);
+    setShowLogoChip(false);
+    setDotSize(60);
+    setDotShape("circle");
+    setCornerShape("circle");
+    setHasFrame(true);
+    setFrameText("SCAN ME TO FIND ME");
+    setFrameBgColor("#000000");
+    setFrameTextColor("#ffffff");
+    setLogoScale(22);
+
+    // Reset crop state
+    setCropState({
+      x: 0,
+      y: 0,
+      size: 120,
+      dispW: 0,
+      dispH: 0,
+      scale: 1,
+      showCropStep: false
+    });
+
+    // Reset notes/alerts
+    setQrNoteText("");
+    setQrImageUrl("");
+    setDownloadError("");
+    setAdminSuccess("");
+    setAdminError("");
   };
 
   // RENDER CUSTOMER FINDER OR LANDING PAGE
@@ -1565,6 +1613,28 @@ function App() {
         </div>
 
         <div className="admin-header-actions">
+          {/* New Button */}
+          <button
+            type="button"
+            onClick={handleNew}
+            className="btn"
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+              border: 'none',
+              color: 'white',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Reset Form / New Tag"
+          >
+            <Plus size={14} />
+            New
+          </button>
+
           {/* Compact Clear DB Control */}
           {!showConfirm ? (
             <button
@@ -2030,30 +2100,7 @@ function App() {
               )}
             </div>
 
-            <button
-              type="button"
-              onClick={handleGenerateQR}
-              className="btn btn-primary"
-              style={{
-                marginTop: '20px',
-                width: '100%',
-                background: 'linear-gradient(135deg, #e8402c 0%, #7a2118 100%)',
-                boxShadow: '0 4px 15px rgba(232, 64, 44, 0.3)'
-              }}
-              disabled={generatingQR}
-            >
-              {generatingQR ? (
-                <>
-                  <div className="spinner"></div>
-                  Generating QR...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={20} />
-                  GENERATE QR CODE
-                </>
-              )}
-            </button>
+
 
             {qrNoteText && (
               <div className={`status-msg ${qrNoteClass.includes('warn') ? 'status-msg-error' : 'status-msg-success'}`} style={{ fontSize: '0.8rem', marginTop: '12px' }}>
