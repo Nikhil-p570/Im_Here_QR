@@ -21,7 +21,12 @@ import {
   LogOut,
   ShieldCheck,
   Image as ImageIcon,
-  Download
+  Download,
+  Mail,
+  Plus,
+  User,
+  Phone,
+  ExternalLink
 } from 'lucide-react';
 
 const PRESETS = [
@@ -30,6 +35,39 @@ const PRESETS = [
   { name: 'Red on White',   dot: '#e8402c', bg: '#ffffff' },
   { name: 'Navy on Cream',  dot: '#1b2a4a', bg: '#f4f1ea' },
 ];
+
+const BrandIcon = ({ type, size = 16, className, style }) => {
+  if (type === 'Email') {
+    return <Mail size={size} className={className} style={style} />;
+  }
+  if (type === 'LinkedIn') {
+    return (
+      <svg className={className} style={style} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+        <rect x="2" y="9" width="4" height="12" />
+        <circle cx="4" cy="4" r="2" />
+      </svg>
+    );
+  }
+  if (type === 'GitHub') {
+    return (
+      <svg className={className} style={style} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+        <path d="M9 18c-4.51 2-5-2-7-2" />
+      </svg>
+    );
+  }
+  if (type === 'Instagram') {
+    return (
+      <svg className={className} style={style} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+      </svg>
+    );
+  }
+  return <Globe size={size} className={className} style={style} />;
+};
 
 const ensureQrLib = async () => {
   if (typeof window.qrcode !== 'undefined') return true;
@@ -120,6 +158,20 @@ function App() {
   const [qrImageUrl, setQrImageUrl] = useState("");
   const [downloadError, setDownloadError] = useState("");
 
+  // Customer-facing tag states
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [customerError, setCustomerError] = useState("");
+  const [customerData, setCustomerData] = useState(null);
+
+  // Registration Form States
+  const [regName, setRegName] = useState("");
+  const [regNumber, setRegNumber] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [socials, setSocials] = useState([]);
+  const [regError, setRegError] = useState("");
+  const [regSuccess, setRegSuccess] = useState("");
+  const [savingReg, setSavingReg] = useState(false);
+
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
 
@@ -142,6 +194,92 @@ function App() {
       }
     }
   }, [isMainLanding]);
+
+  const getUrlId = () => {
+    if (window.location.pathname === '/id') {
+      const search = window.location.search;
+      if (search.startsWith('?=')) {
+        return search.substring(2).trim();
+      } else if (search.startsWith('?id=')) {
+        return search.substring(4).trim();
+      } else if (search.substring(1).trim()) {
+        return search.substring(1).trim();
+      }
+    }
+    return null;
+  };
+
+  // Load customer QR tag details if ID is present
+  useEffect(() => {
+    const customerId = getUrlId();
+    if (!customerId) return;
+
+    const initCustomerDb = async () => {
+      setCustomerLoading(true);
+      setCustomerError("");
+      let db = firestoreDb;
+
+      if (!db) {
+        let config = null;
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        if (isLocal) {
+          config = {
+            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+            authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+            projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+            storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+            appId: import.meta.env.VITE_FIREBASE_APP_ID,
+            measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+          };
+        } else {
+          try {
+            const res = await fetch('/api/config');
+            if (res.ok) {
+              const data = await res.json();
+              config = data.config;
+            }
+          } catch (e) {
+            console.error("Failed to load Firebase config:", e);
+          }
+        }
+
+        if (config && config.apiKey) {
+          try {
+            const dbInstance = initializeFirebase(config);
+            setFirestoreDb(dbInstance);
+            db = dbInstance;
+          } catch (err) {
+            console.error("Firebase dynamic initialization failed:", err);
+          }
+        }
+      }
+
+      if (db) {
+        try {
+          const docRef = doc(db, 'links', customerId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setCustomerData(data);
+          } else {
+            setCustomerError("This QR Tag ID does not exist or has been removed.");
+          }
+        } catch (err) {
+          console.error(err);
+          setCustomerError(`Failed to fetch QR details: ${err.message}`);
+        } finally {
+          setCustomerLoading(false);
+        }
+      } else {
+        setCustomerError("Could not connect to database.");
+        setCustomerLoading(false);
+      }
+    };
+
+    initCustomerDb();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firestoreDb]);
 
   // Sync generated customer link to QR URL input
   useEffect(() => {
@@ -361,6 +499,109 @@ function App() {
       throw new Error("Unable to generate a unique ID after several attempts.");
     }
     return newId;
+  };
+
+  const handleAddSocial = () => {
+    setSocials(prev => [...prev, { type: 'Email', value: '', label: '' }]);
+  };
+
+  const handleRemoveSocial = (idx) => {
+    setSocials(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleSocialFieldChange = (idx, field, val) => {
+    setSocials(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item));
+  };
+
+  const handleSaveRegistration = async (e) => {
+    e.preventDefault();
+    setRegError("");
+    setRegSuccess("");
+    setSavingReg(true);
+
+    const nameVal = regName.trim();
+    const numberVal = regNumber.replace(/\D/g, ''); // digits only
+    const passwordVal = regPassword.trim();
+
+    // 1. Core validations
+    if (!numberVal) {
+      setRegError("Contact phone number is required.");
+      setSavingReg(false);
+      return;
+    }
+    if (numberVal.length !== 10) {
+      setRegError("Phone number must be exactly 10 digits.");
+      setSavingReg(false);
+      return;
+    }
+    if (!passwordVal) {
+      setRegError("Please specify a tag password so you can update details later.");
+      setSavingReg(false);
+      return;
+    }
+
+    // 2. Social fields validation
+    const cleanedSocials = [];
+    for (const social of socials) {
+      const type = social.type;
+      let val = social.value.trim();
+      let lbl = social.label.trim();
+
+      if (!val) continue; // ignore empty value lines
+
+      if (type === 'Email') {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          setRegError(`Please enter a valid email address: "${val}"`);
+          setSavingReg(false);
+          return;
+        }
+        lbl = 'Email';
+      } else {
+        if (type !== 'Custom Link' && !lbl) {
+          lbl = type;
+        }
+        if (type === 'Custom Link' && !lbl) {
+          setRegError("Please enter a title for your custom link.");
+          setSavingReg(false);
+          return;
+        }
+        // Normalize typical URL structures
+        if (val.includes('.') && !/^https?:\/\//i.test(val)) {
+          val = `https://${val}`;
+        }
+      }
+
+      cleanedSocials.push({ type, label: lbl, value: val });
+    }
+
+    try {
+      const customerId = getUrlId();
+      if (!customerId) throw new Error("No customer ID found in URL.");
+
+      const docRef = doc(firestoreDb, 'links', customerId);
+
+      const updatePayload = {
+        status: 'registered',
+        registeredAt: new Date(),
+        name: nameVal,
+        number: numberVal,
+        password: passwordVal,
+        socials: cleanedSocials
+      };
+
+      await setDoc(docRef, updatePayload, { merge: true });
+
+      setRegSuccess("Locked in! This QR code is officially yours. 🎉");
+      setCustomerData(prev => ({
+        ...prev,
+        ...updatePayload
+      }));
+    } catch (err) {
+      console.error(err);
+      setRegError(`Failed to save details: ${err.message}`);
+    } finally {
+      setSavingReg(false);
+    }
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -811,8 +1052,359 @@ function App() {
     setBgColor(preset.bg);
   };
 
-  // RENDER LANDING PAGE
+  // RENDER CUSTOMER FINDER OR LANDING PAGE
   if (isMainLanding) {
+    const customerId = getUrlId();
+
+    if (customerId) {
+      if (customerLoading) {
+        return (
+          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh', textAlign: 'center' }}>
+            <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px', borderTopColor: 'var(--accent-indigo)' }}></div>
+            <p style={{ marginTop: '16px', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Locating owner details...</p>
+          </div>
+        );
+      }
+
+      if (customerError) {
+        return (
+          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh' }}>
+            <main className="glass-panel card-content" style={{ maxWidth: '460px', width: '100%', margin: '0 auto', textAlign: 'center', padding: '40px 32px' }}>
+              <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', background: 'rgba(244, 63, 94, 0.05)', border: '1px solid rgba(244, 63, 94, 0.15)', marginBottom: '16px' }}>
+                <AlertTriangle size={32} style={{ color: 'var(--accent-rose)' }} />
+              </div>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Tag Error</h2>
+              <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.95rem', lineHeight: '1.5' }}>{customerError}</p>
+            </main>
+          </div>
+        );
+      }
+
+      if (customerData) {
+        const isUnregistered = customerData.status === 'unregistered';
+
+        if (isUnregistered) {
+          // 1. UNREGISTERED REGISTRATION VIEW
+          return (
+            <div className="app-container" style={{ maxWidth: '520px' }}>
+              <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
+                <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                  <div style={{ display: 'inline-flex', padding: '14px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.06)', border: '1px solid rgba(99, 102, 241, 0.15)', marginBottom: '16px', boxShadow: '0 0 15px rgba(99, 102, 241, 0.15)' }}>
+                    <Lock style={{ color: 'var(--accent-indigo)' }} size={28} />
+                  </div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                    Claim This QR Tag! 🔒
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px', lineHeight: '1.5' }}>
+                    This QR code isn't claimed yet. Add your contact details below so anyone who scans this tag can get in touch to return your item if it goes missing!
+                  </p>
+                </div>
+
+                <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
+                  <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <span>
+                    Heads up: The details you save below will be publicly visible to whoever scans this QR tag to help them return your item. Only share what you're comfortable with!
+                  </span>
+                </div>
+
+                <form onSubmit={handleSaveRegistration} className="form-group" style={{ gap: '16px' }}>
+                  <div className="form-group">
+                    <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>Full Name (Optional)</label>
+                    <div className="input-wrapper">
+                      <User className="input-icon" size={18} />
+                      <input 
+                        id="regNameInput"
+                        type="text" 
+                        className="text-input" 
+                        placeholder="e.g. Nikhil P." 
+                        value={regName}
+                        onChange={(e) => setRegName(e.target.value)}
+                        disabled={savingReg}
+                        style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Contact Phone Number (Required)</label>
+                    <div className="input-wrapper">
+                      <Phone className="input-icon" size={18} />
+                      <input 
+                        id="regNumberInput"
+                        type="tel" 
+                        className="text-input" 
+                        placeholder="10-digit mobile number" 
+                        value={regNumber}
+                        onChange={(e) => setRegNumber(e.target.value)}
+                        disabled={savingReg}
+                        style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Choose Tag Password (Required)</label>
+                    <div className="input-wrapper">
+                      <Lock className="input-icon" size={18} />
+                      <input 
+                        id="regPasswordInput"
+                        type="password" 
+                        className="text-input" 
+                        placeholder="Password to update details later" 
+                        value={regPassword}
+                        onChange={(e) => setRegPassword(e.target.value)}
+                        disabled={savingReg}
+                        style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dynamic socials wrapper */}
+                  <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span className="form-label" style={{ fontSize: '0.72rem', margin: 0 }}>Socials & Extra Info (Optional)</span>
+                      <button 
+                        type="button" 
+                        onClick={handleAddSocial} 
+                        className="btn" 
+                        style={{ padding: '4px 8px', fontSize: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', borderRadius: '6px' }}
+                        disabled={savingReg}
+                      >
+                        <Plus size={12} />
+                        Add Option
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {socials.map((social, idx) => (
+                        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <select 
+                            value={social.type} 
+                            onChange={(e) => handleSocialFieldChange(idx, 'type', e.target.value)}
+                            style={{ 
+                              background: '#0f172a', 
+                              border: '1px solid var(--border-light)', 
+                              color: 'var(--text-primary)', 
+                              borderRadius: '8px', 
+                              padding: '10px 8px', 
+                              fontSize: '0.8rem',
+                              outline: 'none',
+                              cursor: 'pointer'
+                            }}
+                            disabled={savingReg}
+                          >
+                            <option value="Email">Email</option>
+                            <option value="LinkedIn">LinkedIn</option>
+                            <option value="GitHub">GitHub</option>
+                            <option value="Instagram">Instagram</option>
+                            <option value="Custom Link">Custom Link</option>
+                          </select>
+
+                          {social.type === 'Custom Link' && (
+                            <input 
+                              type="text" 
+                              placeholder="Title (e.g. YouTube)" 
+                              value={social.label}
+                              onChange={(e) => handleSocialFieldChange(idx, 'label', e.target.value)}
+                              style={{ 
+                                flex: '0.4', 
+                                background: 'rgba(255,255,255,0.03)', 
+                                border: '1px solid var(--border-light)', 
+                                color: 'var(--text-primary)', 
+                                borderRadius: '8px', 
+                                padding: '10px', 
+                                fontSize: '0.8rem',
+                                outline: 'none'
+                              }}
+                              disabled={savingReg}
+                            />
+                          )}
+
+                          <input 
+                            type={social.type === 'Email' ? 'email' : 'text'} 
+                            placeholder={social.type === 'Email' ? 'owner@mail.com' : 'profile link or username'} 
+                            value={social.value}
+                            onChange={(e) => handleSocialFieldChange(idx, 'value', e.target.value)}
+                            style={{ 
+                              flex: '1', 
+                              background: 'rgba(255,255,255,0.03)', 
+                              border: '1px solid var(--border-light)', 
+                              color: 'var(--text-primary)', 
+                              borderRadius: '8px', 
+                              padding: '10px', 
+                              fontSize: '0.8rem',
+                              outline: 'none'
+                            }}
+                            disabled={savingReg}
+                          />
+
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveSocial(idx)} 
+                            className="btn btn-danger-outline" 
+                            style={{ padding: '10px', borderRadius: '8px' }}
+                            disabled={savingReg}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {regError && (
+                    <div className="status-msg status-msg-error" style={{ fontSize: '0.85rem' }}>
+                      <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                      <span>{regError}</span>
+                    </div>
+                  )}
+
+                  {regSuccess && (
+                    <div className="status-msg status-msg-success" style={{ fontSize: '0.85rem' }}>
+                      <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+                      <span>{regSuccess}</span>
+                    </div>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    disabled={savingReg || regSuccess}
+                    style={{ width: '100%', marginTop: '10px' }}
+                  >
+                    {savingReg ? (
+                      <>
+                        <div className="spinner"></div>
+                        Locking in details...
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck size={20} />
+                        Lock it in! 🔒
+                      </>
+                    )}
+                  </button>
+                </form>
+              </main>
+            </div>
+          );
+        } else {
+          // 2. REGISTERED DETAILS VIEW
+          return (
+            <div className="app-container" style={{ maxWidth: '480px' }}>
+              <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
+                <div style={{ marginBottom: '24px' }}>
+                  <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.15)', marginBottom: '16px', boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)' }}>
+                    <ShieldCheck className="text-cyan-400" size={36} />
+                  </div>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Owner Contact Info</h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
+                    If you scanned this item and found it, please reach out to the owner below!
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                  {/* Name field (if exists) */}
+                  {customerData.name && (
+                    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px' }}>
+                      <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Owner Name</span>
+                      <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>{customerData.name}</span>
+                    </div>
+                  )}
+
+                  {/* Phone number card */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px' }}>
+                    <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+                        {customerData.number.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
+                      </span>
+                      <a 
+                        href={`tel:${customerData.number}`}
+                        className="btn" 
+                        style={{ 
+                          padding: '6px 12px', 
+                          fontSize: '0.8rem', 
+                          background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)', 
+                          color: 'white',
+                          borderRadius: '6px',
+                          textDecoration: 'none'
+                        }}
+                      >
+                        <Phone size={12} />
+                        Call Owner
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Social links (if any exist) */}
+                  {customerData.socials && customerData.socials.length > 0 && (
+                    <div style={{ marginTop: '8px' }}>
+                      <span className="form-label" style={{ fontSize: '0.68rem', display: 'block', marginBottom: '10px' }}>Socials & Extra Details</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {customerData.socials.map((social, idx) => {
+                          const isEmail = social.type === 'Email';
+                          const linkHref = isEmail ? `mailto:${social.value}` : social.value;
+                          
+                          return (
+                            <a 
+                              key={idx}
+                              href={linkHref}
+                              target={isEmail ? '_self' : '_blank'}
+                              rel="noopener noreferrer"
+                              style={{ 
+                                textDecoration: 'none', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifySelf: 'stretch',
+                                gap: '12px', 
+                                background: 'rgba(255,255,255,0.03)', 
+                                border: '1px solid var(--border-light)', 
+                                borderRadius: '10px', 
+                                padding: '12px 16px',
+                                color: 'var(--text-primary)',
+                                transition: 'all 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                e.currentTarget.style.borderColor = 'var(--border-light)';
+                              }}
+                            >
+                              <div style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center' }}>
+                                <BrandIcon type={social.type} size={18} />
+                              </div>
+                              <div style={{ flex: 1 }}>
+                                <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                  {social.label}
+                                </span>
+                                <span style={{ fontSize: '0.88rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'var(--accent-cyan)' }}>
+                                  {social.value}
+                                </span>
+                              </div>
+                              <ExternalLink size={14} style={{ opacity: 0.4 }} />
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-light)', paddingTop: '20px', color: 'var(--text-secondary)', fontSize: '0.8rem', fontStyle: 'italic', lineHeight: '1.4' }}>
+                  😊 Thank you for scanning. If you have found the owner's item, please let them know!
+                </div>
+              </main>
+            </div>
+          );
+        }
+      }
+    }
+
+    // Default main landing page (no ID query parameter)
     return (
       <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
         <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
