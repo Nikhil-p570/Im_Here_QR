@@ -1564,7 +1564,7 @@ function App() {
 
     // Default main landing page (no ID query parameter)
     return (
-      <div className="app-container" style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
+      <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
         <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           {/* Logo with glow effect */}
           <div style={{ position: 'relative', marginBottom: '8px' }}>
@@ -1608,14 +1608,7 @@ function App() {
         </h2>
 
         {/* Problem Section */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '24px',
-          width: '100%',
-          maxWidth: '100%',
-          marginTop: '16px'
-        }}>
+        <div className="problem-grid">
           {/* Problem Card 1 */}
           <div className="glass-panel" style={{ 
             padding: '20px', 
