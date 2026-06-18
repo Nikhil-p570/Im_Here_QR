@@ -171,6 +171,7 @@ function App() {
   const [regError, setRegError] = useState("");
   const [regSuccess, setRegSuccess] = useState("");
   const [savingReg, setSavingReg] = useState(false);
+  const [openDropdownIdx, setOpenDropdownIdx] = useState(null);
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -351,6 +352,15 @@ function App() {
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [cropState.showCropStep]);
+
+  // Close custom dropdowns on clicking anywhere outside
+  useEffect(() => {
+    const handleOutsideClick = () => {
+      setOpenDropdownIdx(null);
+    };
+    window.addEventListener('click', handleOutsideClick);
+    return () => window.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   // Countdown timer effect for clear database confirmation
   useEffect(() => {
@@ -1106,7 +1116,7 @@ function App() {
 
                 <form onSubmit={handleSaveRegistration} className="form-group" style={{ gap: '16px' }}>
                   <div className="form-group">
-                    <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>What should I call you? (Name - Optional)</label>
+                    <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>Name (Optional)</label>
                     <div className="input-wrapper">
                       <User className="input-icon" size={18} />
                       <input 
@@ -1123,7 +1133,7 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Your digits? I promise not to spam. 😉 (Phone - Required)</label>
+                    <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Phone Number (Required)</label>
                     <div className="input-wrapper">
                       <Phone className="input-icon" size={18} />
                       <input 
@@ -1140,7 +1150,7 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Our secret code (Password to edit - Required)</label>
+                    <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Password (Remember it so in case you want to change your details in the future - Required)</label>
                     <div className="input-wrapper">
                       <Lock className="input-icon" size={18} />
                       <input 
@@ -1175,27 +1185,72 @@ function App() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {socials.map((social, idx) => (
                         <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <select 
-                            value={social.type} 
-                            onChange={(e) => handleSocialFieldChange(idx, 'type', e.target.value)}
-                            style={{ 
-                              background: '#0f172a', 
-                              border: '1px solid var(--border-light)', 
-                              color: 'var(--text-primary)', 
-                              borderRadius: '8px', 
-                              padding: '10px 8px', 
-                              fontSize: '0.8rem',
-                              outline: 'none',
-                              cursor: 'pointer'
-                            }}
-                            disabled={savingReg}
-                          >
-                            <option value="Email">Email</option>
-                            <option value="LinkedIn">LinkedIn</option>
-                            <option value="GitHub">GitHub</option>
-                            <option value="Instagram">Instagram</option>
-                            <option value="Custom Link">Custom Link</option>
-                          </select>
+                          <div style={{ position: 'relative', minWidth: '120px' }}>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setOpenDropdownIdx(openDropdownIdx === idx ? null : idx); }}
+                              disabled={savingReg}
+                              style={{
+                                width: '100%',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid var(--border-light)',
+                                color: 'var(--text-primary)',
+                                borderRadius: '8px',
+                                padding: '10px 12px',
+                                fontSize: '0.8rem',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                outline: 'none'
+                              }}
+                            >
+                              <span>{social.type}</span>
+                              <span style={{ fontSize: '0.6rem', opacity: 0.5, marginLeft: '6px' }}>▼</span>
+                            </button>
+                            
+                            {openDropdownIdx === idx && (
+                              <div 
+                                style={{
+                                  position: 'absolute',
+                                  top: '100%',
+                                  left: 0,
+                                  right: 0,
+                                  marginTop: '6px',
+                                  background: '#0f172a',
+                                  border: '1px solid var(--border-light)',
+                                  borderRadius: '8px',
+                                  boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+                                  zIndex: 50,
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                {['Email', 'LinkedIn', 'GitHub', 'Instagram', 'Custom Link'].map((option) => (
+                                  <div
+                                    key={option}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSocialFieldChange(idx, 'type', option);
+                                      setOpenDropdownIdx(null);
+                                    }}
+                                    style={{
+                                      padding: '10px 12px',
+                                      fontSize: '0.8rem',
+                                      cursor: 'pointer',
+                                      color: social.type === option ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                                      background: social.type === option ? 'rgba(255,255,255,0.04)' : 'transparent',
+                                      transition: 'background 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
+                                    onMouseLeave={(e) => e.target.style.background = social.type === option ? 'rgba(255,255,255,0.04)' : 'transparent'}
+                                  >
+                                    {option}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
 
                           {social.type === 'Custom Link' && (
                             <input 
