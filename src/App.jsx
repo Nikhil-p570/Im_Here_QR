@@ -1207,7 +1207,7 @@ function App() {
             <div className="app-container" style={{ maxWidth: '520px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                  <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+                  <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     You're the first one to scan me! Claim me!
                   </h2>
@@ -1422,7 +1422,7 @@ function App() {
             <div className="app-container" style={{ maxWidth: '480px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '24px' }}>
-                  <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+                  <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Hey there! Looking for me? 👀</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
                     You just scanned a piece of my physical world. Want to get in touch, return a lost item, or just see what I’m up to? Here’s my digital space:
@@ -1548,7 +1548,7 @@ function App() {
               zIndex: -1
             }} />
             <img 
-              src="/I'm here logo.png" 
+              src="/full logo.png" 
               alt="I'm here Logo" 
               style={{ 
                 width: '180px', 
@@ -1635,7 +1635,7 @@ function App() {
       <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh' }}>
         <main className="glass-panel card-content" style={{ maxWidth: '440px', width: '100%', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-            <img src="/I'm here logo.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+            <img src="/full logo.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Admin Access</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Enter password to view and generate customer links</p>
           </div>
@@ -1689,7 +1689,7 @@ function App() {
       <header className="admin-header-wrapper">
         <div className="admin-header-main">
           <h1 style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/I'm here logo.png" alt="I'm here" style={{ width: '80px', height: 'auto', marginRight: '14px', borderRadius: '8px' }} />
+            <img src="/logo icon.png" alt="I'm here" style={{ width: '50px', height: '50px', objectFit: 'contain', marginRight: '14px', borderRadius: '8px' }} />
             I'm here
           </h1>
           <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
