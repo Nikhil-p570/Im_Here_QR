@@ -1130,8 +1130,18 @@ function App() {
         return (
           <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh' }}>
             <main className="glass-panel card-content" style={{ maxWidth: '460px', width: '100%', margin: '0 auto', textAlign: 'center', padding: '40px 32px' }}>
-              <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', background: 'rgba(244, 63, 94, 0.05)', border: '1px solid rgba(244, 63, 94, 0.15)', marginBottom: '16px' }}>
-                <AlertTriangle size={32} style={{ color: 'var(--accent-rose)' }} />
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                background: 'rgba(244, 63, 94, 0.05)',
+                border: '1px solid rgba(244, 63, 94, 0.15)',
+                marginBottom: '16px'
+              }}>
+                <AlertTriangle size={28} style={{ color: 'var(--accent-rose)', flexShrink: 0 }} />
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Tag Error</h2>
               <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.95rem', lineHeight: '1.5' }}>{customerError}</p>
