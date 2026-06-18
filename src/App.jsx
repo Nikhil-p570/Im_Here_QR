@@ -1627,7 +1627,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '280px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '380px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s1.png" 
                 alt="Lost items situation" 
@@ -1657,7 +1657,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '280px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '380px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s2.png" 
                 alt="Helpful finder situation" 
