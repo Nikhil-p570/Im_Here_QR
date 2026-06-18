@@ -1187,7 +1187,9 @@ function App() {
                 borderRadius: '50%',
                 background: 'rgba(244, 63, 94, 0.05)',
                 border: '1px solid rgba(244, 63, 94, 0.15)',
-                marginBottom: '16px'
+                marginBottom: '16px',
+                marginLeft: 'auto',
+                marginRight: 'auto'
               }}>
                 <AlertTriangle size={28} style={{ color: 'var(--accent-rose)', flexShrink: 0 }} />
               </div>
@@ -1635,11 +1637,8 @@ function App() {
               />
             </div>
             <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 600, lineHeight: '1.5', marginBottom: '8px' }}>
-                Lost belongings are a common part of everyday life.
-              </p>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', margin: 0 }}>
-                From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+                Lost belongings are a common part of everyday life. From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
               </p>
             </div>
           </div>
