@@ -1571,37 +1571,7 @@ function App() {
           </p>
         </header>
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', margin: '8px 0' }}>
-          <a
-            href="/admin1226"
-            className="btn btn-primary"
-            style={{
-              padding: '14px 28px',
-              fontSize: '1rem',
-              fontWeight: 700,
-              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
-              boxShadow: '0 4px 20px rgba(99, 102, 241, 0.35)',
-              borderRadius: '10px',
-              textDecoration: 'none',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 24px rgba(99, 102, 241, 0.55)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'none';
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(99, 102, 241, 0.35)';
-            }}
-          >
-            <ShieldCheck size={18} />
-            Go to Admin Cockpit
-          </a>
-        </div>
+
 
         {/* Feature Cards Grid */}
         <div style={{ 
