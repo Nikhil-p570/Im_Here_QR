@@ -1613,7 +1613,7 @@ function App() {
           <div className="glass-panel" style={{ 
             padding: '20px', 
             borderRadius: '16px', 
-            textAlign: 'left', 
+            textAlign: 'justify', 
             display: 'flex', 
             flexDirection: 'column', 
             gap: '16px',
@@ -1630,7 +1630,7 @@ function App() {
               />
             </div>
             <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
                 Lost belongings are a common part of everyday life. From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
               </p>
             </div>
@@ -1640,7 +1640,7 @@ function App() {
           <div className="glass-panel" style={{ 
             padding: '20px', 
             borderRadius: '16px', 
-            textAlign: 'left', 
+            textAlign: 'justify', 
             display: 'flex', 
             flexDirection: 'column', 
             gap: '16px',
@@ -1657,7 +1657,7 @@ function App() {
               />
             </div>
             <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
                 Many people notice lost belongings and genuinely want to help, but with no way to identify or contact the owner, they simply leave them where they found them.
               </p>
             </div>
@@ -1667,7 +1667,7 @@ function App() {
           <div className="glass-panel" style={{ 
             padding: '20px', 
             borderRadius: '16px', 
-            textAlign: 'left', 
+            textAlign: 'justify', 
             display: 'flex', 
             flexDirection: 'column', 
             gap: '16px',
@@ -1684,7 +1684,7 @@ function App() {
               />
             </div>
             <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
                 A vehicle is causing trouble, but most people have no idea how to identify or contact the owner using just the registration number.
               </p>
             </div>
