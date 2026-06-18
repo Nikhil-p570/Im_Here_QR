@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { db } from './firebase';
+import { initializeFirebase } from './firebase';
 import { 
   collection, 
   doc, 
@@ -18,11 +18,25 @@ import {
   CheckCircle2, 
   History, 
   Database,
-  ArrowRight,
+  Lock,
+  LogOut,
+  ShieldCheck,
   RefreshCw
 } from 'lucide-react';
 
 function App() {
+  const isMainLanding = window.location.pathname !== '/admin1226';
+
+  // Auth States
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  // Firestore DB Instance State
+  const [firestoreDb, setFirestoreDb] = useState(null);
+
+  // App States
   const [domain, setDomain] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +44,7 @@ function App() {
   
   // History State
   const [history, setHistory] = useState([]);
-  const [loadingHistory, setLoadingHistory] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   // Clipboard Copied State
   const [copied, setCopied] = useState(false);
@@ -42,11 +56,34 @@ function App() {
   const [adminSuccess, setAdminSuccess] = useState("");
   const [adminError, setAdminError] = useState("");
 
-  // Load history from Firestore on component mount
+  // Check session on load
   useEffect(() => {
-    const fetchHistory = async () => {
+    if (isMainLanding) return;
+
+    const sessionAuth = sessionStorage.getItem('im_here_authenticated');
+    const sessionConfig = sessionStorage.getItem('im_here_firebase_config');
+
+    if (sessionAuth === 'true' && sessionConfig) {
       try {
-        const querySnapshot = await getDocs(collection(db, 'links'));
+        const config = JSON.parse(sessionConfig);
+        const dbInstance = initializeFirebase(config);
+        setFirestoreDb(dbInstance);
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.error("Session restoration error:", err);
+        handleLogout();
+      }
+    }
+  }, [isMainLanding]);
+
+  // Load history from Firestore when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !firestoreDb) return;
+
+    const fetchHistory = async () => {
+      setLoadingHistory(true);
+      try {
+        const querySnapshot = await getDocs(collection(firestoreDb, 'links'));
         const items = [];
         querySnapshot.forEach(docSnap => {
           const data = docSnap.data();
@@ -67,7 +104,7 @@ function App() {
     };
 
     fetchHistory();
-  }, []);
+  }, [isAuthenticated, firestoreDb]);
 
   // Countdown timer effect for clear database confirmation
   useEffect(() => {
@@ -79,6 +116,62 @@ function App() {
     }
     return () => clearTimeout(timer);
   }, [showConfirm, countdown]);
+
+  // Action: Log In
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    if (!password) {
+      setAuthError("Please enter the password.");
+      return;
+    }
+
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const response = await fetch('/api/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Initialize dynamic Firebase
+        const dbInstance = initializeFirebase(data.config);
+        setFirestoreDb(dbInstance);
+
+        // Store session
+        sessionStorage.setItem('im_here_authenticated', 'true');
+        sessionStorage.setItem('im_here_firebase_config', JSON.stringify(data.config));
+
+        setIsAuthenticated(true);
+        setPassword("");
+      } else {
+        setAuthError(data.error || "Incorrect password. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setAuthError("Network error. Unable to verify password.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  // Action: Log Out
+  const handleLogout = () => {
+    sessionStorage.removeItem('im_here_authenticated');
+    sessionStorage.removeItem('im_here_firebase_config');
+    setIsAuthenticated(false);
+    setFirestoreDb(null);
+    setHistory([]);
+    setResult(null);
+    setShowConfirm(false);
+    setCountdown(0);
+    setAdminSuccess("");
+    setAdminError("");
+  };
 
   // Helper: generates an 8 character random alphanumeric ID
   const generateRandomCode = () => {
@@ -92,13 +185,14 @@ function App() {
 
   // Helper: check Firestore and ensure ID is unique
   const getUniqueId = async () => {
+    if (!firestoreDb) throw new Error("Firestore database not initialized.");
     let unique = false;
     let newId = '';
     let attempts = 0;
     
     while (!unique && attempts < 15) {
       newId = generateRandomCode();
-      const docRef = doc(db, 'links', newId);
+      const docRef = doc(firestoreDb, 'links', newId);
       const docSnap = await getDoc(docRef);
       if (!docSnap.exists()) {
         unique = true;
@@ -128,15 +222,13 @@ function App() {
 
     try {
       let cleanedDomain = domain.trim();
-      // Remove trailing slash if present
       if (cleanedDomain.endsWith('/')) {
         cleanedDomain = cleanedDomain.slice(0, -1);
       }
 
       const uniqueId = await getUniqueId();
-      const docRef = doc(db, 'links', uniqueId);
+      const docRef = doc(firestoreDb, 'links', uniqueId);
       
-      // Save mapping in Firestore
       await setDoc(docRef, {
         id: uniqueId,
         domain: cleanedDomain,
@@ -150,9 +242,8 @@ function App() {
         url: generatedUrl
       });
 
-      // Update local history
       setHistory(prev => [{ id: uniqueId, domain: cleanedDomain, url: generatedUrl }, ...prev]);
-      setDomain(""); // Clear input
+      setDomain("");
     } catch (err) {
       console.error(err);
       setError(`Error: ${err.message}. Ensure your Firestore Rules allow reads & writes.`);
@@ -163,11 +254,12 @@ function App() {
 
   // Action: Clear DB
   const handleClearDatabase = async () => {
+    if (!firestoreDb) return;
     setClearing(true);
     setAdminError("");
     setAdminSuccess("");
     try {
-      const querySnapshot = await getDocs(collection(db, 'links'));
+      const querySnapshot = await getDocs(collection(firestoreDb, 'links'));
       
       if (querySnapshot.empty) {
         setAdminSuccess("Database is already empty!");
@@ -175,7 +267,6 @@ function App() {
         return;
       }
 
-      // Delete each document individually (suitable for dev testing/small databases)
       const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
       await Promise.all(deletePromises);
 
@@ -191,7 +282,6 @@ function App() {
     }
   };
 
-  // Action: Copy output link to clipboard
   const handleCopyLink = () => {
     if (!result) return;
     navigator.clipboard.writeText(result.url);
@@ -199,15 +289,110 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // RENDER LANDING PAGE
+  if (isMainLanding) {
+    return (
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
+        <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
+            <Database size={56} className="text-cyan-400" style={{ filter: 'drop-shadow(0 0 10px rgba(6, 182, 212, 0.4))' }} />
+          </div>
+          <h1 style={{ fontSize: '3.5rem', fontWeight: 900, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 70%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
+            I'm here
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '480px', lineHeight: '1.6' }}>
+            Your digital presence, mapped.
+          </p>
+        </header>
+      </div>
+    );
+  }
+
+  // RENDER PASSWORD PROMPT (UNAUTHENTICATED ADMIN)
+  if (!isAuthenticated) {
+    return (
+      <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh' }}>
+        <main className="glass-panel card-content" style={{ maxWidth: '440px', width: '100%', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'inline-flex', padding: '12px', borderRadius: '50%', background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.15)', marginBottom: '16px' }}>
+              <Lock className="text-indigo-400" size={32} />
+            </div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Admin Access</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Enter password to view and generate customer links</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="form-group">
+            <label htmlFor="passwordInput" className="form-label">Password</label>
+            <div className="input-wrapper">
+              <Lock className="input-icon" size={20} />
+              <input
+                id="passwordInput"
+                type="password"
+                className="text-input"
+                placeholder="Enter password..."
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={authLoading}
+                autoFocus
+              />
+            </div>
+
+            {authError && (
+              <div className="status-msg status-msg-error">
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            <button type="submit" className="btn btn-primary" disabled={authLoading || !password}>
+              {authLoading ? (
+                <>
+                  <div className="spinner"></div>
+                  Verifying Securely...
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={20} />
+                  Access Dashboard
+                </>
+              )}
+            </button>
+          </form>
+        </main>
+      </div>
+    );
+  }
+
+  // RENDER ADMIN PANEL (AUTHENTICATED)
   return (
     <div className="app-container">
       {/* Header */}
-      <header className="header">
+      <header className="header" style={{ position: 'relative' }}>
+        <button 
+          onClick={handleLogout} 
+          className="btn" 
+          style={{ 
+            position: 'absolute', 
+            right: 0, 
+            top: 0, 
+            padding: '8px 14px', 
+            fontSize: '0.85rem', 
+            background: 'rgba(255, 255, 255, 0.03)', 
+            border: '1px solid var(--border-light)', 
+            color: 'var(--text-secondary)',
+            borderRadius: '8px'
+          }}
+          title="Logout Admin"
+        >
+          <LogOut size={14} />
+          Logout
+        </button>
+
         <h1>
           <Database className="text-cyan-400" size={32} />
           I'm here
         </h1>
-        <p>Generate unique, non-overlapping IDs for your domains</p>
+        <p>Admin Dashboard — Generate unique IDs for your domains</p>
       </header>
 
       {/* Main Form Panel */}
