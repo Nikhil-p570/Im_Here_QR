@@ -1943,9 +1943,9 @@ function App() {
             <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
               <Globe size={20} />
             </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Secure Contact Hub</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Call & Connect</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
-              A clean, privacy-first glassmorphic dashboard displays your customized return instructions, phone triggers, and secure socials to get items back home safely.
+              Finders can easily call, email, or message you directly through a simple contact interface. You stay connected and get your items back quickly, without exposing your private details.
             </p>
           </div>
         </div>
