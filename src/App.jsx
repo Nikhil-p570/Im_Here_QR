@@ -1985,6 +1985,13 @@ function App() {
             opacity: 0.7,
             transition: 'all 0.3s ease'
           }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src="/ordinary_qr.png" 
+                alt="Ordinary QR Code" 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+              />
+            </div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordinary QR Codes</h3>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-rose)', marginBottom: '16px' }}>Cold, Clinical, and Generic.</h4>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
@@ -2009,6 +2016,13 @@ function App() {
                  e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
                  e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(99, 102, 241, 0.15)';
                }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src="/customised.png" 
+                alt="Custom Aesthetic QR Code" 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+              />
+            </div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', background: 'linear-gradient(135deg, #ffffff 40%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
             <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-cyan)', marginBottom: '16px' }}>Your Favorite Visuals. Your Safety Net.</h4>
             <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
