@@ -1100,7 +1100,7 @@ function App() {
             <div className="app-container" style={{ maxWidth: '520px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                  <img src="/I'm here I only logo.png" alt="I'm here" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '16px', marginBottom: '12px' }} />
+                  <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                     You're the first one to scan me! Claim me! 😘
                   </h2>
@@ -1348,7 +1348,7 @@ function App() {
             <div className="app-container" style={{ maxWidth: '480px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '24px' }}>
-                  <img src="/I'm here I only logo.png" alt="I'm here" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '16px', marginBottom: '12px' }} />
+                  <img src="/I'm here logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Hey there! Looking for me? 👀</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
                     You just scanned a piece of my physical world. Want to get in touch, return a lost item, or just see what I’m up to? Here’s my digital space:
