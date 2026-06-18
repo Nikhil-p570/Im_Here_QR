@@ -371,7 +371,8 @@ function App() {
       await setDoc(docRef, {
         id: currentResult.id,
         domain: currentResult.domain,
-        createdAt: new Date()
+        createdAt: new Date(),
+        status: 'unregistered'
       });
       const updated = { ...currentResult, isSavedToDb: true };
       setResult(updated);
