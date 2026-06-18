@@ -2061,7 +2061,7 @@ function App() {
 
         {/* Footer info */}
         <footer style={{ marginTop: '24px', fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
-          © 2026 I'm here QR Tagging System. Powered by Firestore & Vite.
+          © 2026 I'M HERE. Reuniting belongings with their owners.
         </footer>
       </div>
     );
