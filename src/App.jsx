@@ -1116,6 +1116,14 @@ function App() {
       }
     }
 
+    // Set shadow for dots to guarantee scan contrast on light background images
+    if (bgMode === 'image') {
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+    }
+
     // Draw dots
     for (let row = 0; row < moduleCount; row++) {
       for (let col = 0; col < moduleCount; col++) {
@@ -1130,6 +1138,12 @@ function App() {
     drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
     drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
     drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
+
+    // Reset shadow properties before drawing logo and banner
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
 
     // Draw Logo Chip
     if (logoCanvas && showLogoChip) {
