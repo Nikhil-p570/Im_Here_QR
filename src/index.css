@@ -114,8 +114,7 @@ body {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-secondary);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: normal;
 }
 
 .input-wrapper {
@@ -240,8 +239,7 @@ body {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--accent-cyan);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: normal;
 }
 
 .output-link-box {
@@ -402,8 +400,7 @@ body {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--text-secondary);
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  letter-spacing: normal;
 }
 
 .history-list {
@@ -595,4 +592,103 @@ body {
   gap: 24px;
   position: sticky;
   top: 24px;
+}
+
+/* Responsive Admin Header */
+.admin-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  width: 100%;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-header-main {
+  flex: 1;
+  min-width: 280px;
+}
+
+.admin-header-main h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 30%, #a5b4fc 70%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  margin-bottom: 6px;
+}
+
+.admin-header-main p {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.admin-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+/* General Mobile Styling and Responsive Layout adjustments */
+@media (max-width: 640px) {
+  .admin-header-wrapper {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .admin-header-main {
+    text-align: center;
+  }
+  
+  .admin-header-main h1 {
+    justify-content: center;
+    font-size: 1.8rem;
+  }
+  
+  .admin-header-main p {
+    text-align: center;
+    font-size: 0.85rem;
+  }
+  
+  .admin-header-actions {
+    justify-content: center;
+    width: 100%;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-container {
+    padding: 24px 12px;
+    gap: 16px;
+  }
+  
+  .card-content {
+    padding: 24px 16px;
+    gap: 16px;
+  }
+  
+  .text-input {
+    padding: 12px 12px 12px 42px;
+    font-size: 0.9rem;
+  }
+  
+  .btn {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .confirmation-box {
+    padding: 12px;
+  }
 }

@@ -879,7 +879,7 @@ function App() {
     ctx.font = "bold 26px ui-monospace, Menlo, Consolas, monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text.toUpperCase(), qrSize / 2, bannerH / 2);
+    ctx.fillText(text, qrSize / 2, bannerH / 2);
 
     ctx.strokeStyle = dColor;
     ctx.lineWidth = 6;
@@ -1100,7 +1100,7 @@ function App() {
                 <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
                   <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <span>
-                    ⚠️ Keep it clean: Anyone who scans this physical tag will see the digital secrets you drop below. Only share what you'd say on a first date!
+                    ⚠️ Keep it clean: Anyone who scans this physical tag will see the digital secrets you drop below.
                   </span>
                 </div>
 
@@ -1375,7 +1375,7 @@ function App() {
                                 <BrandIcon type={social.type} size={18} />
                               </div>
                               <div style={{ flex: 1 }}>
-                                <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>
+                                <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>
                                   {social.label}
                                 </span>
                                 <span style={{ fontSize: '0.88rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'var(--accent-cyan)' }}>
@@ -1478,8 +1478,16 @@ function App() {
   return (
     <div className="app-container" style={{ maxWidth: '1100px' }}>
       {/* Header */}
-      <header className="header" style={{ position: 'relative', marginBottom: '24px' }}>
-        <div style={{ position: 'absolute', right: 0, top: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+      <header className="admin-header-wrapper">
+        <div className="admin-header-main">
+          <h1>
+            <Database className="text-cyan-400" size={32} />
+            I'm here
+          </h1>
+          <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
+        </div>
+
+        <div className="admin-header-actions">
           {/* Compact Clear DB Control */}
           {!showConfirm ? (
             <button 
@@ -1558,12 +1566,6 @@ function App() {
             Logout
           </button>
         </div>
-
-        <h1 style={{ justifyContent: 'flex-start' }}>
-          <Database className="text-cyan-400" size={32} />
-          I'm here
-        </h1>
-        <p style={{ textAlign: 'left' }}>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
       </header>
 
       {/* DB Admin Status Messages */}
