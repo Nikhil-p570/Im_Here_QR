@@ -1636,10 +1636,10 @@ function App() {
             </div>
             <div>
               <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 600, lineHeight: '1.5', marginBottom: '8px' }}>
-                Lost items are a part of everyday life.
+                Lost belongings are a common part of everyday life.
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', margin: 0 }}>
-                A forgotten key, a misplaced bag, a missing wallet.
+                From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
               </p>
             </div>
           </div>
