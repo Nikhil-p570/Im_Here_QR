@@ -591,7 +591,7 @@ function App() {
 
       await setDoc(docRef, updatePayload, { merge: true });
 
-      setRegSuccess("Locked in! This QR code is officially yours. 🎉");
+      setRegSuccess("Finally claimed! We're official now. 😉🎉");
       setCustomerData(prev => ({
         ...prev,
         ...updatePayload
@@ -1010,21 +1010,11 @@ function App() {
     setGeneratingQR(false);
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     const canvas = qrCanvasRef.current;
     if (!canvas || !canvas.width) {
       setDownloadError("Generate a QR code first.");
       return;
-    }
-
-    // Save generated customer link to Firestore before downloading
-    if (result && !result.isSavedToDb) {
-      try {
-        await saveResultToFirestore(result);
-      } catch (err) {
-        setDownloadError("Failed to register link in database. Download aborted.");
-        return;
-      }
     }
 
     try {
@@ -1044,6 +1034,13 @@ function App() {
       }, 'image/png');
     } catch (e) {
       setDownloadError("Direct download unavailable. Right click to save.");
+    }
+
+    // Save generated customer link to Firestore in the background
+    if (result && !result.isSavedToDb) {
+      saveResultToFirestore(result).catch((err) => {
+        console.error("Background Firestore save failed:", err);
+      });
     }
   };
 
@@ -1093,23 +1090,23 @@ function App() {
                     <Lock style={{ color: 'var(--accent-indigo)' }} size={28} />
                   </div>
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                    Claim This QR Tag! 🔒
+                    Don't leave me hanging. Claim me! 😘
                   </h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px', lineHeight: '1.5' }}>
-                    This QR code isn't claimed yet. Add your contact details below so anyone who scans this tag can get in touch to return your item if it goes missing!
+                    This physical tag is single, unclaimed, and waiting for you. Give me a purpose—link your gear, share your socials, or just make sure your lost items find their way back to you. Let's lock it in.
                   </p>
                 </div>
 
                 <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
                   <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <span>
-                    Heads up: The details you save below will be publicly visible to whoever scans this QR tag to help them return your item. Only share what you're comfortable with!
+                    ⚠️ Keep it clean: Anyone who scans this physical tag will see the digital secrets you drop below. Only share what you'd say on a first date!
                   </span>
                 </div>
 
                 <form onSubmit={handleSaveRegistration} className="form-group" style={{ gap: '16px' }}>
                   <div className="form-group">
-                    <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>Full Name (Optional)</label>
+                    <label htmlFor="regNameInput" className="form-label" style={{ fontSize: '0.72rem' }}>What should I call you? (Name - Optional)</label>
                     <div className="input-wrapper">
                       <User className="input-icon" size={18} />
                       <input 
@@ -1126,7 +1123,7 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Contact Phone Number (Required)</label>
+                    <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Your digits? I promise not to spam. 😉 (Phone - Required)</label>
                     <div className="input-wrapper">
                       <Phone className="input-icon" size={18} />
                       <input 
@@ -1143,7 +1140,7 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Choose Tag Password (Required)</label>
+                    <label htmlFor="regPasswordInput" className="form-label" style={{ fontSize: '0.72rem' }}>Our secret code (Password to edit - Required)</label>
                     <div className="input-wrapper">
                       <Lock className="input-icon" size={18} />
                       <input 
@@ -1162,7 +1159,7 @@ function App() {
                   {/* Dynamic socials wrapper */}
                   <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span className="form-label" style={{ fontSize: '0.72rem', margin: 0 }}>Socials & Extra Info (Optional)</span>
+                      <span className="form-label" style={{ fontSize: '0.72rem', margin: 0 }}>Where else can I find you? (Optional Contacts)</span>
                       <button 
                         type="button" 
                         onClick={handleAddSocial} 
@@ -1275,12 +1272,12 @@ function App() {
                     {savingReg ? (
                       <>
                         <div className="spinner"></div>
-                        Locking in details...
+                        Claiming tag...
                       </>
                     ) : (
                       <>
                         <ShieldCheck size={20} />
-                        Lock it in! 🔒
+                        Claim me! 💖
                       </>
                     )}
                   </button>
@@ -1297,9 +1294,9 @@ function App() {
                   <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.15)', marginBottom: '16px', boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)' }}>
                     <ShieldCheck className="text-cyan-400" size={36} />
                   </div>
-                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Owner Contact Info</h2>
+                  <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Hey there! Looking for me? 👀</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
-                    If you scanned this item and found it, please reach out to the owner below!
+                    You just scanned a piece of my physical world. Want to get in touch, return a lost item, or just see what I’m up to? Here’s my digital space:
                   </p>
                 </div>
 
@@ -1332,7 +1329,7 @@ function App() {
                         }}
                       >
                         <Phone size={12} />
-                        Call Owner
+                        Say Hey! 📞
                       </a>
                     </div>
                   </div>
@@ -1340,7 +1337,7 @@ function App() {
                   {/* Social links (if any exist) */}
                   {customerData.socials && customerData.socials.length > 0 && (
                     <div style={{ marginTop: '8px' }}>
-                      <span className="form-label" style={{ fontSize: '0.68rem', display: 'block', marginBottom: '10px' }}>Socials & Extra Details</span>
+                      <span className="form-label" style={{ fontSize: '0.68rem', display: 'block', marginBottom: '10px' }}>Find me online ✨</span>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {customerData.socials.map((social, idx) => {
                           const isEmail = social.type === 'Email';
@@ -1395,7 +1392,7 @@ function App() {
                 </div>
 
                 <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-light)', paddingTop: '20px', color: 'var(--text-secondary)', fontSize: '0.8rem', fontStyle: 'italic', lineHeight: '1.4' }}>
-                  😊 Thank you for scanning. If you have found the owner's item, please let them know!
+                  😊 Thanks for scanning! Be a sweetheart and let me know if you found my item. 😉
                 </div>
               </main>
             </div>
