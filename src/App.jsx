@@ -26,9 +26,7 @@ import {
   Plus,
   User,
   Phone,
-  ExternalLink,
-  Tag,
-  MapPin
+  ExternalLink
 } from 'lucide-react';
 
 const PRESETS = [
@@ -71,32 +69,6 @@ const BrandIcon = ({ type, size = 16, className, style }) => {
   return <Globe size={size} className={className} style={style} />;
 };
 
-const COUNTRY_CODES = [
-  { name: 'India', code: '91', flag: '🇮🇳' },
-  { name: 'United States', code: '1', flag: '🇺🇸' },
-  { name: 'United Kingdom', code: '44', flag: '🇬🇧' },
-  { name: 'Australia', code: '61', flag: '🇦🇺' },
-  { name: 'Canada', code: '1', flag: '🇨🇦' },
-  { name: 'Germany', code: '49', flag: '🇩🇪' },
-  { name: 'France', code: '33', flag: '🇫🇷' },
-  { name: 'United Arab Emirates', code: '971', flag: '🇦🇪' },
-  { name: 'Singapore', code: '65', flag: '🇸🇬' },
-  { name: 'Saudi Arabia', code: '966', flag: '🇸🇦' },
-  { name: 'South Africa', code: '27', flag: '🇿🇦' },
-  { name: 'New Zealand', code: '64', flag: '🇳🇿' },
-  { name: 'Japan', code: '81', flag: '🇯🇵' },
-  { name: 'Brazil', code: '55', flag: '🇧🇷' },
-  { name: 'Mexico', code: '52', flag: '🇲🇽' },
-  { name: 'Italy', code: '39', flag: '🇮🇹' },
-  { name: 'Spain', code: '34', flag: '🇪🇸' },
-  { name: 'Russia', code: '7', flag: '🇷🇺' },
-  { name: 'China', code: '86', flag: '🇨🇳' },
-  { name: 'Bangladesh', code: '880', flag: '🇧🇩' },
-  { name: 'Pakistan', code: '92', flag: '🇵🇰' },
-  { name: 'Sri Lanka', code: '94', flag: '🇱🇰' },
-  { name: 'Nepal', code: '977', flag: '🇳🇵' }
-];
-
 const ensureQrLib = async () => {
   if (typeof window.qrcode !== 'undefined') return true;
   const urls = [
@@ -122,6 +94,34 @@ const ensureQrLib = async () => {
     }
   }
   return false;
+};
+
+const formatDisplayPhone = (num) => {
+  if (!num) return "";
+  const cleaned = num.replace(/\D/g, '');
+  if (cleaned.length === 12 && cleaned.startsWith('91')) {
+    return `+91 ${cleaned.slice(2, 7)}-${cleaned.slice(7)}`;
+  }
+  if (cleaned.length === 10) {
+    return `+91 ${cleaned.slice(0, 5)}-${cleaned.slice(5)}`;
+  }
+  if (cleaned.length > 5) {
+    const half = Math.ceil(cleaned.length / 2);
+    return `${cleaned.slice(0, half)}-${cleaned.slice(half)}`;
+  }
+  return num;
+};
+
+const getTelLink = (num) => {
+  if (!num) return "";
+  const cleaned = num.replace(/\D/g, '');
+  if (cleaned.length === 10) {
+    return `tel:+91${cleaned}`;
+  }
+  if (cleaned.length === 12 && cleaned.startsWith('91')) {
+    return `tel:+${cleaned}`;
+  }
+  return `tel:${cleaned}`;
 };
 
 function App() {
@@ -157,9 +157,9 @@ function App() {
   const [bgColor, setBgColor] = useState("#000000");
   const [bgMode, setBgMode] = useState("image"); // solid, image
   const [hasBeenGeneratedOnce, setHasBeenGeneratedOnce] = useState(false);
-  const [overlayDarkness, setOverlayDarkness] = useState(40);
+  const [overlayDarkness, setOverlayDarkness] = useState(30);
   const [showLogoChip, setShowLogoChip] = useState(false);
-  const [dotSize, setDotSize] = useState(80);
+  const [dotSize, setDotSize] = useState(60);
   const [dotShape, setDotShape] = useState("circle"); // square, rounded, circle
   const [cornerShape, setCornerShape] = useState("circle"); // square, rounded, circle
   const [hasFrame, setHasFrame] = useState(true);
@@ -202,13 +202,6 @@ function App() {
   const [regSuccess, setRegSuccess] = useState("");
   const [savingReg, setSavingReg] = useState(false);
   const [openDropdownIdx, setOpenDropdownIdx] = useState(null);
-
-  // Country Code and Geolocation States
-  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
-  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
-  const [locLoading, setLocLoading] = useState(false);
-  const [locError, setLocError] = useState("");
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -327,13 +320,10 @@ function App() {
     }
   }, [result]);
 
-  // Auto-regenerate QR code on any layout/style/parameter change
+  // Auto-regenerate QR code on any layout/style/parameter change once generated
   useEffect(() => {
-    if (qrUrl.trim()) {
+    if (hasBeenGeneratedOnce && qrUrl.trim()) {
       handleGenerateQR();
-    } else {
-      setQrImageUrl("");
-      setQrNoteText("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -354,7 +344,8 @@ function App() {
     logoScale,
     cropState.x,
     cropState.y,
-    cropState.size
+    cropState.size,
+    hasBeenGeneratedOnce
   ]);
 
   // Render crop preview canvas
@@ -580,14 +571,8 @@ function App() {
       setSavingReg(false);
       return;
     }
-    const isIndia = selectedCountry.code === '91';
-    if (isIndia && numberVal.length !== 10) {
-      setRegError("Indian phone numbers must be exactly 10 digits.");
-      setSavingReg(false);
-      return;
-    }
-    if (numberVal.length < 7 || numberVal.length > 15) {
-      setRegError("Phone number must be between 7 and 15 digits.");
+    if (numberVal.length !== 10) {
+      setRegError("Phone number must be exactly 10 digits.");
       setSavingReg(false);
       return;
     }
@@ -631,8 +616,6 @@ function App() {
       cleanedSocials.push({ type, label: lbl, value: val });
     }
 
-    const combinedNumber = `${selectedCountry.code}${numberVal}`;
-
     try {
       const customerId = getUrlId();
       if (!customerId) throw new Error("No customer ID found in URL.");
@@ -643,9 +626,7 @@ function App() {
         status: 'registered',
         registeredAt: new Date(),
         name: nameVal,
-        number: combinedNumber,
-        countryCode: selectedCountry.code,
-        localNumber: numberVal,
+        number: numberVal,
         password: passwordVal,
         socials: cleanedSocials
       };
@@ -663,45 +644,6 @@ function App() {
     } finally {
       setSavingReg(false);
     }
-  };
-
-  const handleDropLocation = () => {
-    setLocLoading(true);
-    setLocError("");
-
-    if (!navigator.geolocation) {
-      setLocError("Geolocation is not supported by your browser.");
-      setLocLoading(false);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const messageText = `Hi .. I scanned your I'm Here smart qr tag and found your item at this location\nmap\nhttps://maps.google.com/?q=${lat},${lng}`;
-        const waUrl = `https://wa.me/${customerData.number}?text=${encodeURIComponent(messageText)}`;
-        setLocLoading(false);
-        window.open(waUrl, '_blank');
-      },
-      (error) => {
-        setLocLoading(false);
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocError("Location permission denied. Please allow location access.");
-            break;
-          case error.POSITION_UNAVAILABLE:
-            setLocError("Location information is unavailable.");
-            break;
-          case error.TIMEOUT:
-            setLocError("Location request timed out.");
-            break;
-          default:
-            setLocError("An unknown error occurred while fetching location.");
-        }
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -743,8 +685,6 @@ function App() {
         url: generatedUrl,
         isSavedToDb: false
       });
-      setQrUrl(generatedUrl);
-      handleGenerateQR(generatedUrl);
     } catch (err) {
       console.error(err);
       setError(`Error: ${err.message}.`);
@@ -980,14 +920,14 @@ function App() {
     ctx.font = "bold 22px ui-monospace, Menlo, Consolas, monospace";
     const textMetrics = ctx.measureText(text);
     const textW = textMetrics.width;
-    
+
     // Calculate layout parameters
     const badgeSize = 32;
     const paddingLeft = 14;
     const gap = 12;
     const paddingRight = 24;
     const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
-    
+
     const pillX = (qrSize - pillW) / 2;
     const pillY = offsetY + (bannerH - pillH) / 2;
 
@@ -995,7 +935,7 @@ function App() {
     roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
     ctx.fillStyle = bannerBgColor;
     ctx.fill();
-    
+
     // Draw pill border
     ctx.strokeStyle = bannerTextColor;
     ctx.lineWidth = 2.5;
@@ -1005,7 +945,7 @@ function App() {
     const badgeRadius = badgeSize / 2;
     const badgeCx = pillX + paddingLeft + badgeRadius;
     const badgeCy = pillY + pillH / 2;
-    
+
     ctx.beginPath();
     ctx.arc(badgeCx, badgeCy, badgeRadius, 0, Math.PI * 2);
     ctx.fillStyle = '#facc15'; // Vibrant yellow
@@ -1015,12 +955,12 @@ function App() {
     // SVG path for lucide phone (24x24 box)
     const phonePathStr = "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z";
     const phonePath = new Path2D(phonePathStr);
-    
+
     const iconSize = 15;
     const iconScale = iconSize / 24;
     const iconX = badgeCx - iconSize / 2;
     const iconY = badgeCy - iconSize / 2;
-    
+
     ctx.translate(iconX, iconY);
     ctx.scale(iconScale, iconScale);
     ctx.fillStyle = '#000000'; // Black phone icon
@@ -1054,9 +994,8 @@ function App() {
     throw new Error('Text too long to encode as a QR code.');
   };
 
-  const handleGenerateQR = async (urlOverride) => {
-    const activeUrl = urlOverride || qrUrl;
-    if (!activeUrl.trim()) {
+  const handleGenerateQR = async () => {
+    if (!qrUrl.trim()) {
       setQrNoteText("Enter a URL or generate a customer ID link first.");
       setQrNoteClass("note warn");
       return;
@@ -1076,7 +1015,7 @@ function App() {
 
     let qrResult;
     try {
-      qrResult = makeQR(activeUrl.trim());
+      qrResult = makeQR(qrUrl.trim());
     } catch (err) {
       setQrNoteText(err.message);
       setQrNoteClass("note warn");
@@ -1116,14 +1055,6 @@ function App() {
       }
     }
 
-    // Set shadow for dots to guarantee scan contrast on light background images
-    if (bgMode === 'image') {
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = 1;
-    }
-
     // Draw dots
     for (let row = 0; row < moduleCount; row++) {
       for (let col = 0; col < moduleCount; col++) {
@@ -1138,12 +1069,6 @@ function App() {
     drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
     drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
     drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
-
-    // Reset shadow properties before drawing logo and banner
-    ctx.shadowColor = 'transparent';
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 0;
 
     // Draw Logo Chip
     if (logoCanvas && showLogoChip) {
@@ -1215,49 +1140,6 @@ function App() {
     setBgColor(preset.bg);
   };
 
-  const handleNew = () => {
-    // Reset ID generation results
-    setResult(null);
-    setCopied(false);
-    setError("");
-
-    // Reset QR configuration states
-    setQrUrl("");
-    setUploadedImg(null);
-    setDotColor("#ffffff");
-    setBgColor("#000000");
-    setBgMode("image");
-    setHasBeenGeneratedOnce(false);
-    setOverlayDarkness(40);
-    setShowLogoChip(false);
-    setDotSize(80);
-    setDotShape("circle");
-    setCornerShape("circle");
-    setHasFrame(true);
-    setFrameText("SCAN ME TO FIND ME");
-    setFrameBgColor("#000000");
-    setFrameTextColor("#ffffff");
-    setLogoScale(22);
-
-    // Reset crop state
-    setCropState({
-      x: 0,
-      y: 0,
-      size: 120,
-      dispW: 0,
-      dispH: 0,
-      scale: 1,
-      showCropStep: false
-    });
-
-    // Reset notes/alerts
-    setQrNoteText("");
-    setQrImageUrl("");
-    setDownloadError("");
-    setAdminSuccess("");
-    setAdminError("");
-  };
-
   // RENDER CUSTOMER FINDER OR LANDING PAGE
   if (isMainLanding) {
     const customerId = getUrlId();
@@ -1274,7 +1156,7 @@ function App() {
 
       if (customerError) {
         return (
-          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh', alignSelf: 'center' }}>
+          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh' }}>
             <main className="glass-panel card-content" style={{ maxWidth: '460px', width: '100%', margin: '0 auto', textAlign: 'center', padding: '40px 32px' }}>
               <div style={{
                 display: 'inline-flex',
@@ -1285,44 +1167,12 @@ function App() {
                 borderRadius: '50%',
                 background: 'rgba(244, 63, 94, 0.05)',
                 border: '1px solid rgba(244, 63, 94, 0.15)',
-                marginBottom: '16px',
-                marginLeft: 'auto',
-                marginRight: 'auto'
+                marginBottom: '16px'
               }}>
                 <AlertTriangle size={28} style={{ color: 'var(--accent-rose)', flexShrink: 0 }} />
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Tag Error</h2>
               <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.95rem', lineHeight: '1.5' }}>{customerError}</p>
-              
-              <a
-                href="/"
-                style={{
-                  marginTop: '24px',
-                  padding: '12px 24px',
-                  fontSize: '0.9rem',
-                  fontWeight: 600,
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-light)',
-                  color: 'var(--text-secondary)',
-                  borderRadius: '10px',
-                  textDecoration: 'none',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s ease',
-                  justifyContent: 'center'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-                  e.currentTarget.style.color = '#ffffff';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                  e.currentTarget.style.color = 'var(--text-secondary)';
-                }}
-              >
-                Go to Homepage
-              </a>
             </main>
           </div>
         );
@@ -1334,7 +1184,7 @@ function App() {
         if (isUnregistered) {
           // 1. UNREGISTERED REGISTRATION VIEW
           return (
-            <div className="app-container" style={{ maxWidth: '520px', alignSelf: 'center' }}>
+            <div className="app-container" style={{ maxWidth: '520px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                   <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
@@ -1346,12 +1196,12 @@ function App() {
                   </p>
                 </div>
 
-                <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
+                {/* <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
                   <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <span>
                     ⚠️ Keep it clean: Anyone who scans this physical tag will see the digital secrets you drop below.
                   </span>
-                </div>
+                </div> */}
 
                 <form onSubmit={handleSaveRegistration} className="form-group" style={{ gap: '16px' }}>
                   <div className="form-group">
@@ -1373,115 +1223,18 @@ function App() {
 
                   <div className="form-group">
                     <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Phone Number (Required)</label>
-                    <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
-                      {/* Searchable Country Code Dropdown */}
-                      <div style={{ position: 'relative', width: '130px', flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          onClick={() => setShowCountryDropdown(!showCountryDropdown)}
-                          disabled={savingReg}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            padding: '12px 10px',
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: '12px',
-                            color: 'var(--text-primary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            cursor: 'pointer',
-                            fontSize: '0.9rem'
-                          }}
-                        >
-                          <span>{selectedCountry.flag} +{selectedCountry.code}</span>
-                          <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>▼</span>
-                        </button>
-
-                        {showCountryDropdown && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: '100%',
-                              left: 0,
-                              width: '240px',
-                              marginTop: '6px',
-                              background: '#0f172a',
-                              border: '1px solid var(--border-light)',
-                              borderRadius: '12px',
-                              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                              zIndex: 100,
-                              overflow: 'hidden',
-                              padding: '8px'
-                            }}
-                          >
-                            <input
-                              type="text"
-                              placeholder="Search country..."
-                              value={countrySearch}
-                              onChange={(e) => setCountrySearch(e.target.value)}
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid var(--border-light)',
-                                borderRadius: '8px',
-                                color: '#ffffff',
-                                fontSize: '0.8rem',
-                                marginBottom: '8px',
-                                outline: 'none'
-                              }}
-                            />
-                            <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
-                              {COUNTRY_CODES.filter(c => 
-                                c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
-                                c.code.includes(countrySearch)
-                              ).map(c => (
-                                <div
-                                  key={c.name}
-                                  onClick={() => {
-                                    setSelectedCountry(c);
-                                    setShowCountryDropdown(false);
-                                    setCountrySearch("");
-                                  }}
-                                  style={{
-                                    padding: '8px 10px',
-                                    fontSize: '0.85rem',
-                                    cursor: 'pointer',
-                                    borderRadius: '6px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    color: selectedCountry.code === c.code ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                                    background: selectedCountry.code === c.code ? 'rgba(255,255,255,0.04)' : 'transparent'
-                                  }}
-                                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                                  onMouseLeave={(e) => e.target.style.background = selectedCountry.code === c.code ? 'rgba(255,255,255,0.04)' : 'transparent'}
-                                >
-                                  <span>{c.flag} {c.name}</span>
-                                  <span style={{ opacity: 0.6 }}>+{c.code}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Phone Number Input */}
-                      <div className="input-wrapper" style={{ flex: 1 }}>
-                        <Phone className="input-icon" size={18} />
-                        <input
-                          id="regNumberInput"
-                          type="tel"
-                          className="text-input"
-                          placeholder={selectedCountry.code === '91' ? "10-digit mobile number" : "Mobile number"}
-                          value={regNumber}
-                          onChange={(e) => setRegNumber(e.target.value)}
-                          disabled={savingReg}
-                          style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
-                        />
-                      </div>
+                    <div className="input-wrapper">
+                      <Phone className="input-icon" size={18} />
+                      <input
+                        id="regNumberInput"
+                        type="tel"
+                        className="text-input"
+                        placeholder="10-digit mobile number"
+                        value={regNumber}
+                        onChange={(e) => setRegNumber(e.target.value)}
+                        disabled={savingReg}
+                        style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                      />
                     </div>
                   </div>
 
@@ -1646,7 +1399,7 @@ function App() {
         } else {
           // 2. REGISTERED DETAILS VIEW
           return (
-            <div className="app-container" style={{ maxWidth: '480px', alignSelf: 'center' }}>
+            <div className="app-container" style={{ maxWidth: '480px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '24px' }}>
                   <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
@@ -1667,15 +1420,13 @@ function App() {
 
                   {/* Phone number card */}
                   <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px' }}>
+                    <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
-                        <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
-                          {customerData.number.replace(/(\d{5})(\d{5})/, '$1-$2')}
-                        </span>
-                      </div>
+                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+                        {formatDisplayPhone(customerData.number)}
+                      </span>
                       <a
-                        href={`tel:${customerData.number}`}
+                        href={getTelLink(customerData.number)}
                         className="btn"
                         style={{
                           padding: '6px 12px',
@@ -1687,60 +1438,9 @@ function App() {
                         }}
                       >
                         <Phone size={12} />
-                        Say Hey! 📞
+                        Make a call
                       </a>
                     </div>
-                  </div>
-
-                  {/* Drop Location Card */}
-                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '2px' }}>Drop Location</span>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                        Using "Drop Location" service, you can easily send your current GPS location to the owner via WhatsApp to help them find their lost item.
-                      </span>
-                    </div>
-
-                    {locError && (
-                      <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '8px 12px', margin: 0 }}>
-                        <AlertTriangle size={14} style={{ flexShrink: 0 }} />
-                        <span>{locError}</span>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={handleDropLocation}
-                      disabled={locLoading}
-                      className="btn"
-                      style={{
-                        padding: '10px 16px',
-                        fontSize: '0.85rem',
-                        background: 'linear-gradient(135deg, var(--accent-emerald) 0%, #059669 100%)',
-                        color: 'white',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        width: '100%',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
-                      }}
-                    >
-                      {locLoading ? (
-                        <>
-                          <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', borderTopColor: '#ffffff' }}></div>
-                          Fetching current location...
-                        </>
-                      ) : (
-                        <>
-                          <Globe size={14} />
-                          Drop Location 📍
-                        </>
-                      )}
-                    </button>
                   </div>
 
                   {/* Social links (if any exist) */}
@@ -1812,229 +1512,16 @@ function App() {
 
     // Default main landing page (no ID query parameter)
     return (
-      <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
-        <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-          {/* Logo with glow effect */}
-          <div style={{ position: 'relative', marginBottom: '8px' }}>
-            <div style={{
-              position: 'absolute',
-              top: '-15px',
-              left: '-15px',
-              right: '-15px',
-              bottom: '-15px',
-              background: 'radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%)',
-              borderRadius: '24px',
-              filter: 'blur(16px)',
-              zIndex: -1
-            }} />
-            <img 
-              src="/full logo.png" 
-              alt="I'm here Logo" 
-              style={{ 
-                width: '180px', 
-                height: 'auto', 
-                borderRadius: '16px', 
-                boxShadow: '0 12px 36px rgba(0,0,0,0.65)', 
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' 
-              }} 
-              onMouseEnter={(e) => e.target.style.transform = 'scale(1.06) rotate(1deg)'}
-              onMouseLeave={(e) => e.target.style.transform = 'scale(1) rotate(0deg)'}
-            />
-          </div>
-          
-          <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
-            Smart QR Item Tags
+      <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', textAlign: 'center' }}>
+        <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+          <img src="/logo icon.png" alt="I'm here" style={{ width: '120px', height: '120px', objectFit: 'contain', borderRadius: '24px', marginBottom: '8px' }} />
+          <h1 style={{ fontSize: '3.5rem', fontWeight: 900, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 70%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
+            I'm here
           </h1>
-          
-          <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '540px', lineHeight: '1.6', margin: '0 auto' }}>
-            Securely connect your physical belongings to your digital space. No apps to download. Just scan, claim, and protect your items.
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.15rem', maxWidth: '480px', lineHeight: '1.6' }}>
+            Your digital presence, mapped.
           </p>
         </header>
-
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          The Problem
-        </h2>
-
-        {/* Problem Section */}
-        <div className="problem-grid">
-          {/* Problem Card 1 */}
-          <div className="glass-panel" style={{ 
-            padding: '20px', 
-            borderRadius: '16px', 
-            textAlign: 'justify', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '16px',
-            border: '1px solid rgba(244, 63, 94, 0.15)',
-            transition: 'all 0.3s ease' 
-          }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
-              <img 
-                src="/problem s1.png" 
-                alt="Lost items situation" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-            </div>
-            <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
-                Lost belongings are a common part of everyday life. From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
-              </p>
-            </div>
-          </div>
-
-          {/* Problem Card 2 */}
-          <div className="glass-panel" style={{ 
-            padding: '20px', 
-            borderRadius: '16px', 
-            textAlign: 'justify', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '16px',
-            border: '1px solid rgba(244, 63, 94, 0.15)',
-            transition: 'all 0.3s ease' 
-          }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
-              <img 
-                src="/problem s2.png" 
-                alt="Helpful finder situation" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-            </div>
-            <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
-                Many people notice lost belongings and genuinely want to help, but with no way to identify or contact the owner, they simply leave them where they found them.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          How It Works
-        </h2>
-
-        {/* Feature Cards Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-          gap: '20px', 
-          width: '100%', 
-          marginTop: '20px' 
-        }}>
-          {/* Card 1 */}
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
-            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
-              <Tag size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Attach & Protect</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
-              Secure your valuables with a smart recovery tag. If your item ever goes missing, anyone who finds it can scan the tag to instantly initiate a secure return process.
-            </p>
-          </div>
-
-          {/* Card 2 */}
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
-            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
-              <MapPin size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Location Ping</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
-              No need to wait for a phone call to connect. With a single tap, finders can instantly drop their current GPS location, sending an immediate alert straight to your phone.
-            </p>
-          </div>
-
-          {/* Card 3 */}
-          <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
-            <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
-              <Globe size={20} />
-            </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Call & Connect</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
-              Finders can easily call, email, or message you directly through a simple contact interface. You stay connected and get your items back quickly, without exposing your private details.
-            </p>
-          </div>
-        </div>
-
-        {/* Why Us Section */}
-        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Why Us?
-        </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '24px',
-          width: '100%',
-          marginTop: '20px'
-        }}>
-          {/* Ordinary QR Codes Card */}
-          <div className="glass-panel" style={{
-            padding: '24px',
-            borderRadius: '16px',
-            textAlign: 'left',
-            border: '1px solid rgba(255, 255, 255, 0.05)',
-            opacity: 0.7,
-            transition: 'all 0.3s ease'
-          }}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img 
-                src="/ordinary_qr.png" 
-                alt="Ordinary QR Code" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-              />
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordinary QR Codes</h3>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-rose)', marginBottom: '16px' }}>Cold, Clinical, and Generic.</h4>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
-              Traditional black-and-white matrix codes look like barcodes on a shipping label. They ruin the aesthetic of your favorite keys, designer bags, or custom wallets, making security feel like a chore rather than a lifestyle choice.
-            </p>
-          </div>
-
-          {/* Custom Aesthetic QRs Card */}
-          <div className="glass-panel" style={{
-            padding: '24px',
-            borderRadius: '16px',
-            textAlign: 'left',
-            border: '1px solid rgba(99, 102, 241, 0.3)',
-            boxShadow: '0 8px 32px 0 rgba(99, 102, 241, 0.15)',
-            transition: 'all 0.3s ease'
-          }}
-               onMouseEnter={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
-                 e.currentTarget.style.boxShadow = '0 12px 36px 0 rgba(6, 182, 212, 0.25)';
-               }}
-               onMouseLeave={(e) => {
-                 e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-                 e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(99, 102, 241, 0.15)';
-               }}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <img 
-                src="/customised.png" 
-                alt="Custom Aesthetic QR Code" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
-              />
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', background: 'linear-gradient(135deg, #ffffff 40%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-cyan)', marginBottom: '16px' }}>Your Favorite Visuals. Your Safety Net.</h4>
-            <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
-              We don't just generate codes; we embed them. Blend your high-contrast QR matrix seamlessly over a picture of your pet, a favorite memory, or custom artwork. It acts as a stunning personal accessory that solves the "what if it's lost" problem beautifully behind the scenes.
-            </p>
-          </div>
-        </div>
-
-        {/* Footer info */}
-        <footer style={{ marginTop: '24px', fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
-          © 2026 I'm here QR Tagging System. Powered by Firestore & Vite.
-        </footer>
       </div>
     );
   }
@@ -2042,10 +1529,10 @@ function App() {
   // RENDER PASSWORD PROMPT (UNAUTHENTICATED ADMIN)
   if (!isAuthenticated) {
     return (
-      <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh', alignSelf: 'center' }}>
+      <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh' }}>
         <main className="glass-panel card-content" style={{ maxWidth: '440px', width: '100%', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-            <img src="/full logo.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+            <img src="/logo icon.png" alt="I'm here" style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '16px', marginBottom: '12px' }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Admin Access</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Enter password to view and generate customer links</p>
           </div>
@@ -2094,40 +1581,18 @@ function App() {
 
   // RENDER ADMIN PANEL (AUTHENTICATED - SPLIT SCREEN COCKPIT)
   return (
-    <div className="app-container" style={{ maxWidth: '1100px', alignSelf: 'center' }}>
+    <div className="app-container" style={{ maxWidth: '1100px' }}>
       {/* Header */}
       <header className="admin-header-wrapper">
         <div className="admin-header-main">
           <h1 style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo icon.png" alt="I'm here" style={{ width: '50px', height: '50px', objectFit: 'contain', marginRight: '14px', borderRadius: '8px' }} />
+            <img src="/logo icon.png" alt="I'm here" style={{ width: '60px', height: '60px', marginRight: '14px', objectFit: 'contain', borderRadius: '12px' }} />
             I'm here
           </h1>
           <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
         </div>
 
         <div className="admin-header-actions">
-          {/* New Button */}
-          <button
-            type="button"
-            onClick={handleNew}
-            className="btn"
-            style={{
-              padding: '8px 14px',
-              fontSize: '0.85rem',
-              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
-              border: 'none',
-              color: 'white',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-            title="Reset Form / New Tag"
-          >
-            <Plus size={14} />
-            New
-          </button>
-
           {/* Compact Clear DB Control */}
           {!showConfirm ? (
             <button
@@ -2593,7 +2058,30 @@ function App() {
               )}
             </div>
 
-
+            <button
+              type="button"
+              onClick={handleGenerateQR}
+              className="btn btn-primary"
+              style={{
+                marginTop: '20px',
+                width: '100%',
+                background: 'linear-gradient(135deg, #e8402c 0%, #7a2118 100%)',
+                boxShadow: '0 4px 15px rgba(232, 64, 44, 0.3)'
+              }}
+              disabled={generatingQR}
+            >
+              {generatingQR ? (
+                <>
+                  <div className="spinner"></div>
+                  Generating QR...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={20} />
+                  GENERATE QR CODE
+                </>
+              )}
+            </button>
 
             {qrNoteText && (
               <div className={`status-msg ${qrNoteClass.includes('warn') ? 'status-msg-error' : 'status-msg-success'}`} style={{ fontSize: '0.8rem', marginTop: '12px' }}>
