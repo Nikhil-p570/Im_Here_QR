@@ -1176,7 +1176,7 @@ function App() {
 
       if (customerError) {
         return (
-          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh' }}>
+          <div className="app-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '85vh', alignSelf: 'center' }}>
             <main className="glass-panel card-content" style={{ maxWidth: '460px', width: '100%', margin: '0 auto', textAlign: 'center', padding: '40px 32px' }}>
               <div style={{
                 display: 'inline-flex',
@@ -1193,6 +1193,36 @@ function App() {
               </div>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Tag Error</h2>
               <p style={{ color: 'var(--text-secondary)', marginTop: '8px', fontSize: '0.95rem', lineHeight: '1.5' }}>{customerError}</p>
+              
+              <a
+                href="/"
+                style={{
+                  marginTop: '24px',
+                  padding: '12px 24px',
+                  fontSize: '0.9rem',
+                  fontWeight: 600,
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-secondary)',
+                  borderRadius: '10px',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  justifyContent: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.color = '#ffffff';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }}
+              >
+                Go to Homepage
+              </a>
             </main>
           </div>
         );
@@ -1204,7 +1234,7 @@ function App() {
         if (isUnregistered) {
           // 1. UNREGISTERED REGISTRATION VIEW
           return (
-            <div className="app-container" style={{ maxWidth: '520px' }}>
+            <div className="app-container" style={{ maxWidth: '520px', alignSelf: 'center' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
                 <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                   <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
@@ -1419,7 +1449,7 @@ function App() {
         } else {
           // 2. REGISTERED DETAILS VIEW
           return (
-            <div className="app-container" style={{ maxWidth: '480px' }}>
+            <div className="app-container" style={{ maxWidth: '480px', alignSelf: 'center' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '24px' }}>
                   <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
@@ -1532,7 +1562,7 @@ function App() {
 
     // Default main landing page (no ID query parameter)
     return (
-      <div className="app-container" style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px' }}>
+      <div className="app-container" style={{ maxWidth: '800px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
         <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
           {/* Logo with glow effect */}
           <div style={{ position: 'relative', marginBottom: '8px' }}>
@@ -1632,7 +1662,7 @@ function App() {
   // RENDER PASSWORD PROMPT (UNAUTHENTICATED ADMIN)
   if (!isAuthenticated) {
     return (
-      <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh' }}>
+      <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh', alignSelf: 'center' }}>
         <main className="glass-panel card-content" style={{ maxWidth: '440px', width: '100%', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '12px' }}>
             <img src="/full logo.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
@@ -1684,7 +1714,7 @@ function App() {
 
   // RENDER ADMIN PANEL (AUTHENTICATED - SPLIT SCREEN COCKPIT)
   return (
-    <div className="app-container" style={{ maxWidth: '1100px' }}>
+    <div className="app-container" style={{ maxWidth: '1100px', alignSelf: 'center' }}>
       {/* Header */}
       <header className="admin-header-wrapper">
         <div className="admin-header-main">
