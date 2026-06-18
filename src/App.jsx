@@ -1395,7 +1395,7 @@ function App() {
                     <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
-                        {customerData.number.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')}
+                        {customerData.number.replace(/(\d{5})(\d{5})/, '$1-$2')}
                       </span>
                       <a
                         href={`tel:${customerData.number}`}
