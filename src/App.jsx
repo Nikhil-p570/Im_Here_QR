@@ -363,7 +363,27 @@ function App() {
     return newId;
   };
 
-  // Action: Generate ID for new Customer
+  // Helper: Save generated customer link to Firestore database on demand
+  const saveResultToFirestore = async (currentResult) => {
+    if (!firestoreDb || !currentResult || currentResult.isSavedToDb) return currentResult;
+    try {
+      const docRef = doc(firestoreDb, 'links', currentResult.id);
+      await setDoc(docRef, {
+        id: currentResult.id,
+        domain: currentResult.domain,
+        createdAt: new Date()
+      });
+      const updated = { ...currentResult, isSavedToDb: true };
+      setResult(updated);
+      return updated;
+    } catch (err) {
+      console.error("Failed to save customer link to database:", err);
+      setError(`Failed to save customer link to database: ${err.message}`);
+      throw err;
+    }
+  };
+
+  // Action: Generate ID for new Customer (locally first, deferred database save)
   const handleGenerateId = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -373,24 +393,17 @@ function App() {
     setAdminError("");
 
     try {
-      const uniqueId = await getUniqueId();
-      const docRef = doc(firestoreDb, 'links', uniqueId);
-      
-      await setDoc(docRef, {
-        id: uniqueId,
-        domain: predefinedDomain,
-        createdAt: new Date()
-      });
-
+      const uniqueId = await getUniqueId(); // reads firestore to ensure uniqueness
       const generatedUrl = `${predefinedDomain}/id?=${uniqueId}`;
       setResult({
         domain: predefinedDomain,
         id: uniqueId,
-        url: generatedUrl
+        url: generatedUrl,
+        isSavedToDb: false
       });
     } catch (err) {
       console.error(err);
-      setError(`Error: ${err.message}. Ensure your Firestore Rules allow reads & writes.`);
+      setError(`Error: ${err.message}.`);
     } finally {
       setLoading(false);
     }
@@ -428,8 +441,15 @@ function App() {
   };
 
   // Action: Copy link to clipboard
-  const handleCopyLink = () => {
+  const handleCopyLink = async () => {
     if (!result) return;
+    if (!result.isSavedToDb) {
+      try {
+        await saveResultToFirestore(result);
+      } catch (err) {
+        return;
+      }
+    }
     navigator.clipboard.writeText(result.url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -748,11 +768,21 @@ function App() {
     setGeneratingQR(false);
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     const canvas = qrCanvasRef.current;
     if (!canvas || !canvas.width) {
       setDownloadError("Generate a QR code first.");
       return;
+    }
+
+    // Save generated customer link to Firestore before downloading
+    if (result && !result.isSavedToDb) {
+      try {
+        await saveResultToFirestore(result);
+      } catch (err) {
+        setDownloadError("Failed to register link in database. Download aborted.");
+        return;
+      }
     }
 
     try {
@@ -1365,9 +1395,15 @@ function App() {
                     {copied ? <Check size={18} style={{ color: '#10b981' }} /> : <Copy size={18} />}
                   </button>
                 </div>
-                <p className="hint" style={{ color: 'var(--accent-emerald)', marginTop: '4px' }}>
-                  ✓ ID stored in Firestore and loaded into the QR input.
-                </p>
+                {result.isSavedToDb ? (
+                  <p className="hint" style={{ color: 'var(--accent-emerald)', marginTop: '4px' }}>
+                    ✓ ID stored in Firestore and loaded into the QR input.
+                  </p>
+                ) : (
+                  <p className="hint" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    ID ready. Will be saved to Firestore when you Copy Link or Download PNG.
+                  </p>
+                )}
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
