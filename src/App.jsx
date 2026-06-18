@@ -69,6 +69,32 @@ const BrandIcon = ({ type, size = 16, className, style }) => {
   return <Globe size={size} className={className} style={style} />;
 };
 
+const COUNTRY_CODES = [
+  { name: 'India', code: '91', flag: '🇮🇳' },
+  { name: 'United States', code: '1', flag: '🇺🇸' },
+  { name: 'United Kingdom', code: '44', flag: '🇬🇧' },
+  { name: 'Australia', code: '61', flag: '🇦🇺' },
+  { name: 'Canada', code: '1', flag: '🇨🇦' },
+  { name: 'Germany', code: '49', flag: '🇩🇪' },
+  { name: 'France', code: '33', flag: '🇫🇷' },
+  { name: 'United Arab Emirates', code: '971', flag: '🇦🇪' },
+  { name: 'Singapore', code: '65', flag: '🇸🇬' },
+  { name: 'Saudi Arabia', code: '966', flag: '🇸🇦' },
+  { name: 'South Africa', code: '27', flag: '🇿🇦' },
+  { name: 'New Zealand', code: '64', flag: '🇳🇿' },
+  { name: 'Japan', code: '81', flag: '🇯🇵' },
+  { name: 'Brazil', code: '55', flag: '🇧🇷' },
+  { name: 'Mexico', code: '52', flag: '🇲🇽' },
+  { name: 'Italy', code: '39', flag: '🇮🇹' },
+  { name: 'Spain', code: '34', flag: '🇪🇸' },
+  { name: 'Russia', code: '7', flag: '🇷🇺' },
+  { name: 'China', code: '86', flag: '🇨🇳' },
+  { name: 'Bangladesh', code: '880', flag: '🇧🇩' },
+  { name: 'Pakistan', code: '92', flag: '🇵🇰' },
+  { name: 'Sri Lanka', code: '94', flag: '🇱🇰' },
+  { name: 'Nepal', code: '977', flag: '🇳🇵' }
+];
+
 const ensureQrLib = async () => {
   if (typeof window.qrcode !== 'undefined') return true;
   const urls = [
@@ -174,6 +200,13 @@ function App() {
   const [regSuccess, setRegSuccess] = useState("");
   const [savingReg, setSavingReg] = useState(false);
   const [openDropdownIdx, setOpenDropdownIdx] = useState(null);
+
+  // Country Code and Geolocation States
+  const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
+  const [showCountryDropdown, setShowCountryDropdown] = useState(false);
+  const [countrySearch, setCountrySearch] = useState("");
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState("");
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -545,8 +578,14 @@ function App() {
       setSavingReg(false);
       return;
     }
-    if (numberVal.length !== 10) {
-      setRegError("Phone number must be exactly 10 digits.");
+    const isIndia = selectedCountry.code === '91';
+    if (isIndia && numberVal.length !== 10) {
+      setRegError("Indian phone numbers must be exactly 10 digits.");
+      setSavingReg(false);
+      return;
+    }
+    if (numberVal.length < 7 || numberVal.length > 15) {
+      setRegError("Phone number must be between 7 and 15 digits.");
       setSavingReg(false);
       return;
     }
@@ -590,6 +629,8 @@ function App() {
       cleanedSocials.push({ type, label: lbl, value: val });
     }
 
+    const combinedNumber = `${selectedCountry.code}${numberVal}`;
+
     try {
       const customerId = getUrlId();
       if (!customerId) throw new Error("No customer ID found in URL.");
@@ -600,7 +641,9 @@ function App() {
         status: 'registered',
         registeredAt: new Date(),
         name: nameVal,
-        number: numberVal,
+        number: combinedNumber,
+        countryCode: selectedCountry.code,
+        localNumber: numberVal,
         password: passwordVal,
         socials: cleanedSocials
       };
@@ -618,6 +661,45 @@ function App() {
     } finally {
       setSavingReg(false);
     }
+  };
+
+  const handleDropLocation = () => {
+    setLocLoading(true);
+    setLocError("");
+
+    if (!navigator.geolocation) {
+      setLocError("Geolocation is not supported by your browser.");
+      setLocLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const messageText = `Hi .. I scanned your I'm Here smart qr tag and found your item at this location\nmap\nhttps://maps.google.com/?q=${lat},${lng}`;
+        const waUrl = `https://wa.me/${customerData.number}?text=${encodeURIComponent(messageText)}`;
+        setLocLoading(false);
+        window.open(waUrl, '_blank');
+      },
+      (error) => {
+        setLocLoading(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocError("Location permission denied. Please allow location access.");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            setLocError("Location information is unavailable.");
+            break;
+          case error.TIMEOUT:
+            setLocError("Location request timed out.");
+            break;
+          default:
+            setLocError("An unknown error occurred while fetching location.");
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -1275,18 +1357,115 @@ function App() {
 
                   <div className="form-group">
                     <label htmlFor="regNumberInput" className="form-label" style={{ fontSize: '0.72rem' }}>Phone Number (Required)</label>
-                    <div className="input-wrapper">
-                      <Phone className="input-icon" size={18} />
-                      <input
-                        id="regNumberInput"
-                        type="tel"
-                        className="text-input"
-                        placeholder="10-digit mobile number"
-                        value={regNumber}
-                        onChange={(e) => setRegNumber(e.target.value)}
-                        disabled={savingReg}
-                        style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
-                      />
+                    <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+                      {/* Searchable Country Code Dropdown */}
+                      <div style={{ position: 'relative', width: '130px', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowCountryDropdown(!showCountryDropdown)}
+                          disabled={savingReg}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            padding: '12px 10px',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid var(--border-light)',
+                            borderRadius: '12px',
+                            color: 'var(--text-primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            cursor: 'pointer',
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          <span>{selectedCountry.flag} +{selectedCountry.code}</span>
+                          <span style={{ fontSize: '0.6rem', opacity: 0.5 }}>▼</span>
+                        </button>
+
+                        {showCountryDropdown && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '100%',
+                              left: 0,
+                              width: '240px',
+                              marginTop: '6px',
+                              background: '#0f172a',
+                              border: '1px solid var(--border-light)',
+                              borderRadius: '12px',
+                              boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                              zIndex: 100,
+                              overflow: 'hidden',
+                              padding: '8px'
+                            }}
+                          >
+                            <input
+                              type="text"
+                              placeholder="Search country..."
+                              value={countrySearch}
+                              onChange={(e) => setCountrySearch(e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: '8px',
+                                color: '#ffffff',
+                                fontSize: '0.8rem',
+                                marginBottom: '8px',
+                                outline: 'none'
+                              }}
+                            />
+                            <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                              {COUNTRY_CODES.filter(c => 
+                                c.name.toLowerCase().includes(countrySearch.toLowerCase()) || 
+                                c.code.includes(countrySearch)
+                              ).map(c => (
+                                <div
+                                  key={c.name}
+                                  onClick={() => {
+                                    setSelectedCountry(c);
+                                    setShowCountryDropdown(false);
+                                    setCountrySearch("");
+                                  }}
+                                  style={{
+                                    padding: '8px 10px',
+                                    fontSize: '0.85rem',
+                                    cursor: 'pointer',
+                                    borderRadius: '6px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    color: selectedCountry.code === c.code ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                                    background: selectedCountry.code === c.code ? 'rgba(255,255,255,0.04)' : 'transparent'
+                                  }}
+                                  onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
+                                  onMouseLeave={(e) => e.target.style.background = selectedCountry.code === c.code ? 'rgba(255,255,255,0.04)' : 'transparent'}
+                                >
+                                  <span>{c.flag} {c.name}</span>
+                                  <span style={{ opacity: 0.6 }}>+{c.code}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Phone Number Input */}
+                      <div className="input-wrapper" style={{ flex: 1 }}>
+                        <Phone className="input-icon" size={18} />
+                        <input
+                          id="regNumberInput"
+                          type="tel"
+                          className="text-input"
+                          placeholder={selectedCountry.code === '91' ? "10-digit mobile number" : "Mobile number"}
+                          value={regNumber}
+                          onChange={(e) => setRegNumber(e.target.value)}
+                          disabled={savingReg}
+                          style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1472,11 +1651,13 @@ function App() {
 
                   {/* Phone number card */}
                   <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px' }}>
-                    <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
-                        {customerData.number.replace(/(\d{5})(\d{5})/, '$1-$2')}
-                      </span>
+                      <div>
+                        <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+                          {customerData.number.replace(/(\d{5})(\d{5})/, '$1-$2')}
+                        </span>
+                      </div>
                       <a
                         href={`tel:${customerData.number}`}
                         className="btn"
@@ -1493,6 +1674,57 @@ function App() {
                         Say Hey! 📞
                       </a>
                     </div>
+                  </div>
+
+                  {/* Drop Location Card */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '2px' }}>Drop Location</span>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                        Using "Drop Location" service, you can easily send your current GPS location to the owner via WhatsApp to help them find their lost item.
+                      </span>
+                    </div>
+
+                    {locError && (
+                      <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '8px 12px', margin: 0 }}>
+                        <AlertTriangle size={14} style={{ flexShrink: 0 }} />
+                        <span>{locError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleDropLocation}
+                      disabled={locLoading}
+                      className="btn"
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '0.85rem',
+                        background: 'linear-gradient(135deg, var(--accent-emerald) 0%, #059669 100%)',
+                        color: 'white',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        width: '100%',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                      }}
+                    >
+                      {locLoading ? (
+                        <>
+                          <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', borderTopColor: '#ffffff' }}></div>
+                          Fetching current location...
+                        </>
+                      ) : (
+                        <>
+                          <Globe size={14} />
+                          Drop Location 📍
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   {/* Social links (if any exist) */}
@@ -1622,7 +1854,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '340px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s1.png" 
                 alt="Lost items situation" 
@@ -1649,7 +1881,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '340px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s2.png" 
                 alt="Helpful finder situation" 
