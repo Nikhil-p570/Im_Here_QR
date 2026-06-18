@@ -1533,8 +1533,8 @@ function App() {
       {/* Header */}
       <header className="admin-header-wrapper">
         <div className="admin-header-main">
-          <h1>
-            <img src="/I'm here I only logo.png" alt="I'm here" style={{ width: '32px', height: '32px', marginRight: '10px', objectFit: 'contain' }} />
+          <h1 style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/I'm here I only logo.png" alt="I'm here" style={{ width: '60px', height: '60px', marginRight: '14px', objectFit: 'contain', borderRadius: '10px' }} />
             I'm here
           </h1>
           <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
