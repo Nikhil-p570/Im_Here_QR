@@ -887,17 +887,66 @@ function App() {
   };
 
   const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerTextColor, offsetY) => {
-    ctx.fillStyle = bannerBgColor;
-    ctx.fillRect(0, offsetY, qrSize, bannerH);
-    ctx.fillStyle = bannerTextColor;
-    ctx.font = "bold 26px ui-monospace, Menlo, Consolas, monospace";
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, qrSize / 2, offsetY + bannerH / 2);
+    const pillH = 50;
+    ctx.save();
+    ctx.font = "bold 22px ui-monospace, Menlo, Consolas, monospace";
+    const textMetrics = ctx.measureText(text);
+    const textW = textMetrics.width;
+    
+    // Calculate layout parameters
+    const badgeSize = 32;
+    const paddingLeft = 14;
+    const gap = 12;
+    const paddingRight = 24;
+    const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
+    
+    const pillX = (qrSize - pillW) / 2;
+    const pillY = offsetY + (bannerH - pillH) / 2;
 
-    ctx.strokeStyle = bannerBgColor;
-    ctx.lineWidth = 6;
-    ctx.strokeRect(3, 3, qrSize - 6, qrSize + bannerH - 6);
+    // Draw pill background
+    roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fillStyle = bannerBgColor;
+    ctx.fill();
+    
+    // Draw pill border
+    ctx.strokeStyle = bannerTextColor;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    // Draw yellow circle badge
+    const badgeRadius = badgeSize / 2;
+    const badgeCx = pillX + paddingLeft + badgeRadius;
+    const badgeCy = pillY + pillH / 2;
+    
+    ctx.beginPath();
+    ctx.arc(badgeCx, badgeCy, badgeRadius, 0, Math.PI * 2);
+    ctx.fillStyle = '#facc15'; // Vibrant yellow
+    ctx.fill();
+
+    // Draw phone receiver icon inside the yellow badge
+    // SVG path for lucide phone (24x24 box)
+    const phonePathStr = "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z";
+    const phonePath = new Path2D(phonePathStr);
+    
+    const iconSize = 15;
+    const iconScale = iconSize / 24;
+    const iconX = badgeCx - iconSize / 2;
+    const iconY = badgeCy - iconSize / 2;
+    
+    ctx.translate(iconX, iconY);
+    ctx.scale(iconScale, iconScale);
+    ctx.fillStyle = '#000000'; // Black phone icon
+    ctx.fill(phonePath);
+    ctx.restore();
+
+    // Draw text next to the yellow badge
+    ctx.save();
+    ctx.fillStyle = bannerTextColor;
+    ctx.font = "bold 20px ui-monospace, Menlo, Consolas, monospace";
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, pillX + paddingLeft + badgeSize + gap, pillY + pillH / 2 + 1);
+    ctx.restore();
   };
 
   const makeQR = (text) => {
@@ -968,10 +1017,10 @@ function App() {
     let bgImageMissing = false;
     if (bgMode === 'image') {
       if (logoCanvas) {
-        ctx.drawImage(logoCanvas, 0, 0, qrSize, qrSize);
+        ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
         if (overlayDarkness > 0) {
           ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
-          ctx.fillRect(0, 0, qrSize, qrSize);
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
       } else {
         bgImageMissing = true;
