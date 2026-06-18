@@ -1610,10 +1610,10 @@ function App() {
         {/* Problem Section */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
           gap: '24px',
           width: '100%',
-          maxWidth: '740px',
+          maxWidth: '100%',
           marginTop: '16px'
         }}>
           {/* Problem Card 1 */}
@@ -1629,7 +1629,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '380px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '300px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s1.png" 
                 alt="Lost items situation" 
@@ -1656,7 +1656,7 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '380px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '300px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s2.png" 
                 alt="Helpful finder situation" 
@@ -1666,6 +1666,33 @@ function App() {
             <div>
               <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
                 Many people notice lost belongings and genuinely want to help, but with no way to identify or contact the owner, they simply leave them where they found them.
+              </p>
+            </div>
+          </div>
+
+          {/* Problem Card 3 */}
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            borderRadius: '16px', 
+            textAlign: 'left', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '16px',
+            border: '1px solid rgba(244, 63, 94, 0.15)',
+            transition: 'all 0.3s ease' 
+          }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '300px', background: 'rgba(0,0,0,0.2)' }}>
+              <img 
+                src="/problem s3.jpeg" 
+                alt="Vehicle parking issue" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+              />
+            </div>
+            <div>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+                A vehicle is causing trouble, but most people have no idea how to identify or contact the owner using just the registration number.
               </p>
             </div>
           </div>
