@@ -1348,9 +1348,7 @@ function App() {
             <div className="app-container" style={{ maxWidth: '480px' }}>
               <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
                 <div style={{ marginBottom: '24px' }}>
-                  <div style={{ display: 'inline-flex', padding: '16px', borderRadius: '50%', background: 'rgba(6, 182, 212, 0.05)', border: '1px solid rgba(6, 182, 212, 0.15)', marginBottom: '16px', boxShadow: '0 0 15px rgba(6, 182, 212, 0.1)' }}>
-                    <ShieldCheck className="text-cyan-400" size={36} />
-                  </div>
+                  <img src="/I'm here I only logo.png" alt="I'm here" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '16px', marginBottom: '12px' }} />
                   <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Hey there! Looking for me? 👀</h2>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px' }}>
                     You just scanned a piece of my physical world. Want to get in touch, return a lost item, or just see what I’m up to? Here’s my digital space:
