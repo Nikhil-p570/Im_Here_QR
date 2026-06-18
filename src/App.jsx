@@ -1601,12 +1601,17 @@ function App() {
           </p>
         </header>
 
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          The Problem
+        </h2>
+
         {/* Problem Section */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
           gap: '24px',
           width: '100%',
+          maxWidth: '740px',
           marginTop: '16px'
         }}>
           {/* Problem Card 1 */}
@@ -1622,11 +1627,11 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '220px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '280px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s1.png" 
                 alt="Lost items situation" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
             </div>
             <div>
@@ -1652,11 +1657,11 @@ function App() {
           }}
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '220px', background: 'rgba(0,0,0,0.2)' }}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '280px', background: 'rgba(0,0,0,0.2)' }}>
               <img 
                 src="/problem s2.png" 
                 alt="Helpful finder situation" 
-                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
               />
             </div>
             <div>
