@@ -26,7 +26,9 @@ import {
   Plus,
   User,
   Phone,
-  ExternalLink
+  ExternalLink,
+  Tag,
+  MapPin
 } from 'lucide-react';
 
 const PRESETS = [
@@ -1897,13 +1899,13 @@ function App() {
         </div>
 
         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          The Solution
+          How It Works
         </h2>
 
         {/* Feature Cards Grid */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
           gap: '20px', 
           width: '100%', 
           marginTop: '20px' 
@@ -1913,11 +1915,11 @@ function App() {
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
             <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
-              <Sparkles size={20} />
+              <Tag size={20} />
             </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Design Branded QRs</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
-              Create stunning, high-contrast QR codes matching your personal style with custom colors, frame text, and photo backgrounds.
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Attach & Protect</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
+              Secure your valuables with a smart recovery tag. If your item ever goes missing, anyone who finds it can scan the tag to instantly initiate a secure return process.
             </p>
           </div>
 
@@ -1926,11 +1928,11 @@ function App() {
                onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
                onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
             <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
-              <Lock size={20} />
+              <MapPin size={20} />
             </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Scan & Claim Tag</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
-              Unregistered physical tags can be instantly claimed by finders or owners. Secure details with your personal password.
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Location Ping</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
+              No need to wait for a phone call to connect. With a single tap, finders can instantly drop their current GPS location, sending an immediate alert straight to your phone.
             </p>
           </div>
 
@@ -1941,9 +1943,62 @@ function App() {
             <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
               <Globe size={20} />
             </div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Unified Find Card</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5' }}>
-              Displays clean, glassmorphic owner profile cards with phone triggers and secure socials to get returned items back home.
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Secure Contact Hub</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
+              A clean, privacy-first glassmorphic dashboard displays your customized return instructions, phone triggers, and secure socials to get items back home safely.
+            </p>
+          </div>
+        </div>
+
+        {/* Why Us Section */}
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          Why Us?
+        </h2>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '24px',
+          width: '100%',
+          marginTop: '20px'
+        }}>
+          {/* Ordinary QR Codes Card */}
+          <div className="glass-panel" style={{
+            padding: '24px',
+            borderRadius: '16px',
+            textAlign: 'left',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            opacity: 0.7,
+            transition: 'all 0.3s ease'
+          }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordinary QR Codes</h3>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-rose)', marginBottom: '16px' }}>Cold, Clinical, and Generic.</h4>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
+              Traditional black-and-white matrix codes look like barcodes on a shipping label. They ruin the aesthetic of your favorite keys, designer bags, or custom wallets, making security feel like a chore rather than a lifestyle choice.
+            </p>
+          </div>
+
+          {/* Custom Aesthetic QRs Card */}
+          <div className="glass-panel" style={{
+            padding: '24px',
+            borderRadius: '16px',
+            textAlign: 'left',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            boxShadow: '0 8px 32px 0 rgba(99, 102, 241, 0.15)',
+            transition: 'all 0.3s ease'
+          }}
+               onMouseEnter={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+                 e.currentTarget.style.boxShadow = '0 12px 36px 0 rgba(6, 182, 212, 0.25)';
+               }}
+               onMouseLeave={(e) => {
+                 e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+                 e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(99, 102, 241, 0.15)';
+               }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', background: 'linear-gradient(135deg, #ffffff 40%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
+            <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-cyan)', marginBottom: '16px' }}>Your Favorite Visuals. Your Safety Net.</h4>
+            <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
+              We don't just generate codes; we embed them. Blend your high-contrast QR matrix seamlessly over a picture of your pet, a favorite memory, or custom artwork. It acts as a stunning personal accessory that solves the "what if it's lost" problem beautifully behind the scenes.
             </p>
           </div>
         </div>
