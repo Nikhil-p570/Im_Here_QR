@@ -1662,33 +1662,6 @@ function App() {
               </p>
             </div>
           </div>
-
-          {/* Problem Card 3 */}
-          <div className="glass-panel" style={{ 
-            padding: '20px', 
-            borderRadius: '16px', 
-            textAlign: 'justify', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: '16px',
-            border: '1px solid rgba(244, 63, 94, 0.15)',
-            transition: 'all 0.3s ease' 
-          }}
-               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
-               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
-            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '340px', background: 'rgba(0,0,0,0.2)' }}>
-              <img 
-                src="/problem s3.jpeg" 
-                alt="Vehicle parking issue" 
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-              />
-            </div>
-            <div>
-              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
-                A vehicle is causing trouble, but most people have no idea how to identify or contact the owner using just the registration number.
-              </p>
-            </div>
-          </div>
         </div>
 
         <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
