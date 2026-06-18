@@ -859,25 +859,85 @@ function App() {
     <div className="app-container" style={{ maxWidth: '1100px' }}>
       {/* Header */}
       <header className="header" style={{ position: 'relative', marginBottom: '24px' }}>
-        <button 
-          onClick={handleLogout} 
-          className="btn" 
-          style={{ 
-            position: 'absolute', 
-            right: 0, 
-            top: 0, 
-            padding: '8px 14px', 
-            fontSize: '0.85rem', 
-            background: 'rgba(255, 255, 255, 0.03)', 
-            border: '1px solid var(--border-light)', 
-            color: 'var(--text-secondary)',
-            borderRadius: '8px'
-          }}
-          title="Logout Admin"
-        >
-          <LogOut size={14} />
-          Logout
-        </button>
+        <div style={{ position: 'absolute', right: 0, top: 0, display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {/* Compact Clear DB Control */}
+          {!showConfirm ? (
+            <button 
+              type="button" 
+              className="btn btn-danger-outline" 
+              onClick={() => { setShowConfirm(true); setCountdown(3); }}
+              disabled={loading || clearing}
+              style={{ 
+                padding: '8px 14px', 
+                fontSize: '0.85rem', 
+                border: '1px solid rgba(244, 63, 94, 0.2)', 
+                color: 'var(--accent-rose)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Clear Database"
+            >
+              <Trash2 size={14} />
+              Clear DB
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-rose)' }}>Wipe DB?</span>
+              <button 
+                type="button"
+                className="btn-confirm-no" 
+                onClick={() => { setShowConfirm(false); setCountdown(0); }}
+                disabled={clearing}
+                style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                No
+              </button>
+              <button 
+                type="button"
+                className="btn-confirm-yes" 
+                onClick={handleClearDatabase}
+                disabled={clearing || countdown > 0}
+                style={{ 
+                  padding: '4px 8px', 
+                  fontSize: '0.75rem', 
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--accent-rose)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  opacity: countdown > 0 ? 0.6 : 1, 
+                  cursor: countdown > 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {clearing ? '...' : countdown > 0 ? `${countdown}s` : 'Yes'}
+              </button>
+            </div>
+          )}
+
+          {/* Logout Button */}
+          <button 
+            type="button"
+            onClick={handleLogout} 
+            className="btn" 
+            style={{ 
+              padding: '8px 14px', 
+              fontSize: '0.85rem', 
+              background: 'rgba(255, 255, 255, 0.03)', 
+              border: '1px solid var(--border-light)', 
+              color: 'var(--text-secondary)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Logout Admin"
+          >
+            <LogOut size={14} />
+            Logout
+          </button>
+        </div>
 
         <h1 style={{ justifyContent: 'flex-start' }}>
           <Database className="text-cyan-400" size={32} />
@@ -885,6 +945,24 @@ function App() {
         </h1>
         <p style={{ textAlign: 'left' }}>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
       </header>
+
+      {/* DB Admin Status Messages */}
+      {(adminSuccess || adminError) && (
+        <div style={{ marginBottom: '24px' }}>
+          {adminSuccess && (
+            <div className="status-msg status-msg-success">
+              <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+              <span>{adminSuccess}</span>
+            </div>
+          )}
+          {adminError && (
+            <div className="status-msg status-msg-error">
+              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <span>{adminError}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Two-Column Cockpit Layout */}
       <div className="dashboard-grid">
@@ -1355,75 +1433,7 @@ function App() {
           {/* Hidden Canvas used for generating the QR code */}
           <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
 
-          {/* Card 3: Danger Zone clear database */}
-          <footer className="glass-panel card-content admin-card" style={{ marginTop: 0 }}>
-            <div className="admin-header">
-              <Trash2 size={20} />
-              <span>Danger Zone</span>
-            </div>
-            
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '16px' }}>
-              Reset database. Wipes all generated links from Firestore.
-            </p>
 
-            {adminSuccess && (
-              <div className="status-msg status-msg-success" style={{ marginBottom: '16px' }}>
-                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-                <span>{adminSuccess}</span>
-              </div>
-            )}
-
-            {adminError && (
-              <div className="status-msg status-msg-error" style={{ marginBottom: '16px' }}>
-                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-                <span>{adminError}</span>
-              </div>
-            )}
-
-            {!showConfirm ? (
-              <button 
-                type="button" 
-                className="btn btn-danger-outline" 
-                onClick={() => { setShowConfirm(true); setCountdown(3); }}
-                disabled={loading || clearing}
-                style={{ width: '100%', padding: '12px 20px' }}
-              >
-                Clear Database
-              </button>
-            ) : (
-              <div className="confirmation-box">
-                <p style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--accent-rose)' }}>
-                  Are you sure? Wipes Firestore permanently.
-                </p>
-                <div className="confirmation-actions">
-                  <button 
-                    className="btn-confirm-no" 
-                    onClick={() => { setShowConfirm(false); setCountdown(0); }}
-                    disabled={clearing}
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    className="btn-confirm-yes" 
-                    onClick={handleClearDatabase}
-                    disabled={clearing || countdown > 0}
-                    style={{ 
-                      opacity: countdown > 0 ? 0.6 : 1, 
-                      cursor: countdown > 0 ? 'not-allowed' : 'pointer' 
-                    }}
-                  >
-                    {clearing ? (
-                      'Clearing...'
-                    ) : countdown > 0 ? (
-                      `Confirm in ${countdown}s`
-                    ) : (
-                      'Yes, Delete Everything'
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-          </footer>
 
         </div>
 
