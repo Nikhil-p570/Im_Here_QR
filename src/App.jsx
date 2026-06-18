@@ -1601,7 +1601,75 @@ function App() {
           </p>
         </header>
 
+        {/* Problem Section */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+          gap: '24px',
+          width: '100%',
+          marginTop: '16px'
+        }}>
+          {/* Problem Card 1 */}
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            borderRadius: '16px', 
+            textAlign: 'left', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '16px',
+            border: '1px solid rgba(244, 63, 94, 0.15)',
+            transition: 'all 0.3s ease' 
+          }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '220px', background: 'rgba(0,0,0,0.2)' }}>
+              <img 
+                src="/problem s1.png" 
+                alt="Lost items situation" 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+              />
+            </div>
+            <div>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 600, lineHeight: '1.5', marginBottom: '8px' }}>
+                Lost items are a part of everyday life.
+              </p>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', margin: 0 }}>
+                A forgotten key, a misplaced bag, a missing wallet.
+              </p>
+            </div>
+          </div>
 
+          {/* Problem Card 2 */}
+          <div className="glass-panel" style={{ 
+            padding: '20px', 
+            borderRadius: '16px', 
+            textAlign: 'left', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: '16px',
+            border: '1px solid rgba(244, 63, 94, 0.15)',
+            transition: 'all 0.3s ease' 
+          }}
+               onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
+               onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
+            <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '220px', background: 'rgba(0,0,0,0.2)' }}>
+              <img 
+                src="/problem s2.png" 
+                alt="Helpful finder situation" 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+              />
+            </div>
+            <div>
+              <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0 }}>
+                Many people notice lost belongings and genuinely want to help, but with no way to identify or contact the owner, they simply leave them where they found them.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          The Solution
+        </h2>
 
         {/* Feature Cards Grid */}
         <div style={{ 
