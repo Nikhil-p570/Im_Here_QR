@@ -97,6 +97,7 @@ const AdminPanel = ({
 
   // PDF Sheet State
   const [appendedQrs, setAppendedQrs] = useState([]);
+  const [undoneQrs, setUndoneQrs] = useState([]);
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -360,6 +361,7 @@ const AdminPanel = ({
       return;
     }
     setAppendedQrs(prev => [...prev, qrImageUrl]);
+    setUndoneQrs([]); // Clear redo stack on new action
     
     // Auto-save generated customer ID to Firestore if not saved yet (same as PNG download)
     if (result && !result.isSavedToDb) {
@@ -371,10 +373,16 @@ const AdminPanel = ({
 
   const handleRemoveLastQr = () => {
     if (appendedQrs.length === 0) return;
-    const confirmUndo = window.confirm("Are you sure you want to undo and remove the recently added QR code?");
-    if (confirmUndo) {
-      setAppendedQrs(prev => prev.slice(0, -1));
-    }
+    const lastItem = appendedQrs[appendedQrs.length - 1];
+    setAppendedQrs(prev => prev.slice(0, -1));
+    setUndoneQrs(prev => [...prev, lastItem]);
+  };
+
+  const handleRedoLastQr = () => {
+    if (undoneQrs.length === 0) return;
+    const nextItem = undoneQrs[undoneQrs.length - 1];
+    setUndoneQrs(prev => prev.slice(0, -1));
+    setAppendedQrs(prev => [...prev, nextItem]);
   };
 
   const handleClearPdfSheet = () => {
@@ -382,6 +390,7 @@ const AdminPanel = ({
     const confirmClear = window.confirm("Are you sure you want to clear all appended QR codes from this sheet?");
     if (confirmClear) {
       setAppendedQrs([]);
+      setUndoneQrs([]);
     }
   };
 
@@ -1514,34 +1523,68 @@ const AdminPanel = ({
               Layout: A4 sheet, 4x4 grid (16 tags max per page). Each tag: 45mm x 60mm border, 40mm x 55mm QR code centered (2.5mm margin).
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            {appendedQrs.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {(appendedQrs.length > 0 || undoneQrs.length > 0) && (
               <>
                 <button
                   type="button"
                   onClick={handleRemoveLastQr}
+                  disabled={appendedQrs.length === 0}
                   className="btn"
-                  style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(244, 63, 94, 0.1)', color: 'var(--accent-rose)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.8rem',
+                    background: appendedQrs.length === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(244, 63, 94, 0.1)',
+                    color: appendedQrs.length === 0 ? 'var(--text-muted)' : 'var(--accent-rose)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: appendedQrs.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: appendedQrs.length === 0 ? 0.4 : 1
+                  }}
                 >
                   Undo
                 </button>
                 <button
                   type="button"
-                  onClick={handleClearPdfSheet}
+                  onClick={handleRedoLastQr}
+                  disabled={undoneQrs.length === 0}
                   className="btn"
-                  style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                  style={{
+                    padding: '8px 14px',
+                    fontSize: '0.8rem',
+                    background: undoneQrs.length === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(99, 102, 241, 0.1)',
+                    color: undoneQrs.length === 0 ? 'var(--text-muted)' : 'var(--accent-indigo)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    cursor: undoneQrs.length === 0 ? 'not-allowed' : 'pointer',
+                    opacity: undoneQrs.length === 0 ? 0.4 : 1
+                  }}
                 >
-                  Clear Sheet
+                  Redo
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDownloadPdf}
-                  className="btn btn-primary"
-                  style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
-                >
-                  <Download size={14} />
-                  DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
-                </button>
+                {appendedQrs.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleClearPdfSheet}
+                      className="btn"
+                      style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Clear Sheet
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadPdf}
+                      className="btn btn-primary"
+                      style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
+                    >
+                      <Download size={14} />
+                      DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
+                    </button>
+                  </>
+                )}
               </>
             )}
           </div>
