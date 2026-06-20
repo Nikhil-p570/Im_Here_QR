@@ -419,6 +419,13 @@
   text-transform: uppercase;
 }
 
+.hanging-keychain-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+}
+
 /* ── Qty + Add To Cart ─────────────────────────────── */
 .qty-and-add {
   display: flex;

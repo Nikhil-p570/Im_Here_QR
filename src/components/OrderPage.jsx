@@ -28,6 +28,29 @@ const CLASSIC_PRESETS = [
   }
 ];
 
+const KeyringSvg = () => (
+  <svg width="60" height="90" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-18px', marginRight: '8px', zIndex: 5, position: 'relative' }}>
+    {/* Metal Ring (Keyring) */}
+    <circle cx="30" cy="25" r="20" stroke="url(#metal-grad)" strokeWidth="4.5" fill="none" filter="drop-shadow(0px 4px 4px rgba(0,0,0,0.35))"/>
+    <circle cx="30" cy="25" r="17.75" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" fill="none"/>
+    
+    {/* Chain Links */}
+    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.2))"/>
+    <rect x="27.5" y="51" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.2))" transform="rotate(15, 30, 57)"/>
+    <rect x="27.5" y="60" width="5" height="14" rx="2.5" stroke="url(#metal-grad)" strokeWidth="3" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.3))"/>
+    
+    <defs>
+      <linearGradient id="metal-grad" x1="10" y1="5" x2="50" y2="45" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="25%" stop-color="#94a3b8"/>
+        <stop offset="50%" stop-color="#cbd5e1"/>
+        <stop offset="75%" stop-color="#475569"/>
+        <stop offset="100%" stop-color="#94a3b8"/>
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
 /* ── Helper: draw branded QR code (matching admin) ── */
 function drawBrandedQr(uploadedImg, cropState, presetOptions) {
   if (typeof window.qrcode === 'undefined') return null;
@@ -175,6 +198,43 @@ const OrderPage = () => {
   const daylightCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const cartRef = useRef(null);
+
+  /* ── Scroll swing velocity tracking ── */
+  const [scrollRotation, setScrollRotation] = useState(0);
+  const lastScrollY = useRef(window.scrollY);
+  const scrollTimeout = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const deltaY = currentScrollY - lastScrollY.current;
+      lastScrollY.current = currentScrollY;
+
+      // Temporary swing based on scroll velocity (capped at 12 deg)
+      const targetRotation = Math.max(-12, Math.min(12, deltaY * 0.12));
+      setScrollRotation(targetRotation);
+
+      // Swing back home smoothly
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+      scrollTimeout.current = setTimeout(() => {
+        setScrollRotation(0);
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    };
+  }, []);
+
+  const swingStyle = {
+    transformOrigin: 'calc(100% - 38px) 25px', // Pivot exactly at the top-right keyring center!
+    transform: `rotate(${scrollRotation}deg)`,
+    transition: scrollRotation === 0 
+      ? 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Springy return bounce
+      : 'transform 0.15s ease-out'
+  };
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -791,7 +851,24 @@ const OrderPage = () => {
                   <div className="keychain-preview-section">
                     <div className="section-label">Live Preview</div>
                     <div className="keychain-frame">
-                      <canvas ref={keychainCanvasRef} className="keychain-canvas" />
+                      <div className="hanging-keychain-wrapper" style={swingStyle}>
+                        <KeyringSvg />
+                        <div style={{ position: 'relative' }}>
+                          <canvas ref={keychainCanvasRef} className="keychain-canvas" />
+                          <div className="tag-hole-eyelet" style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: '22px',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            border: '3.5px solid #cbd5e1',
+                            background: '#0a0a0a',
+                            boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                            zIndex: 6
+                          }} />
+                        </div>
+                      </div>
                       <div className="keychain-label">Your I'm Here Tag</div>
                     </div>
                   </div>
