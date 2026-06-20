@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { jsPDF } from 'jspdf';
 import { initializeFirebase } from './firebase';
 import {
   collection,
@@ -254,6 +255,9 @@ function App() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState("");
   const [editSuccess, setEditSuccess] = useState("");
+
+  // PDF Sheet State
+  const [appendedQrs, setAppendedQrs] = useState([]);
 
   // Country Code and Geolocation States
   const [selectedCountry, setSelectedCountry] = useState(COUNTRY_CODES[0]);
@@ -930,6 +934,79 @@ function App() {
 
   const handleEditSocialFieldChange = (idx, field, val) => {
     setEditSocials(prev => prev.map((item, i) => i === idx ? { ...item, [field]: val } : item));
+  };
+
+  // PDF Sheet Handlers
+  const handleAppendToPdf = () => {
+    if (!qrImageUrl) {
+      setDownloadError("Please generate a QR code first.");
+      return;
+    }
+    setAppendedQrs(prev => [...prev, qrImageUrl]);
+    
+    // Auto-save generated customer ID to Firestore if not saved yet (same as PNG download)
+    if (result && !result.isSavedToDb) {
+      saveResultToFirestore(result).catch((err) => {
+        console.error("Background Firestore save failed:", err);
+      });
+    }
+  };
+
+  const handleRemoveLastQr = () => {
+    if (appendedQrs.length === 0) return;
+    const confirmUndo = window.confirm("Are you sure you want to undo and remove the recently added QR code?");
+    if (confirmUndo) {
+      setAppendedQrs(prev => prev.slice(0, -1));
+    }
+  };
+
+  const handleClearPdfSheet = () => {
+    if (appendedQrs.length === 0) return;
+    const confirmClear = window.confirm("Are you sure you want to clear all appended QR codes from this sheet?");
+    if (confirmClear) {
+      setAppendedQrs([]);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    if (appendedQrs.length === 0) return;
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const itemsPerPage = 16;
+    const colWidth = 45;
+    const rowHeight = 60;
+    const marginX = 15;
+    const marginY = 28.5;
+
+    appendedQrs.forEach((qrUrl, index) => {
+      const pageIndex = index % itemsPerPage;
+      
+      // Page division
+      if (index > 0 && pageIndex === 0) {
+        pdf.addPage();
+      }
+
+      const row = Math.floor(pageIndex / 4);
+      const col = pageIndex % 4;
+
+      const x = marginX + col * colWidth;
+      const y = marginY + row * rowHeight;
+
+      // 1. Draw outer grey border (45mm x 60mm)
+      pdf.setDrawColor(209, 213, 219); // light grey (#d1d5db)
+      pdf.setLineWidth(0.5);
+      pdf.rect(x, y, 45, 60);
+
+      // 2. Add QR image centered (40mm x 55mm), leaving 2.5mm margin on all sides
+      pdf.addImage(qrUrl, "PNG", x + 2.5, y + 2.5, 40, 55);
+    });
+
+    pdf.save("qr-print-sheet.pdf");
   };
 
   const handleDropLocation = () => {
@@ -3611,24 +3688,44 @@ function App() {
                   }}
                 />
 
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="btn"
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid var(--accent-rose)',
-                    color: 'var(--accent-rose)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <Download size={18} />
-                  DOWNLOAD PNG
-                </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    type="button"
+                    onClick={handleAppendToPdf}
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <Plus size={18} />
+                    APPEND TO PDF SHEET
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="btn"
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: '1px solid var(--border-light)',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      padding: '12px 16px'
+                    }}
+                  >
+                    <Download size={16} />
+                    DOWNLOAD SINGLE PNG
+                  </button>
+                </div>
 
                 {downloadError && (
                   <p className="hint" style={{ color: 'var(--accent-rose)', marginTop: '8px' }}>{downloadError}</p>
@@ -3651,6 +3748,114 @@ function App() {
         </div>
 
       </div>
+
+      {/* PDF Print Sheet Preview Section */}
+      <div className="glass-panel card-content" style={{ marginTop: '32px', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px', marginBottom: '24px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              PDF Print Sheet Preview
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+              Layout: A4 sheet, 4x4 grid (16 tags max per page). Each tag: 45mm x 60mm border, 40mm x 55mm QR code centered (2.5mm margin).
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {appendedQrs.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleRemoveLastQr}
+                  className="btn"
+                  style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(244, 63, 94, 0.1)', color: 'var(--accent-rose)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Undo
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearPdfSheet}
+                  className="btn"
+                  style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  Clear Sheet
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadPdf}
+                  className="btn btn-primary"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
+                >
+                  <Download size={14} />
+                  DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {appendedQrs.length === 0 ? (
+          <div style={{
+            border: '2px dashed var(--border-light)',
+            borderRadius: '12px',
+            padding: '48px 24px',
+            textAlign: 'center',
+            color: 'var(--text-secondary)'
+          }}>
+            <ImageIcon size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '6px' }}>Print Sheet is Empty</h3>
+            <p style={{ fontSize: '0.85rem', maxWidth: '380px', margin: '0 auto', lineHeight: '1.5' }}>
+              Generate a QR code above and click **"APPEND TO PDF SHEET"** to place it on the print template.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            gap: '32px',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            padding: '16px 0'
+          }}>
+            {/* Split appended QRs into chunks of 16 for pagination */}
+            {(() => {
+              const pages = [];
+              for (let i = 0; i < appendedQrs.length; i += 16) {
+                pages.push(appendedQrs.slice(i, i + 16));
+              }
+              return pages.map((pageItems, pageIdx) => (
+                <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    Page {pageIdx + 1} of {pages.length}
+                  </span>
+                  <div className="pdf-preview-page">
+                    {Array.from({ length: 16 }).map((_, slotIdx) => {
+                      const hasItem = slotIdx < pageItems.length;
+                      if (hasItem) {
+                        return (
+                          <div key={slotIdx} className="pdf-preview-item">
+                            <img
+                              src={pageItems[slotIdx]}
+                              alt={`QR Slot ${slotIdx}`}
+                              className="pdf-preview-image"
+                            />
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={slotIdx}
+                            className="pdf-preview-item-empty"
+                          />
+                        );
+                      }
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
