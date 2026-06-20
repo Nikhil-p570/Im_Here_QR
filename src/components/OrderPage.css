@@ -426,6 +426,22 @@
   position: relative;
 }
 
+/* Idle swing animation for keyring */
+@keyframes idle-swing {
+  0% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+  100% { transform: rotate(-2deg); }
+}
+
+.keychain-idle-swing {
+  transform-origin: calc(100% - 30px) 25px;
+  animation: idle-swing 5.5s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+}
+
 /* ── Qty + Add To Cart ─────────────────────────────── */
 .qty-and-add {
   display: flex;

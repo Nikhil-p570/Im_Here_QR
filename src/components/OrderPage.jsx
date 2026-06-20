@@ -29,7 +29,7 @@ const CLASSIC_PRESETS = [
 ];
 
 const KeyringSvg = () => (
-  <svg width="60" height="115" viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-38px', marginRight: '8px', zIndex: 5, position: 'relative' }}>
+  <svg width="60" height="115" viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-38px', marginRight: '0px', zIndex: 5, position: 'relative' }}>
     {/* Matte Silver Ring (Keyring) */}
     <circle cx="30" cy="20" r="16" stroke="url(#metal-grad)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))"/>
     <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none"/>
@@ -232,7 +232,7 @@ const OrderPage = () => {
   }, []);
 
   const swingStyle = {
-    transformOrigin: 'calc(100% - 38px) 25px', // Pivot exactly at the top-right keyring center!
+    transformOrigin: 'calc(100% - 30px) 25px', // Pivot exactly at the top-right keyring center!
     transform: `rotate(${scrollRotation}deg)`,
     transition: scrollRotation === 0 
       ? 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Springy return bounce
@@ -854,22 +854,24 @@ const OrderPage = () => {
                   <div className="keychain-preview-section">
                     <div className="section-label">Live Preview</div>
                     <div className="keychain-frame">
-                      <div className="hanging-keychain-wrapper" style={swingStyle}>
-                        <KeyringSvg />
-                        <div style={{ position: 'relative' }}>
-                          <canvas ref={keychainCanvasRef} className="keychain-canvas" />
-                          <div className="tag-hole-eyelet" style={{
-                            position: 'absolute',
-                            top: '12px',
-                            right: '22px',
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '50%',
-                            border: '3.5px solid #cbd5e1',
-                            background: '#0a0a0a',
-                            boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
-                            zIndex: 6
-                          }} />
+                      <div className="keychain-idle-swing">
+                        <div className="hanging-keychain-wrapper" style={swingStyle}>
+                          <KeyringSvg />
+                          <div style={{ position: 'relative' }}>
+                            <canvas ref={keychainCanvasRef} className="keychain-canvas" />
+                            <div className="tag-hole-eyelet" style={{
+                              position: 'absolute',
+                              top: '12px',
+                              right: '22px',
+                              width: '16px',
+                              height: '16px',
+                              borderRadius: '50%',
+                              border: '3.5px solid #cbd5e1',
+                              background: '#0a0a0a',
+                              boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                              zIndex: 6
+                            }} />
+                          </div>
                         </div>
                       </div>
                       <div className="keychain-label">Your I'm Here Tag</div>
