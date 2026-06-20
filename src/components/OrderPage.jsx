@@ -926,7 +926,7 @@ const OrderPage = () => {
                       <div style={{ position: 'relative' }}>
                         <canvas
                           ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
-                          className="classic-canvas"
+                          className={`classic-canvas ${preset.id === 'midnight' ? 'midnight-canvas' : ''}`}
                         />
                         <div className="tag-hole-eyelet" style={{
                           position: 'absolute',
