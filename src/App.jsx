@@ -13,6 +13,7 @@ import CustomerEditProfile from './components/CustomerEditProfile';
 import AdminPanel from './components/AdminPanel';
 import OrderPage from './components/OrderPage';
 import PolicyPage from './components/PolicyPage';
+import PaymentStatus from './components/PaymentStatus';
 
 const formatDisplayPhone = (num) => {
   if (!num) return "";
@@ -54,6 +55,11 @@ function App() {
   // Policy pages — render standalone, no auth needed
   if (['/terms', '/privacy', '/shipping_policy', '/refund_policy'].includes(path)) {
     return <PolicyPage />;
+  }
+
+  // Payment status page — render standalone, no auth needed
+  if (path === '/payment-status') {
+    return <PaymentStatus />;
   }
 
   // Auth States (Admin Cockpit authentication)

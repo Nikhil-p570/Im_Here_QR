@@ -198,6 +198,20 @@ const OrderPage = () => {
   const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
   const [logoImage, setLogoImage] = useState(null);
 
+  /* ── Checkout form states ── */
+  const [checkoutForm, setCheckoutForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
+  });
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+
   useEffect(() => {
     const img = new Image();
     img.src = '/full logo.png';
@@ -562,6 +576,61 @@ const OrderPage = () => {
     setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
   };
 
+  const handlePayNow = async (e) => {
+    e.preventDefault();
+    if (!checkoutForm.firstName || !checkoutForm.email || !checkoutForm.phone || !checkoutForm.address || !checkoutForm.city || !checkoutForm.state || !checkoutForm.pincode) {
+      setCheckoutError('Please fill in all required fields.');
+      return;
+    }
+
+    setCheckoutLoading(true);
+    setCheckoutError('');
+
+    try {
+      const response = await fetch('/api/initiate-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: total,
+          buyerEmail: checkoutForm.email,
+          buyerPhoneNumber: checkoutForm.phone,
+          buyerFirstName: checkoutForm.firstName,
+          buyerLastName: checkoutForm.lastName,
+          buyerAddress: checkoutForm.address,
+          buyerCity: checkoutForm.city,
+          buyerState: checkoutForm.state,
+          buyerPincode: checkoutForm.pincode
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to initiate payment transaction.');
+      }
+
+      // Dynamically create a post form and submit it to redirect to Zaakpay gateway
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = data.gatewayUrl;
+
+      Object.keys(data.params).forEach(key => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = data.params[key];
+        form.appendChild(input);
+      });
+
+      document.body.appendChild(form);
+      form.submit();
+
+    } catch (err) {
+      console.error("Payment submission error:", err);
+      setCheckoutError(err.message || 'Something went wrong. Please try again.');
+      setCheckoutLoading(false);
+    }
+  };
+
   const removeCartItem = (id) => setCartItems(prev => prev.filter(i => i.id !== id));
   const updateCartQty = (id, delta) => {
     if (delta === 1) {
@@ -742,7 +811,11 @@ const OrderPage = () => {
                       <Plus size={16} /> Add Another Tag
                     </button>
                   )}
-                  <button className="btn-checkout" id="btn-checkout">
+                  <button
+                    className="btn-checkout"
+                    id="btn-checkout"
+                    onClick={() => setStep('checkout')}
+                  >
                     Proceed to Payment →
                   </button>
                 </div>
@@ -1135,6 +1208,198 @@ const OrderPage = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════
+            STEP: CHECKOUT
+        ════════════════════════════════════════════ */}
+        {step === 'checkout' && (
+          <div className="setup-panel animate-fade-in">
+            <button className="back-btn" onClick={() => setStep('home')}>← Back to Cart</button>
+
+            <h2 className="order-section-title">📦 Checkout Details</h2>
+            <p className="order-section-subtitle">
+              Enter your shipping information below to place your order. Payments are processed securely via Zaakpay.
+            </p>
+
+            {checkoutError && (
+              <div className="checkout-error-banner" style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                color: '#fca5a5',
+                padding: '12px 16px',
+                borderRadius: '8px',
+                marginBottom: '20px',
+                fontSize: '0.9rem',
+                fontWeight: 500
+              }}>
+                ⚠️ {checkoutError}
+              </div>
+            )}
+
+            <form onSubmit={handlePayNow} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
+              
+              {/* Shipping Address Fields */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '8px', color: '#ffffff' }}>
+                  Shipping Information
+                </h3>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>First Name *</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      required
+                      value={checkoutForm.firstName}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="Nikhil"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Last Name</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      value={checkoutForm.lastName}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Sharma"
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>Email Address *</label>
+                    <input
+                      type="email"
+                      className="text-input"
+                      required
+                      value={checkoutForm.email}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
+                      placeholder="nikhil@example.com"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Phone Number *</label>
+                    <input
+                      type="tel"
+                      className="text-input"
+                      required
+                      value={checkoutForm.phone}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
+                      placeholder="9876543210"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Street Address *</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    required
+                    value={checkoutForm.address}
+                    onChange={(e) => setCheckoutForm(prev => ({ ...prev, address: e.target.value }))}
+                    placeholder="Flat No, Building, Street Name"
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>City *</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      required
+                      value={checkoutForm.city}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
+                      placeholder="Mumbai"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>State *</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      required
+                      value={checkoutForm.state}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, state: e.target.value }))}
+                      placeholder="Maharashtra"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Pincode *</label>
+                    <input
+                      type="text"
+                      className="text-input"
+                      required
+                      value={checkoutForm.pincode}
+                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, pincode: e.target.value }))}
+                      placeholder="400001"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Summary & Pay CTA */}
+              <div style={{
+                background: 'rgba(255, 255, 255, 0.02)',
+                border: '1px solid rgba(255, 255, 255, 0.05)',
+                borderRadius: '14px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                marginTop: '12px'
+              }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '8px' }}>
+                  Order Summary
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {cartItems.map(item => (
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#94a3b8' }}>
+                      <span>{item.label} (x{item.qty})</span>
+                      <span>₹{item.qty * item.unitPrice}</span>
+                    </div>
+                  ))}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: '#ffffff' }}>
+                    <span>Total Amount</span>
+                    <span style={{ color: 'var(--accent-cyan)' }}>₹{total}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={checkoutLoading}
+                  className="btn-checkout"
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    fontSize: '1.05rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    marginTop: '8px',
+                    position: 'relative'
+                  }}
+                >
+                  {checkoutLoading ? (
+                    <>
+                      <div className="payment-spinner" /> Processing Secure Payment...
+                    </>
+                  ) : (
+                    <>
+                      Pay ₹{total} via Zaakpay
+                    </>
+                  )}
+                </button>
+              </div>
+
+            </form>
           </div>
         )}
 
