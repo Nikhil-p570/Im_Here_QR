@@ -110,7 +110,7 @@ export const drawLogo = (ctx, logoCanvas, qrSize, offsetY, pct, bColor) => {
 export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerTextColor, offsetY) => {
   const pillH = 50;
   ctx.save();
-  ctx.font = "bold 22px ui-monospace, Menlo, Consolas, monospace";
+  ctx.font = "bold 20px ui-monospace, Menlo, Consolas, monospace";
   const textMetrics = ctx.measureText(text);
   const textW = textMetrics.width;
   
@@ -118,7 +118,7 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   const badgeSize = 32;
   const paddingLeft = 14;
   const gap = 12;
-  const paddingRight = 24;
+  const paddingRight = 14;
   const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
   
   const pillX = 30;
