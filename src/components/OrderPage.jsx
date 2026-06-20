@@ -501,8 +501,15 @@ const OrderPage = () => {
   };
 
   const removeCartItem = (id) => setCartItems(prev => prev.filter(i => i.id !== id));
-  const updateCartQty = (id, delta) =>
+  const updateCartQty = (id, delta) => {
+    if (delta === 1) {
+      const item = cartItems.find(i => i.id === id);
+      if (item && item.qty === 1) {
+        setShowQtyAlert(true);
+      }
+    }
     setCartItems(prev => prev.map(i => i.id === id ? { ...i, qty: Math.max(1, i.qty + delta) } : i));
+  };
 
   const total = cartItems.reduce((s, i) => s + i.qty * i.unitPrice, 0);
 
@@ -1023,18 +1030,37 @@ const OrderPage = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={activePreviewUrl}
-              alt="Design Preview"
-              style={{
-                width: '100%',
-                maxWidth: '340px',
-                height: 'auto',
-                borderRadius: '16px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)'
-              }}
-            />
+            <div className="keychain-idle-swing zoom-swing">
+              <div className="hanging-keychain-wrapper">
+                <KeyringSvg width={69} height={132} marginBottom="-44px" marginRight="0px" />
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={activePreviewUrl}
+                    alt="Design Preview"
+                    style={{
+                      width: '300px',
+                      height: 'auto',
+                      borderRadius: '18px',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                      display: 'block'
+                    }}
+                  />
+                  <div className="tag-hole-eyelet" style={{
+                    position: 'absolute',
+                    top: '14px',
+                    right: '25px',
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    border: '4px solid #cbd5e1',
+                    background: '#0a0a0a',
+                    boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                    zIndex: 6
+                  }} />
+                </div>
+              </div>
+            </div>
             <button
               onClick={() => setActivePreviewUrl(null)}
               style={{

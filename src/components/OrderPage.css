@@ -446,6 +446,10 @@
   transform-origin: calc(100% - 21px) 14px;
 }
 
+.keychain-idle-swing.zoom-swing {
+  transform-origin: calc(100% - 35px) 29px;
+}
+
 /* ── Qty + Add To Cart ─────────────────────────────── */
 .qty-and-add {
   display: flex;
