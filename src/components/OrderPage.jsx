@@ -16,7 +16,7 @@ const CLASSIC_PRESETS = [
     dotColor: '#ffffff',
     bgColor: '#0a0a0a',
     cardStyle: { background: '#0a0a0a' },
-    label: 'White dots · Black background'
+    // label: 'White dots · Black background'
   },
   {
     id: 'daylight',
@@ -24,31 +24,31 @@ const CLASSIC_PRESETS = [
     dotColor: '#111111',
     bgColor: '#ffffff',
     cardStyle: { background: '#ffffff' },
-    label: 'Black dots · White background'
+    // label: 'Black dots · White background'
   }
 ];
 
 const KeyringSvg = ({ width = 60, height = 115, marginBottom = '-38px', marginRight = '0px' }) => (
   <svg width={width} height={height} viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom, marginRight, zIndex: 5, position: 'relative' }}>
     {/* Matte Silver Ring (Keyring) */}
-    <circle cx="30" cy="20" r="16" stroke="url(#metal-grad)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))"/>
-    <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none"/>
-    
+    <circle cx="30" cy="20" r="16" stroke="url(#metal-grad)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))" />
+    <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none" />
+
     {/* Longer Matte Silver Chain Links */}
-    <rect x="27.5" y="34" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
-    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(15, 30, 49)"/>
-    <rect x="27.5" y="52" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
-    <rect x="27.5" y="61" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(-15, 30, 67)"/>
-    <rect x="27.5" y="70" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
-    <rect x="27.5" y="79" width="5" height="16" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 1.5px 2px rgba(0,0,0,0.35))"/>
-    
+    <rect x="27.5" y="34" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(15, 30, 49)" />
+    <rect x="27.5" y="52" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="61" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(-15, 30, 67)" />
+    <rect x="27.5" y="70" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="79" width="5" height="16" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 1.5px 2px rgba(0,0,0,0.35))" />
+
     <defs>
       <linearGradient id="metal-grad" x1="14" y1="6" x2="46" y2="38" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#e5e7eb"/>
-        <stop offset="25%" stop-color="#9ca3af"/>
-        <stop offset="50%" stop-color="#d1d5db"/>
-        <stop offset="75%" stop-color="#6b7280"/>
-        <stop offset="100%" stop-color="#cbd5e1"/>
+        <stop offset="0%" stop-color="#e5e7eb" />
+        <stop offset="25%" stop-color="#9ca3af" />
+        <stop offset="50%" stop-color="#d1d5db" />
+        <stop offset="75%" stop-color="#6b7280" />
+        <stop offset="100%" stop-color="#cbd5e1" />
       </linearGradient>
     </defs>
   </svg>
@@ -361,16 +361,16 @@ const OrderPage = () => {
   ───────────────────────────────────────────────── */
   const handleRotateImage = () => {
     if (!uploadedImg) return;
-    
+
     const canvas = document.createElement('canvas');
     canvas.width = uploadedImg.height;
     canvas.height = uploadedImg.width;
-    
+
     const ctx = canvas.getContext('2d');
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((90 * Math.PI) / 180);
     ctx.drawImage(uploadedImg, -uploadedImg.width / 2, -uploadedImg.height / 2);
-    
+
     const rotatedImg = new Image();
     rotatedImg.onload = () => {
       setUploadedImg(rotatedImg);
@@ -922,7 +922,7 @@ const OrderPage = () => {
                 >
                   <div className="keychain-idle-swing classic-swing">
                     <div className="hanging-keychain-wrapper">
-                      <KeyringSvg width={42} height={80} marginBottom="-26px" marginRight="0px" />
+                      <KeyringSvg width={58} height={110} marginBottom="-36px" marginRight="0px" />
                       <div style={{ position: 'relative' }}>
                         <canvas
                           ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
@@ -930,12 +930,12 @@ const OrderPage = () => {
                         />
                         <div className="tag-hole-eyelet" style={{
                           position: 'absolute',
-                          top: '9px',
-                          right: '15px',
-                          width: '12px',
-                          height: '12px',
+                          top: '12px',
+                          right: '21px',
+                          width: '16px',
+                          height: '16px',
                           borderRadius: '50%',
-                          border: '2.5px solid #cbd5e1',
+                          border: '3.5px solid #cbd5e1',
                           background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
                           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
                           zIndex: 6
