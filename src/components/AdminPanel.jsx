@@ -385,6 +385,93 @@ const AdminPanel = ({
     }
   };
 
+  const renderGuideOverlay = (pageIdx, slotIdx) => {
+    if (pageIdx !== 0 || slotIdx !== 0) return null;
+    return (
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 10
+      }}>
+        <svg 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            overflow: 'visible'
+          }}
+          viewBox="0 0 45 60"
+        >
+          <defs>
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path d="M 0 2 L 10 5 L 0 8 z" fill="#dc2626" />
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path d="M 0 2 L 10 5 L 0 8 z" fill="#2563eb" />
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+              <path d="M 0 2 L 10 5 L 0 8 z" fill="#10b981" />
+            </marker>
+          </defs>
+          
+          {/* 1. Outer Box Dimensions (Red) */}
+          {/* Width (45mm) above card */}
+          <line x1="0" y1="-4" x2="45" y2="-4" stroke="#dc2626" strokeWidth="0.4" markerStart="url(#arrow-red)" markerEnd="url(#arrow-red)" />
+          <text x="22.5" y="-5.5" fill="#dc2626" fontSize="2.8" fontWeight="bold" textAnchor="middle">45 mm</text>
+          {/* Extension lines for width */}
+          <line x1="0" y1="0" x2="0" y2="-5" stroke="#dc2626" strokeWidth="0.15" />
+          <line x1="45" y1="0" x2="45" y2="-5" stroke="#dc2626" strokeWidth="0.15" />
+
+          {/* Height (60mm) left of card */}
+          <line x1="-4" y1="0" x2="-4" y2="60" stroke="#dc2626" strokeWidth="0.4" markerStart="url(#arrow-red)" markerEnd="url(#arrow-red)" />
+          <text x="-5.5" y="30" fill="#dc2626" fontSize="2.8" fontWeight="bold" textAnchor="middle" transform="rotate(-90, -5.5, 30)">60 mm</text>
+          {/* Extension lines for height */}
+          <line x1="0" y1="0" x2="-5" y2="0" stroke="#dc2626" strokeWidth="0.15" />
+          <line x1="0" y1="60" x2="-5" y2="60" stroke="#dc2626" strokeWidth="0.15" />
+
+          {/* 2. Inner QR Dimensions (Blue) */}
+          {/* Width (40mm) inside card near bottom */}
+          <line x1="2.5" y1="52" x2="42.5" y2="52" stroke="#2563eb" strokeWidth="0.4" markerStart="url(#arrow-blue)" markerEnd="url(#arrow-blue)" />
+          <text x="22.5" y="50.5" fill="#2563eb" fontSize="2.8" fontWeight="bold" textAnchor="middle">40 mm</text>
+          {/* Extension lines for inner width */}
+          <line x1="2.5" y1="52" x2="2.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
+          <line x1="42.5" y1="52" x2="42.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
+
+          {/* Height (55mm) inside card right side */}
+          <line x1="38" y1="2.5" x2="38" y2="57.5" stroke="#2563eb" strokeWidth="0.4" markerStart="url(#arrow-blue)" markerEnd="url(#arrow-blue)" />
+          <text x="36.5" y="30" fill="#2563eb" fontSize="2.8" fontWeight="bold" textAnchor="middle" transform="rotate(-90, 36.5, 30)">55 mm</text>
+          {/* Extension lines for inner height */}
+          <line x1="38" y1="2.5" x2="42.5" y2="2.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
+          <line x1="38" y1="57.5" x2="42.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
+
+          {/* 3. Margin (2.5mm) inside card near top left */}
+          <line x1="0" y1="8" x2="2.5" y2="8" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
+          <text x="1.25" y="6.8" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="middle">2.5 mm</text>
+
+          {/* 4. Column Gap (2mm) to the right of the first card */}
+          <line x1="45" y1="12" x2="47" y2="12" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
+          <text x="46.0" y="10.5" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="middle">2 mm gap</text>
+          {/* Extension line for gap column start */}
+          <line x1="45" y1="0" x2="45" y2="13" stroke="#10b981" strokeWidth="0.15" />
+          <line x1="47" y1="0" x2="47" y2="13" stroke="#10b981" strokeWidth="0.15" />
+
+          {/* 5. Row Gap (4mm) below the first card */}
+          <line x1="12" y1="60" x2="12" y2="64" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
+          <text x="13.5" y="62.5" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="start">4 mm gap</text>
+          {/* Extension line for gap row start */}
+          <line x1="0" y1="60" x2="13" y2="60" stroke="#10b981" strokeWidth="0.15" />
+          <line x1="0" y1="64" x2="13" y2="64" stroke="#10b981" strokeWidth="0.15" />
+        </svg>
+      </div>
+    );
+  };
+
   const handleDownloadPdf = () => {
     if (appendedQrs.length === 0) return;
 
@@ -419,10 +506,111 @@ const AdminPanel = ({
       // 1. Draw outer grey border (45mm x 60mm)
       pdf.setDrawColor(209, 213, 219); // light grey (#d1d5db)
       pdf.setLineWidth(0.5);
-      pdf.rect(x, y, 45, 60);
+      pdf.rect(x, y, colWidth, rowHeight);
 
       // 2. Add QR image centered (40mm x 55mm), leaving 2.5mm margin on all sides
       pdf.addImage(qrUrl, "PNG", x + 2.5, y + 2.5, 40, 55);
+
+      // 3. Draw dimension guides around the first card on each page for measurement reference
+      if (pageIndex === 0) {
+        pdf.saveState();
+        
+        // Define arrow helper inside to prevent polluting scope
+        const drawArrow = (x1, y1, x2, y2, size = 0.8) => {
+          pdf.line(x1, y1, x2, y2);
+          const angle = Math.atan2(y2 - y1, x2 - x1);
+          
+          // tip at x1, y1
+          const x1_a = x1 + size * Math.cos(angle + Math.PI / 6);
+          const y1_a = y1 + size * Math.sin(angle + Math.PI / 6);
+          const x1_b = x1 + size * Math.cos(angle - Math.PI / 6);
+          const y1_b = y1 + size * Math.sin(angle - Math.PI / 6);
+          pdf.triangle(x1, y1, x1_a, y1_a, x1_b, y1_b, "F");
+          
+          // tip at x2, y2
+          const x2_a = x2 - size * Math.cos(angle + Math.PI / 6);
+          const y2_a = y2 - size * Math.sin(angle + Math.PI / 6);
+          const x2_b = x2 - size * Math.cos(angle - Math.PI / 6);
+          const y2_b = y2 - size * Math.sin(angle - Math.PI / 6);
+          pdf.triangle(x2, y2, x2_a, y2_a, x2_b, y2_b, "F");
+        };
+
+        // Define extension line helper
+        const drawExtension = (x1, y1, x2, y2) => {
+          pdf.saveState();
+          pdf.setLineWidth(0.08);
+          pdf.line(x1, y1, x2, y2);
+          pdf.restoreState();
+        };
+
+        // Red color for Outer Box Dimensions
+        pdf.setStrokeColor(220, 38, 38);
+        pdf.setFillColor(220, 38, 38);
+        pdf.setTextColor(220, 38, 38);
+        pdf.setLineWidth(0.15);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(6);
+
+        // Card Width (45 mm) Above Card
+        const yLine1 = y - 4;
+        drawArrow(x, yLine1, x + colWidth, yLine1, 0.8);
+        drawExtension(x, y, x, yLine1 - 0.5);
+        drawExtension(x + colWidth, y, x + colWidth, yLine1 - 0.5);
+        pdf.text(`${colWidth} mm`, x + colWidth / 2, yLine1 - 0.8, { align: "center" });
+
+        // Card Height (60 mm) Left of Card
+        const xLine1 = x - 4;
+        drawArrow(xLine1, y, xLine1, y + rowHeight, 0.8);
+        drawExtension(x, y, xLine1 - 0.5, y);
+        drawExtension(x, y + rowHeight, xLine1 - 0.5, y + rowHeight);
+        pdf.text(`${rowHeight} mm`, xLine1 - 1.2, y + rowHeight / 2, { align: "center" });
+
+        // Blue color for Inner QR Dimensions
+        pdf.setStrokeColor(37, 99, 235);
+        pdf.setFillColor(37, 99, 235);
+        pdf.setTextColor(37, 99, 235);
+
+        // QR Width (40 mm) Inside Card Bottom
+        const yLine2 = y + rowHeight + 3;
+        drawArrow(x + 2.5, yLine2, x + colWidth - 2.5, yLine2, 0.8);
+        drawExtension(x + 2.5, y + rowHeight, x + 2.5, yLine2 + 0.5);
+        drawExtension(x + colWidth - 2.5, y + rowHeight, x + colWidth - 2.5, yLine2 + 0.5);
+        pdf.text("40 mm", x + colWidth / 2, yLine2 - 0.6, { align: "center" });
+
+        // QR Height (55 mm) Right of Card
+        const xLine2 = x + colWidth + 3;
+        drawArrow(xLine2, y + 2.5, xLine2, y + rowHeight - 2.5, 0.8);
+        drawExtension(x + colWidth, y + 2.5, xLine2 + 0.5, y + 2.5);
+        drawExtension(x + colWidth, y + rowHeight - 2.5, xLine2 + 0.5, y + rowHeight - 2.5);
+        pdf.text("55 mm", xLine2 + 1, y + rowHeight / 2, { align: "left" });
+
+        // Green color for Margins & Gaps
+        pdf.setStrokeColor(16, 185, 129);
+        pdf.setFillColor(16, 185, 129);
+        pdf.setTextColor(16, 185, 129);
+
+        // Left Padding (2.5 mm) Inside Card Top
+        drawArrow(x, y + 8, x + 2.5, y + 8, 0.5);
+        pdf.text("2.5 mm margin", x + 1.25, y + 7.2, { align: "center" });
+
+        // Column Gap (2 mm) between Col 0 and Col 1
+        const xGap = x + colWidth;
+        const yGap1 = y - 9;
+        drawArrow(xGap, yGap1, xGap + gapX, yGap1, 0.5);
+        drawExtension(xGap, y, xGap, yGap1 - 0.5);
+        drawExtension(xGap + gapX, y, xGap + gapX, yGap1 - 0.5);
+        pdf.text(`${gapX} mm`, xGap + gapX / 2, yGap1 - 0.8, { align: "center" });
+
+        // Row Gap (4 mm) between Row 0 and Row 1
+        const yGap2 = y + rowHeight;
+        const xGap2 = x - 9;
+        drawArrow(xGap2, yGap2, xGap2, yGap2 + gapY, 0.5);
+        drawExtension(x, yGap2, xGap2 - 0.5, yGap2);
+        drawExtension(x, yGap2 + gapY, xGap2 - 0.5, yGap2 + gapY);
+        pdf.text(`${gapY} mm`, xGap2 - 1.2, yGap2 + gapY / 2, { align: "center" });
+
+        pdf.restoreState();
+      }
     });
 
     pdf.save("qr-print-sheet.pdf");
@@ -1403,6 +1591,7 @@ const AdminPanel = ({
                               alt={`QR Slot ${slotIdx}`}
                               className="pdf-preview-image"
                             />
+                            {renderGuideOverlay(pageIdx, slotIdx)}
                           </div>
                         );
                       } else {
@@ -1410,7 +1599,10 @@ const AdminPanel = ({
                           <div
                             key={slotIdx}
                             className="pdf-preview-item-empty"
-                          />
+                            style={{ position: 'relative' }}
+                          >
+                            {renderGuideOverlay(pageIdx, slotIdx)}
+                          </div>
                         );
                       }
                     })}
