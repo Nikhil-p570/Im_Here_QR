@@ -576,7 +576,7 @@
 }
 
 .classic-canvas.midnight-canvas {
-  box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 0 1.5px rgba(255, 255, 255, 0.15), 0 0 12px rgba(255, 255, 255, 0.08);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6), 0 0 0 2px rgba(255, 255, 255, 0.3), 0 0 18px rgba(255, 255, 255, 0.15);
 }
 
 .classic-preset-name {
