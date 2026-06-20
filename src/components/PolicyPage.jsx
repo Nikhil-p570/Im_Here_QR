@@ -337,8 +337,6 @@ const PolicyPage = () => {
         <span style={{ color: 'var(--border-light)' }}>•</span>
         <a href="/privacy">Privacy</a>
         <span style={{ color: 'var(--border-light)' }}>•</span>
-        <a href="/return_policy">Return Policy</a>
-        <span style={{ color: 'var(--border-light)' }}>•</span>
         <a href="/shipping_policy">Shipping</a>
         <span style={{ color: 'var(--border-light)' }}>•</span>
         <a href="/refund_policy">Refund Policy</a>

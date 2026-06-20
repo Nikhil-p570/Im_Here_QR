@@ -317,8 +317,6 @@ const OrderPage = () => {
           <span style={{ color: 'var(--border-light)' }}>•</span>
           <a href="/privacy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Privacy Policy</a>
           <span style={{ color: 'var(--border-light)' }}>•</span>
-          <a href="/return_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Return Policy</a>
-          <span style={{ color: 'var(--border-light)' }}>•</span>
           <a href="/shipping_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Shipping Policy</a>
           <span style={{ color: 'var(--border-light)' }}>•</span>
           <a href="/refund_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Refund Policy</a>

@@ -52,7 +52,7 @@ function App() {
   }
 
   // Policy pages — render standalone, no auth needed
-  if (['/terms', '/privacy', '/return_policy', '/shipping_policy', '/refund_policy'].includes(path)) {
+  if (['/terms', '/privacy', '/shipping_policy', '/refund_policy'].includes(path)) {
     return <PolicyPage />;
   }
 
