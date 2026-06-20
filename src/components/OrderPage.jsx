@@ -1082,8 +1082,13 @@ const OrderPage = () => {
                   onClick={() => setClassicPreset(preset.id)}
                   id={`btn-preset-${preset.id}`}
                 >
-                  <div className="keychain-idle-swing classic-swing">
-                    <div className="hanging-keychain-wrapper">
+                  <div className={`keychain-idle-swing classic-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
+                    <div
+                      className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
+                      style={{
+                        alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                      }}
+                    >
                       <KeyringSvg width={70} height={133} marginBottom="-43px" marginRight="0px" />
                       <div style={{ position: 'relative' }}>
                         <canvas
@@ -1093,7 +1098,8 @@ const OrderPage = () => {
                         <div className="tag-hole-eyelet" style={{
                           position: 'absolute',
                           top: '15px',
-                          right: '25px',
+                          right: isPreviewFlipped ? 'auto' : '25px',
+                          left: isPreviewFlipped ? '25px' : 'auto',
                           width: '20px',
                           height: '20px',
                           borderRadius: '50%',
@@ -1118,94 +1124,61 @@ const OrderPage = () => {
               ))}
             </div>
 
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '10px' }}>
+              <button
+                type="button"
+                className="btn-flip-preview"
+                onClick={() => setIsPreviewFlipped(prev => !prev)}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <RotateCw size={14} /> Flip Tags
+              </button>
+            </div>
+
             {classicPreset && (
-              <div className="crop-preview-grid" style={{ marginTop: '30px' }}>
-                <div className="qty-and-add" style={{ marginTop: 0, width: '100%' }}>
-                  <div className="qty-control">
-                    <label>How many tags?</label>
-                    <div className="qty-stepper">
-                      <button className="qty-btn" onClick={() => setClassicQty(q => Math.max(1, q - 1))}>
-                        <Minus size={16} />
-                      </button>
-                      <span className="qty-value">{classicQty}</span>
-                      <button
-                        className="qty-btn"
-                        onClick={() => {
-                          if (classicQty === 1) {
-                            setShowQtyAlert(true);
-                          }
-                          setClassicQty(q => q + 1);
-                        }}
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                    <p className="qty-hint">₹{prices.classic} × {classicQty} = ₹{prices.classic * classicQty}</p>
-                  </div>
-
-                  <button
-                    className="btn-add-to-cart"
-                    onClick={handleAddToCart}
-                    id="btn-add-classic-to-cart"
-                  >
-                    <ShoppingCart size={18} /> Add to Order
-                  </button>
-                </div>
-
-                {/* Right: Live Preview */}
-                <div className="keychain-preview-section">
-                  <div className="section-label">Live Preview</div>
-                  <div className="keychain-frame">
-                    <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
-                      <div
-                        className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
-                        style={{
-                          alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
-                        }}
-                      >
-                        <KeyringSvg />
-                        <div style={{ position: 'relative' }}>
-                          <canvas ref={keychainCanvasRef} className="keychain-canvas" />
-                          <div className="tag-hole-eyelet" style={{
-                            position: 'absolute',
-                            top: '12px',
-                            right: isPreviewFlipped ? 'auto' : '22px',
-                            left: isPreviewFlipped ? '22px' : 'auto',
-                            width: '16px',
-                            height: '16px',
-                            borderRadius: '50%',
-                            border: '3.5px solid #cbd5e1',
-                            background: '#0a0a0a',
-                            boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
-                            zIndex: 6
-                          }} />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="keychain-label">Your I'm Here Tag</div>
+              <div className="qty-and-add">
+                <div className="qty-control">
+                  <label>How many tags?</label>
+                  <div className="qty-stepper">
+                    <button className="qty-btn" onClick={() => setClassicQty(q => Math.max(1, q - 1))}>
+                      <Minus size={16} />
+                    </button>
+                    <span className="qty-value">{classicQty}</span>
                     <button
-                      className="btn-flip-preview"
-                      onClick={() => setIsPreviewFlipped(prev => !prev)}
-                      style={{
-                        marginTop: '8px',
-                        padding: '6px 16px',
-                        borderRadius: '20px',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#ffffff',
-                        cursor: 'pointer',
-                        fontSize: '0.8rem',
-                        fontWeight: 600,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s'
+                      className="qty-btn"
+                      onClick={() => {
+                        if (classicQty === 1) {
+                          setShowQtyAlert(true);
+                        }
+                        setClassicQty(q => q + 1);
                       }}
                     >
-                      <RotateCw size={14} /> Flip Tag
+                      <Plus size={16} />
                     </button>
                   </div>
+                  <p className="qty-hint">₹{prices.classic} × {classicQty} = ₹{prices.classic * classicQty}</p>
                 </div>
+
+                <button
+                  className="btn-add-to-cart"
+                  onClick={handleAddToCart}
+                  id="btn-add-classic-to-cart"
+                >
+                  <ShoppingCart size={18} /> Add to Order
+                </button>
               </div>
             )}
           </div>
