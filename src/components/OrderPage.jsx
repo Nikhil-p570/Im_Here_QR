@@ -888,7 +888,7 @@ const OrderPage = () => {
                   <div className="keychain-preview-section">
                     <div className="section-label">Live Preview</div>
                     <div className="keychain-frame">
-                      <div className="keychain-idle-swing">
+                      <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
                         <div
                           className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
                           style={{
@@ -1083,7 +1083,7 @@ const OrderPage = () => {
                 <div className="keychain-preview-section">
                   <div className="section-label">Live Preview</div>
                   <div className="keychain-frame">
-                    <div className="keychain-idle-swing">
+                    <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
                       <div
                         className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
                         style={{

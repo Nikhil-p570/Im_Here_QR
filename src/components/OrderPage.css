@@ -442,6 +442,11 @@
   position: relative;
 }
 
+.keychain-idle-swing.flipped {
+  align-items: flex-start;
+  transform-origin: 30px 25px;
+}
+
 .keychain-idle-swing.classic-swing {
   transform-origin: calc(100% - 21px) 14px;
 }
