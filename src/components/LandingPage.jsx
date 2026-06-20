@@ -82,7 +82,7 @@ const OrderPage = () => {
             src="/full logo.png" 
             alt="I'm here Logo" 
             style={{ 
-              width: '180px', 
+              width: '260px', 
               height: 'auto', 
               borderRadius: '16px', 
               boxShadow: '0 12px 36px rgba(0,0,0,0.65)', 
