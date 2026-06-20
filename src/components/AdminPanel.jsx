@@ -157,7 +157,7 @@ const AdminPanel = ({
     const margin = 2;
     const totalModules = moduleCount + margin * 2;
     const moduleSize = qrSize / totalModules;
-    const bannerH = hasFrame ? 70 : 0;
+    const bannerH = hasFrame ? 80 : 0;
 
     const canvas = qrCanvasRef.current;
     if (!canvas) {

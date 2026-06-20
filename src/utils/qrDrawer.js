@@ -122,7 +122,7 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
   
   const pillX = 30;
-  const pillY = offsetY + (bannerH - pillH) / 2;
+  const pillY = offsetY + (bannerH - pillH) / 2 + 5;
 
   // Draw pill background
   roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
