@@ -196,6 +196,8 @@ const OrderPage = () => {
 
   /* ── Flip Preview State ── */
   const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
+  const [isMidnightFlipped, setIsMidnightFlipped] = useState(false);
+  const [isDaylightFlipped, setIsDaylightFlipped] = useState(false);
   const [logoImage, setLogoImage] = useState(null);
 
   /* ── Checkout form states ── */
@@ -367,7 +369,7 @@ const OrderPage = () => {
   /* ─────────────────────────────────────────────────
      Draw classic preset canvases
   ───────────────────────────────────────────────── */
-  const drawClassicCanvas = useCallback((canvasRef, preset) => {
+  const drawClassicCanvas = useCallback((canvasRef, preset, isFlipped) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -375,31 +377,46 @@ const OrderPage = () => {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    const brandedCanvas = drawBrandedQr(null, null, {
-      dotColor: preset.dotColor,
-      bgColor: preset.bgColor,
-      bgMode: 'solid',
-      dotShape: 'circle',
-      cornerShape: 'circle',
-      dotSize: 80,
-      frameText: "SCAN ME TO FIND ME",
-      frameBgColor: preset.id === 'midnight' ? '#000000' : '#111111',
-      frameTextColor: '#ffffff'
-    });
+    if (isFlipped) {
+      // Draw back-side (solid background + logo brand in full cover)
+      ctx.fillStyle = preset.bgColor;
+      ctx.fillRect(0, 0, W, H);
 
-    if (brandedCanvas) {
-      ctx.drawImage(brandedCanvas, 0, 0);
+      if (logoImage) {
+        const logoX = 0;
+        const logoY = 0;
+        const logoW = W;
+        const logoH = H;
+        ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
+      }
+    } else {
+      // Draw front-side (QR code)
+      const brandedCanvas = drawBrandedQr(null, null, {
+        dotColor: preset.dotColor,
+        bgColor: preset.bgColor,
+        bgMode: 'solid',
+        dotShape: 'circle',
+        cornerShape: 'circle',
+        dotSize: 80,
+        frameText: "SCAN ME TO FIND ME",
+        frameBgColor: preset.id === 'midnight' ? '#000000' : '#111111',
+        frameTextColor: '#ffffff'
+      });
+
+      if (brandedCanvas) {
+        ctx.drawImage(brandedCanvas, 0, 0);
+      }
     }
-  }, [qrLibLoaded]);
+  }, [logoImage, qrLibLoaded]);
 
   useEffect(() => {
     if (step === 'classic' && qrLibLoaded) {
       setTimeout(() => {
-        drawClassicCanvas(midnightCanvasRef, CLASSIC_PRESETS[0]);
-        drawClassicCanvas(daylightCanvasRef, CLASSIC_PRESETS[1]);
+        drawClassicCanvas(midnightCanvasRef, CLASSIC_PRESETS[0], isMidnightFlipped);
+        drawClassicCanvas(daylightCanvasRef, CLASSIC_PRESETS[1], isDaylightFlipped);
       }, 40);
     }
-  }, [step, qrLibLoaded, drawClassicCanvas]);
+  }, [step, qrLibLoaded, isMidnightFlipped, isDaylightFlipped, drawClassicCanvas]);
 
   /* ─────────────────────────────────────────────────
      Image Upload
@@ -1071,81 +1088,93 @@ const OrderPage = () => {
             </p>
 
             <div className="classic-preset-grid">
-              {CLASSIC_PRESETS.map((preset, idx) => (
-                <div
-                  key={preset.id}
-                  className={`classic-preset-card ${classicPreset === preset.id ? 'selected' : ''}`}
-                  style={{
-                    ...preset.cardStyle,
-                    borderColor: classicPreset === preset.id ? '#6366f1' : 'transparent'
-                  }}
-                  onClick={() => setClassicPreset(preset.id)}
-                  id={`btn-preset-${preset.id}`}
-                >
-                  <div className={`keychain-idle-swing classic-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
-                    <div
-                      className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
-                      style={{
-                        alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
-                      }}
-                    >
-                      <KeyringSvg width={70} height={133} marginBottom="-43px" marginRight="0px" />
-                      <div style={{ position: 'relative' }}>
-                        <canvas
-                          ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
-                          className={`classic-canvas ${preset.id === 'midnight' ? 'midnight-canvas' : ''}`}
-                        />
-                        <div className="tag-hole-eyelet" style={{
-                          position: 'absolute',
-                          top: '15px',
-                          right: isPreviewFlipped ? 'auto' : '25px',
-                          left: isPreviewFlipped ? '25px' : 'auto',
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          border: '4px solid #cbd5e1',
-                          background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
-                          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
-                          zIndex: 6
-                        }} />
+              {CLASSIC_PRESETS.map((preset, idx) => {
+                const isFlipped = preset.id === 'midnight' ? isMidnightFlipped : isDaylightFlipped;
+                return (
+                  <div
+                    key={preset.id}
+                    className={`classic-preset-card ${classicPreset === preset.id ? 'selected' : ''}`}
+                    style={{
+                      ...preset.cardStyle,
+                      borderColor: classicPreset === preset.id ? '#6366f1' : 'transparent'
+                    }}
+                    onClick={() => setClassicPreset(preset.id)}
+                    id={`btn-preset-${preset.id}`}
+                  >
+                    <div className={`keychain-idle-swing classic-swing ${isFlipped ? 'flipped' : ''}`}>
+                      <div
+                        className={`hanging-keychain-wrapper ${isFlipped ? 'flipped' : ''}`}
+                        style={{
+                          alignItems: isFlipped ? 'flex-start' : 'flex-end'
+                        }}
+                      >
+                        <KeyringSvg width={70} height={133} marginBottom="-43px" marginRight="0px" />
+                        <div style={{ position: 'relative' }}>
+                          <canvas
+                            ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
+                            className={`classic-canvas ${preset.id === 'midnight' ? 'midnight-canvas' : ''}`}
+                          />
+                          <div className="tag-hole-eyelet" style={{
+                            position: 'absolute',
+                            top: '15px',
+                            right: isFlipped ? 'auto' : '25px',
+                            left: isFlipped ? '25px' : 'auto',
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '50%',
+                            border: '4px solid #cbd5e1',
+                            background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
+                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
+                            zIndex: 6
+                          }} />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="classic-preset-name" style={{ color: preset.dotColor }}>
-                    {preset.name}
-                  </div>
-                  <div className="classic-preset-label" style={{ color: preset.dotColor, opacity: 0.6 }}>
-                    {preset.label}
-                  </div>
-                  {classicPreset === preset.id && (
-                    <div className="classic-check"><Check size={14} /></div>
-                  )}
-                </div>
-              ))}
-            </div>
 
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', marginBottom: '10px' }}>
-              <button
-                type="button"
-                className="btn-flip-preview"
-                onClick={() => setIsPreviewFlipped(prev => !prev)}
-                style={{
-                  padding: '8px 20px',
-                  borderRadius: '20px',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <RotateCw size={14} /> Flip Tags
-              </button>
+                    <button
+                      type="button"
+                      className="btn-flip-preview"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (preset.id === 'midnight') {
+                          setIsMidnightFlipped(prev => !prev);
+                        } else {
+                          setIsDaylightFlipped(prev => !prev);
+                        }
+                      }}
+                      style={{
+                        marginTop: '4px',
+                        marginBottom: '10px',
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s',
+                        zIndex: 10
+                      }}
+                    >
+                      <RotateCw size={12} /> Flip Tag
+                    </button>
+
+                    <div className="classic-preset-name" style={{ color: preset.dotColor }}>
+                      {preset.name}
+                    </div>
+                    <div className="classic-preset-label" style={{ color: preset.dotColor, opacity: 0.6 }}>
+                      {preset.label}
+                    </div>
+                    {classicPreset === preset.id && (
+                      <div className="classic-check"><Check size={14} /></div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {classicPreset && (

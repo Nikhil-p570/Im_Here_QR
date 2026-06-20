@@ -433,6 +433,12 @@
   100% { transform: rotate(-2deg); }
 }
 
+@keyframes idle-swing-opp {
+  0% { transform: rotate(2deg); }
+  50% { transform: rotate(-2deg); }
+  100% { transform: rotate(2deg); }
+}
+
 .keychain-idle-swing {
   transform-origin: calc(100% - 30px) 25px;
   animation: idle-swing 3.2s ease-in-out infinite;
@@ -443,8 +449,9 @@
 }
 
 .keychain-idle-swing.flipped {
-  align-items: flex-start;
-  transform-origin: 30px 25px;
+  align-items: flex-start !important;
+  transform-origin: 35px 25px !important;
+  animation: idle-swing-opp 3.2s ease-in-out infinite !important;
 }
 
 .keychain-idle-swing.classic-swing {
