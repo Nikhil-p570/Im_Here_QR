@@ -875,11 +875,12 @@ body {
   border: 1px solid var(--border-light);
   border-radius: 4px;
   box-sizing: border-box;
-  padding: 9.596% 7.143%; /* 28.5mm / 297mm top/bottom, 15mm / 210mm left/right */
+  padding: 34.28px 18.28px; /* Scaled 22.5mm top/bottom, 12mm left/right */
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
-  gap: 0;
+  column-gap: 3.04px; /* Scaled 2mm gap */
+  row-gap: 6.09px; /* Scaled 4mm gap */
   animation: fadeIn 0.4s ease-out;
 }
 

@@ -397,8 +397,10 @@ const AdminPanel = ({
     const itemsPerPage = 16;
     const colWidth = 45;
     const rowHeight = 60;
-    const marginX = 15;
-    const marginY = 28.5;
+    const marginX = 12;
+    const marginY = 22.5;
+    const gapX = 2;
+    const gapY = 4;
 
     appendedQrs.forEach((qrUrl, index) => {
       const pageIndex = index % itemsPerPage;
@@ -411,8 +413,8 @@ const AdminPanel = ({
       const row = Math.floor(pageIndex / 4);
       const col = pageIndex % 4;
 
-      const x = marginX + col * colWidth;
-      const y = marginY + row * rowHeight;
+      const x = marginX + col * (colWidth + gapX);
+      const y = marginY + row * (rowHeight + gapY);
 
       // 1. Draw outer grey border (45mm x 60mm)
       pdf.setDrawColor(209, 213, 219); // light grey (#d1d5db)
