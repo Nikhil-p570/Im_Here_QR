@@ -668,7 +668,7 @@ const OrderPage = () => {
             </h2>
             <p className="order-section-subtitle">
               Upload a photo — your pet, a memory, artwork — and preview it on your keychain tag.
-              Drag the orange square to choose which part of the image appears.
+              Drag the crop square to choose which part of the image appears.
             </p>
 
             {!uploadedImg ? (
