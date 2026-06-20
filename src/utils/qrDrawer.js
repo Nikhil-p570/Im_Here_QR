@@ -121,7 +121,7 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   const paddingRight = 24;
   const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
   
-  const pillX = (qrSize - pillW) / 2 - 35;
+  const pillX = 30;
   const pillY = offsetY + (bannerH - pillH) / 2;
 
   // Draw pill background
