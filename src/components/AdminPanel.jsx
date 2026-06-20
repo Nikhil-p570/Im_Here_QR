@@ -96,9 +96,19 @@ const AdminPanel = ({
   const [qrImageUrl, setQrImageUrl] = useState("");
   const [downloadError, setDownloadError] = useState("");
 
-  // PDF Sheet State
-  const [appendedQrs, setAppendedQrs] = useState([]);
-  const [undoneQrs, setUndoneQrs] = useState([]);
+  // PDF Sheet State — persisted to localStorage so reloads don't lose progress
+  const [appendedQrs, setAppendedQrs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pdfSheet_appendedQrs');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
+  const [undoneQrs, setUndoneQrs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pdfSheet_undoneQrs');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -154,10 +164,10 @@ const AdminPanel = ({
     const logoCanvas = getLogoCanvas();
 
     const qrSize = 640;
-    const margin = 2;
+    const margin = 1.5;
     const totalModules = moduleCount + margin * 2;
     const moduleSize = qrSize / totalModules;
-    const bannerH = hasFrame ? 80 : 0;
+    const bannerH = hasFrame ? 60 : 0;
 
     const canvas = qrCanvasRef.current;
     if (!canvas) {
@@ -272,7 +282,12 @@ const AdminPanel = ({
     logoScale,
     cropState.x,
     cropState.y,
-    cropState.size
+    cropState.size,
+    makeQR,
+    drawDot,
+    drawFinder,
+    drawLogo,
+    drawBanner
   ]);
 
   // Render crop preview canvas
@@ -311,6 +326,19 @@ const AdminPanel = ({
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [cropState.showCropStep]);
+
+  // Auto-save PDF sheet to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('pdfSheet_appendedQrs', JSON.stringify(appendedQrs));
+    } catch { /* storage full — silently ignore */ }
+  }, [appendedQrs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('pdfSheet_undoneQrs', JSON.stringify(undoneQrs));
+    } catch { /* storage full — silently ignore */ }
+  }, [undoneQrs]);
 
   // Countdown timer effect for clear database confirmation
   useEffect(() => {
@@ -361,22 +389,39 @@ const AdminPanel = ({
       setDownloadError("Please generate a QR code first.");
       return;
     }
-    setAppendedQrs(prev => [...prev, qrImageUrl]);
+
+    // Store both the image and the ID together so undo can delete the right DB entry
+    const entry = { qrUrl: qrImageUrl, id: result?.id || null };
+    setAppendedQrs(prev => [...prev, entry]);
     setUndoneQrs([]); // Clear redo stack on new action
-    
-    // Auto-save generated customer ID to Firestore if not saved yet (same as PNG download)
-    if (result && !result.isSavedToDb) {
-      saveResultToFirestore(result).catch((err) => {
-        console.error("Background Firestore save failed:", err);
-      });
+
+    // Save the customer ID to Firestore immediately on append
+    if (result) {
+      if (!result.isSavedToDb) {
+        saveResultToFirestore(result).catch((err) => {
+          console.error("Append: Firestore save failed:", err);
+        });
+      }
     }
   };
 
   const handleRemoveLastQr = () => {
     if (appendedQrs.length === 0) return;
     const lastItem = appendedQrs[appendedQrs.length - 1];
-    setAppendedQrs(prev => prev.slice(0, -1));
+    const remaining = appendedQrs.slice(0, -1);
+    setAppendedQrs(remaining);
     setUndoneQrs(prev => [...prev, lastItem]);
+
+    // Delete the ID from Firestore on undo — but only if it's not still present elsewhere on the sheet
+    const entryId = lastItem?.id;
+    if (entryId && firestoreDb) {
+      const stillOnSheet = remaining.some(e => e?.id === entryId);
+      if (!stillOnSheet) {
+        deleteDoc(doc(firestoreDb, 'links', entryId)).catch(err => {
+          console.error("Undo: Firestore delete failed:", err);
+        });
+      }
+    }
   };
 
   const handleRedoLastQr = () => {
@@ -384,14 +429,39 @@ const AdminPanel = ({
     const nextItem = undoneQrs[undoneQrs.length - 1];
     setUndoneQrs(prev => prev.slice(0, -1));
     setAppendedQrs(prev => [...prev, nextItem]);
+
+    // Re-save the ID to Firestore on redo
+    const entryId = nextItem?.id;
+    if (entryId && firestoreDb) {
+      const docRef = doc(firestoreDb, 'links', entryId);
+      setDoc(docRef, {
+        id: entryId,
+        domain: predefinedDomain,
+        createdAt: new Date(),
+        status: 'unregistered'
+      }).catch(err => {
+        console.error("Redo: Firestore re-save failed:", err);
+      });
+    }
   };
 
   const handleClearPdfSheet = () => {
     if (appendedQrs.length === 0) return;
     const confirmClear = window.confirm("Are you sure you want to clear all appended QR codes from this sheet?");
     if (confirmClear) {
+      // Delete every unique ID from Firestore
+      if (firestoreDb) {
+        const uniqueIds = [...new Set(appendedQrs.map(e => e?.id).filter(Boolean))];
+        uniqueIds.forEach(id => {
+          deleteDoc(doc(firestoreDb, 'links', id)).catch(err => {
+            console.error("Clear sheet: Firestore delete failed:", err);
+          });
+        });
+      }
       setAppendedQrs([]);
       setUndoneQrs([]);
+      localStorage.removeItem('pdfSheet_appendedQrs');
+      localStorage.removeItem('pdfSheet_undoneQrs');
     }
   };
 
@@ -407,7 +477,7 @@ const AdminPanel = ({
         pointerEvents: 'none',
         zIndex: 10
       }}>
-        <svg 
+        <svg
           style={{
             position: 'absolute',
             top: 0,
@@ -429,7 +499,7 @@ const AdminPanel = ({
               <path d="M 0 2 L 10 5 L 0 8 z" fill="#10b981" />
             </marker>
           </defs>
-          
+
           {/* 1. Outer Box Dimensions (Red) */}
           {/* Width (45mm) above card */}
           <line x1="0" y1="-4" x2="45" y2="-4" stroke="#dc2626" strokeWidth="0.4" markerStart="url(#arrow-red)" markerEnd="url(#arrow-red)" />
@@ -499,9 +569,11 @@ const AdminPanel = ({
     const gapX = 2;
     const gapY = 4;
 
-    appendedQrs.forEach((qrUrl, index) => {
+    appendedQrs.forEach((entry, index) => {
+      // Support both new {qrUrl, id} objects and legacy plain-string URLs from old localStorage
+      const qrUrl = entry?.qrUrl ?? entry;
       const pageIndex = index % itemsPerPage;
-      
+
       // Page division
       if (index > 0 && pageIndex === 0) {
         pdf.addPage();
@@ -524,19 +596,19 @@ const AdminPanel = ({
       // 3. Draw dimension guides around the first card on each page for measurement reference
       if (pageIndex === 0) {
         pdf.saveGraphicsState();
-        
+
         // Define arrow helper inside to prevent polluting scope
         const drawArrow = (x1, y1, x2, y2, size = 0.8) => {
           pdf.line(x1, y1, x2, y2);
           const angle = Math.atan2(y2 - y1, x2 - x1);
-          
+
           // tip at x1, y1
           const x1_a = x1 + size * Math.cos(angle + Math.PI / 6);
           const y1_a = y1 + size * Math.sin(angle + Math.PI / 6);
           const x1_b = x1 + size * Math.cos(angle - Math.PI / 6);
           const y1_b = y1 + size * Math.sin(angle - Math.PI / 6);
           pdf.triangle(x1, y1, x1_a, y1_a, x1_b, y1_b, "F");
-          
+
           // tip at x2, y2
           const x2_a = x2 - size * Math.cos(angle + Math.PI / 6);
           const y2_a = y2 - size * Math.sin(angle + Math.PI / 6);
@@ -1630,10 +1702,12 @@ const AdminPanel = ({
                     {Array.from({ length: 16 }).map((_, slotIdx) => {
                       const hasItem = slotIdx < pageItems.length;
                       if (hasItem) {
+                        const slotEntry = pageItems[slotIdx];
+                        const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
                         return (
                           <div key={slotIdx} className="pdf-preview-item">
                             <img
-                              src={pageItems[slotIdx]}
+                              src={slotQrUrl}
                               alt={`QR Slot ${slotIdx}`}
                               className="pdf-preview-image"
                             />
