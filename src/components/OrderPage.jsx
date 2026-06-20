@@ -29,23 +29,26 @@ const CLASSIC_PRESETS = [
 ];
 
 const KeyringSvg = () => (
-  <svg width="60" height="90" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-18px', marginRight: '8px', zIndex: 5, position: 'relative' }}>
-    {/* Metal Ring (Keyring) */}
-    <circle cx="30" cy="25" r="20" stroke="url(#metal-grad)" strokeWidth="4.5" fill="none" filter="drop-shadow(0px 4px 4px rgba(0,0,0,0.35))"/>
-    <circle cx="30" cy="25" r="17.75" stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" fill="none"/>
+  <svg width="60" height="115" viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-38px', marginRight: '8px', zIndex: 5, position: 'relative' }}>
+    {/* Matte Silver Ring (Keyring) */}
+    <circle cx="30" cy="20" r="16" stroke="url(#metal-grad)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))"/>
+    <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none"/>
     
-    {/* Chain Links */}
-    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.2))"/>
-    <rect x="27.5" y="51" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.2))" transform="rotate(15, 30, 57)"/>
-    <rect x="27.5" y="60" width="5" height="14" rx="2.5" stroke="url(#metal-grad)" strokeWidth="3" fill="none" filter="drop-shadow(0px 2px 2px rgba(0,0,0,0.3))"/>
+    {/* Longer Matte Silver Chain Links */}
+    <rect x="27.5" y="34" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
+    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(15, 30, 49)"/>
+    <rect x="27.5" y="52" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
+    <rect x="27.5" y="61" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(-15, 30, 67)"/>
+    <rect x="27.5" y="70" width="5" height="12" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))"/>
+    <rect x="27.5" y="79" width="5" height="16" rx="2.5" stroke="url(#metal-grad)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 1.5px 2px rgba(0,0,0,0.35))"/>
     
     <defs>
-      <linearGradient id="metal-grad" x1="10" y1="5" x2="50" y2="45" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#ffffff"/>
-        <stop offset="25%" stop-color="#94a3b8"/>
-        <stop offset="50%" stop-color="#cbd5e1"/>
-        <stop offset="75%" stop-color="#475569"/>
-        <stop offset="100%" stop-color="#94a3b8"/>
+      <linearGradient id="metal-grad" x1="14" y1="6" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="#e5e7eb"/>
+        <stop offset="25%" stop-color="#9ca3af"/>
+        <stop offset="50%" stop-color="#d1d5db"/>
+        <stop offset="75%" stop-color="#6b7280"/>
+        <stop offset="100%" stop-color="#cbd5e1"/>
       </linearGradient>
     </defs>
   </svg>
@@ -210,8 +213,8 @@ const OrderPage = () => {
       const deltaY = currentScrollY - lastScrollY.current;
       lastScrollY.current = currentScrollY;
 
-      // Temporary swing based on scroll velocity (capped at 12 deg)
-      const targetRotation = Math.max(-12, Math.min(12, deltaY * 0.12));
+      // Temporary swing based on scroll velocity (capped at 28 deg)
+      const targetRotation = Math.max(-28, Math.min(28, deltaY * 0.28));
       setScrollRotation(targetRotation);
 
       // Swing back home smoothly
