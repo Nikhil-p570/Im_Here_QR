@@ -16,7 +16,7 @@ const CLASSIC_PRESETS = [
     dotColor: '#ffffff',
     bgColor: '#0a0a0a',
     cardStyle: { background: '#0a0a0a' },
-    // label: 'White dots · Black background'
+    label: 'White dots · Black background'
   },
   {
     id: 'daylight',
@@ -24,7 +24,7 @@ const CLASSIC_PRESETS = [
     dotColor: '#111111',
     bgColor: '#ffffff',
     cardStyle: { background: '#ffffff' },
-    // label: 'Black dots · White background'
+    label: 'Black dots · White background'
   }
 ];
 
@@ -922,7 +922,7 @@ const OrderPage = () => {
                 >
                   <div className="keychain-idle-swing classic-swing">
                     <div className="hanging-keychain-wrapper">
-                      <KeyringSvg width={58} height={110} marginBottom="-36px" marginRight="0px" />
+                      <KeyringSvg width={70} height={133} marginBottom="-43px" marginRight="0px" />
                       <div style={{ position: 'relative' }}>
                         <canvas
                           ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
@@ -930,12 +930,12 @@ const OrderPage = () => {
                         />
                         <div className="tag-hole-eyelet" style={{
                           position: 'absolute',
-                          top: '12px',
-                          right: '21px',
-                          width: '16px',
-                          height: '16px',
+                          top: '15px',
+                          right: '25px',
+                          width: '20px',
+                          height: '20px',
                           borderRadius: '50%',
-                          border: '3.5px solid #cbd5e1',
+                          border: '4px solid #cbd5e1',
                           background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
                           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
                           zIndex: 6
