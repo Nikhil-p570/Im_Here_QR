@@ -307,24 +307,32 @@
 .crop-box {
   position: absolute;
   box-sizing: border-box;
-  border: 2.5px dashed #f97316;
-  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 2px;
+  transition: border-color 0.2s ease;
+}
+
+.crop-box.locked .crop-corner-bracket {
+  border-color: #6366f1;
+}
+
+.crop-box.locked .crop-edge-bar {
+  background: #6366f1;
 }
 
 .crop-handle {
   position: absolute;
-  width: 14px;
-  height: 14px;
-  background: #f97316;
-  border: 2px solid #ffffff;
-  border-radius: 3px;
-  z-index: 2;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  z-index: 10;
 }
 
-.crop-handle-nw { top: -7px;    left: -7px;    cursor: nw-resize; }
-.crop-handle-ne { top: -7px;    right: -7px;   cursor: ne-resize; }
-.crop-handle-sw { bottom: -7px; left: -7px;    cursor: sw-resize; }
-.crop-handle-se { bottom: -7px; right: -7px;   cursor: se-resize; }
+.crop-handle-nw { top: -12px;    left: -12px;    cursor: nw-resize; }
+.crop-handle-ne { top: -12px;    right: -12px;   cursor: ne-resize; }
+.crop-handle-sw { bottom: -12px; left: -12px;    cursor: sw-resize; }
+.crop-handle-se { bottom: -12px; right: -12px;   cursor: se-resize; }
 
 /* Crop Controls */
 .crop-controls {

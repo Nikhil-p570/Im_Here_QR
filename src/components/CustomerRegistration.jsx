@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './CustomerRegistration.css';
 import { doc, setDoc } from 'firebase/firestore';
-import { AlertTriangle, User, Phone, Lock, Plus, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, User, Phone, Lock, Plus, Trash2, ShieldCheck, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 const COUNTRY_CODES = [
   { name: 'India', code: '91', flag: '🇮🇳' },
@@ -48,6 +48,7 @@ const CustomerRegistration = ({
   const [showCountryDropdown, setShowCountryDropdown] = useState(false);
   const [countrySearch, setCountrySearch] = useState("");
   const [openDropdownIdx, setOpenDropdownIdx] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const handleOutsideClick = () => {
@@ -343,14 +344,31 @@ const CustomerRegistration = ({
               <Lock className="input-icon" size={18} />
               <input
                 id="regPasswordInput"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="text-input"
                 placeholder="Password to update details later"
                 value={regPassword}
                 onChange={(e) => setRegPassword(e.target.value)}
                 disabled={savingReg}
-                style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                style={{ padding: '12px 48px 12px 42px', fontSize: '0.9rem' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 

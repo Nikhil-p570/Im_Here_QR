@@ -1,7 +1,32 @@
+import { useEffect } from 'react';
 import { Tag, MapPin, Globe, ShoppingBag } from 'lucide-react';
 import './LandingPage.css';
 
 const OrderPage = () => {
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const revealElements = document.querySelectorAll('.reveal-on-scroll');
+    revealElements.forEach(el => observer.observe(el));
+
+    return () => {
+      revealElements.forEach(el => observer.unobserve(el));
+    };
+  }, []);
+
   return (
     <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
       {/* Top-right Order Now button */}
@@ -39,7 +64,7 @@ const OrderPage = () => {
         </a>
       </div>
 
-      <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+      <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
         {/* Logo with glow effect */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
           <div style={{
@@ -77,14 +102,14 @@ const OrderPage = () => {
         </p>
       </header>
 
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         The Problem
       </h2>
 
       {/* Problem Section */}
       <div className="problem-grid">
         {/* Problem Card 1 */}
-        <div className="glass-panel" style={{ 
+        <div className="glass-panel reveal-on-scroll delay-100" style={{ 
           padding: '20px', 
           borderRadius: '16px', 
           textAlign: 'justify', 
@@ -111,7 +136,7 @@ const OrderPage = () => {
         </div>
 
         {/* Problem Card 2 */}
-        <div className="glass-panel" style={{ 
+        <div className="glass-panel reveal-on-scroll delay-200" style={{ 
           padding: '20px', 
           borderRadius: '16px', 
           textAlign: 'justify', 
@@ -138,7 +163,7 @@ const OrderPage = () => {
         </div>
       </div>
 
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         How It Works
       </h2>
 
@@ -151,7 +176,7 @@ const OrderPage = () => {
         marginTop: '20px' 
       }}>
         {/* Card 1 */}
-        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+        <div className="glass-panel reveal-on-scroll delay-100" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
@@ -164,7 +189,7 @@ const OrderPage = () => {
         </div>
 
         {/* Card 2 */}
-        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+        <div className="glass-panel reveal-on-scroll delay-200" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
@@ -177,7 +202,7 @@ const OrderPage = () => {
         </div>
 
         {/* Card 3 */}
-        <div className="glass-panel" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
+        <div className="glass-panel reveal-on-scroll delay-300" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
              onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'}
              onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
@@ -191,7 +216,7 @@ const OrderPage = () => {
       </div>
 
       {/* Why Us Section */}
-      <h2 style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         Why Us?
       </h2>
 
@@ -203,7 +228,7 @@ const OrderPage = () => {
         marginTop: '20px'
       }}>
         {/* Ordinary QR Codes Card */}
-        <div className="glass-panel" style={{
+        <div className="glass-panel reveal-on-scroll delay-100" style={{
           padding: '24px',
           borderRadius: '16px',
           textAlign: 'left',
@@ -226,7 +251,7 @@ const OrderPage = () => {
         </div>
 
         {/* Custom Aesthetic QRs Card */}
-        <div className="glass-panel" style={{
+        <div className="glass-panel reveal-on-scroll delay-200" style={{
           padding: '24px',
           borderRadius: '16px',
           textAlign: 'left',
@@ -258,7 +283,7 @@ const OrderPage = () => {
       </div>
 
       {/* ── Bottom CTA ── */}
-      <div style={{
+      <div className="reveal-on-scroll" style={{
         width: '100%',
         background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(6,182,212,0.07) 50%, rgba(139,92,246,0.1) 100%)',
         border: '1px solid rgba(99,102,241,0.2)',

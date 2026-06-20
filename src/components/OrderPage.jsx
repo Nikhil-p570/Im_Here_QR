@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
-  Image as ImageIcon, Check, Sparkles, Tag, Eye
+  Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import './OrderPage.css';
@@ -198,6 +198,21 @@ const OrderPage = () => {
   }, []);
 
   /* ─────────────────────────────────────────────────
+     Warn user before reloading if cart has items
+  ───────────────────────────────────────────────── */
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (cartItems.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'You have items in your cart. If you reload, your cart will be cleared. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [cartItems]);
+
+  /* ─────────────────────────────────────────────────
      Draw crop editor background
   ───────────────────────────────────────────────── */
   useEffect(() => {
@@ -311,6 +326,41 @@ const OrderPage = () => {
     };
     reader.readAsDataURL(file);
     e.target.value = '';
+  };
+
+  /* ─────────────────────────────────────────────────
+     Rotate Photo 90 Degrees Clockwise
+  ───────────────────────────────────────────────── */
+  const handleRotateImage = () => {
+    if (!uploadedImg) return;
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = uploadedImg.height;
+    canvas.height = uploadedImg.width;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.rotate((90 * Math.PI) / 180);
+    ctx.drawImage(uploadedImg, -uploadedImg.width / 2, -uploadedImg.height / 2);
+    
+    const rotatedImg = new Image();
+    rotatedImg.onload = () => {
+      setUploadedImg(rotatedImg);
+      const maxW = 280;
+      const scaleDown = Math.min(1, maxW / rotatedImg.width);
+      const dispW = Math.round(rotatedImg.width * scaleDown);
+      const dispH = Math.round(rotatedImg.height * scaleDown);
+      const initSize = Math.round(Math.min(dispW, dispH) * 0.58);
+      setCropState({
+        x: Math.round((dispW - initSize) / 2),
+        y: Math.round((dispH - initSize) / 2),
+        size: initSize,
+        dispW, dispH,
+        scale: rotatedImg.width / dispW
+      });
+      setCropLocked(false);
+    };
+    rotatedImg.src = canvas.toDataURL();
   };
 
   /* ─────────────────────────────────────────────────
@@ -645,26 +695,47 @@ const OrderPage = () => {
                     >
                       <canvas ref={cropCanvasRef} style={{ display: 'block', borderRadius: 8 }} />
 
-                      {/* Orange crop box */}
+                      {/* Visual crop box with rule-of-thirds grid, corners and midpoint markers */}
                       <div
-                        className="crop-box"
+                        className={`crop-box ${cropLocked ? 'locked' : ''}`}
                         style={{
                           left: cropState.x,
                           top: cropState.y,
                           width: cropState.size,
                           height: cropState.size,
-                          borderColor: cropLocked ? '#6366f1' : '#f97316',
+                          borderColor: cropLocked ? '#6366f1' : 'rgba(255, 255, 255, 0.45)',
                           cursor: cropLocked ? 'default' : dragging ? 'grabbing' : 'grab',
                           touchAction: 'none',
                           boxShadow: cropLocked
-                            ? '0 0 0 2px rgba(99,102,241,0.25)'
-                            : '0 0 0 2px rgba(249,115,22,0.25)'
+                            ? '0 0 0 2px rgba(99,102,241,0.2)'
+                            : '0 0 0 2px rgba(255,255,255,0.1)'
                         }}
                         onPointerDown={handleCropBoxDown}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerUp}
                         onPointerCancel={handlePointerUp}
                       >
+                        {/* Custom visual overlay */}
+                        <div className="crop-box-overlay">
+                          {/* Grid Lines (Rule of Thirds) */}
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+
+                          {/* Midpoint Bars */}
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+
+                          {/* Corners (L-brackets) */}
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+
                         {/* 4 corner resize handles */}
                         {!cropLocked && ['nw', 'ne', 'sw', 'se'].map(handle => (
                           <div
@@ -693,6 +764,13 @@ const OrderPage = () => {
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <ImageIcon size={13} /> Change Photo
+                      </button>
+
+                      <button
+                        className="change-photo-btn"
+                        onClick={handleRotateImage}
+                      >
+                        <RotateCw size={13} /> Rotate Photo
                       </button>
 
                       <button

@@ -1227,16 +1227,37 @@ const AdminPanel = ({
                       onPointerCancel={handleCropBoxUp}
                       style={{
                         position: 'absolute',
-                        border: '2.5px dashed #e8402c',
-                        background: 'rgba(232, 64, 44, 0.18)',
+                        border: '1px solid rgba(255, 255, 255, 0.45)',
+                        background: 'rgba(255, 255, 255, 0.05)',
                         cursor: dragging ? 'grabbing' : 'grab',
-                        borderRadius: '6px',
+                        borderRadius: '2px',
                         width: `${cropState.size}px`,
                         height: `${cropState.size}px`,
                         left: `${cropState.x}px`,
                         top: `${cropState.y}px`
                       }}
-                    />
+                    >
+                      {/* Custom visual overlay */}
+                      <div className="crop-box-overlay">
+                        {/* Grid Lines (Rule of Thirds) */}
+                        <div className="crop-grid-line-v v1" />
+                        <div className="crop-grid-line-v v2" />
+                        <div className="crop-grid-line-h h1" />
+                        <div className="crop-grid-line-h h2" />
+
+                        {/* Midpoint Bars */}
+                        <div className="crop-edge-bar bar-top" />
+                        <div className="crop-edge-bar bar-bottom" />
+                        <div className="crop-edge-bar bar-left" />
+                        <div className="crop-edge-bar bar-right" />
+
+                        {/* Corners (L-brackets) */}
+                        <div className="crop-corner-bracket corner-tl" />
+                        <div className="crop-corner-bracket corner-tr" />
+                        <div className="crop-corner-bracket corner-bl" />
+                        <div className="crop-corner-bracket corner-br" />
+                      </div>
+                    </div>
                   </div>
 
                   <p className="hint" style={{ textAlign: 'center', fontSize: '0.75rem' }}>

@@ -1,4 +1,5 @@
-import { Lock, AlertTriangle, Mail, Phone } from 'lucide-react';
+import React, { useState } from 'react';
+import { Lock, AlertTriangle, Mail, Phone, Eye, EyeOff } from 'lucide-react';
 
 const AuthModal = ({
   showAuthModal,
@@ -15,6 +16,8 @@ const AuthModal = ({
   handlePasswordSubmit,
   handleSecuritySubmit
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   if (!showAuthModal) return null;
 
   return (
@@ -66,14 +69,31 @@ const AuthModal = ({
               <div className="input-wrapper">
                 <Lock className="input-icon" size={18} />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   className="text-input"
                   placeholder="Enter password"
                   value={enteredPassword}
                   onChange={(e) => setEnteredPassword(e.target.value)}
-                  style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                  style={{ padding: '12px 48px 12px 42px', fontSize: '0.9rem' }}
                   autoFocus
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: 0
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 

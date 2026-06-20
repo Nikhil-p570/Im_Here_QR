@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { initializeFirebase } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { AlertTriangle, Lock, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 
 // Subcomponents
 import LandingPage from './components/LandingPage';
@@ -59,6 +59,7 @@ function App() {
   // Auth States (Admin Cockpit authentication)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState("");
 
@@ -526,14 +527,32 @@ function App() {
               <Lock className="input-icon" size={20} />
               <input
                 id="passwordInput"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="text-input"
                 placeholder="Enter password..."
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={authLoading}
                 autoFocus
+                style={{ paddingRight: '48px' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '16px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
 
             {authError && (

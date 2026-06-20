@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './CustomerRegistration.css';
 import { doc, setDoc } from 'firebase/firestore';
-import { AlertTriangle, User, Phone, Lock, Plus, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, User, Phone, Lock, Plus, Trash2, ShieldCheck, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 import { COUNTRY_CODES } from './CustomerRegistration';
 
 const CustomerEditProfile = ({
@@ -14,6 +14,7 @@ const CustomerEditProfile = ({
   const [editName, setEditName] = useState(customerData.name || "");
   const [editNumber, setEditNumber] = useState(customerData.localNumber || "");
   const [editPassword, setEditPassword] = useState(customerData.password || "");
+  const [showPassword, setShowPassword] = useState(false);
 
   const presetQuestions = [
     "What is the name of your first pet?",
@@ -324,14 +325,31 @@ const CustomerEditProfile = ({
               <Lock className="input-icon" size={18} />
               <input
                 id="editPasswordInput"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="text-input"
                 placeholder="Password to update details later"
                 value={editPassword}
                 onChange={(e) => setEditPassword(e.target.value)}
                 disabled={editSaving}
-                style={{ padding: '12px 14px 12px 42px', fontSize: '0.9rem' }}
+                style={{ padding: '12px 48px 12px 42px', fontSize: '0.9rem' }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: 0
+                }}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 

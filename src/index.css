@@ -351,3 +351,106 @@ body {
   color: var(--accent-indigo);
 }
 
+/* ── Custom Cropper Overlay & Grid Styles ── */
+.crop-box-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* Let pointer events pass to parent for dragging */
+}
+
+/* 3x3 Grid Lines */
+.crop-grid-line-v {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+.crop-grid-line-v.v1 { left: 33.33%; }
+.crop-grid-line-v.v2 { left: 66.66%; }
+
+.crop-grid-line-h {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+}
+.crop-grid-line-h.h1 { top: 33.33%; }
+.crop-grid-line-h.h2 { top: 66.66%; }
+
+/* Corner Brackets (Thick White L-shapes) */
+.crop-corner-bracket {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #ffffff;
+  pointer-events: none;
+  z-index: 3;
+  transition: border-color 0.2s ease;
+}
+.crop-corner-bracket.corner-tl {
+  top: -3px;
+  left: -3px;
+  border-right: none;
+  border-bottom: none;
+}
+.crop-corner-bracket.corner-tr {
+  top: -3px;
+  right: -3px;
+  border-left: none;
+  border-bottom: none;
+}
+.crop-corner-bracket.corner-bl {
+  bottom: -3px;
+  left: -3px;
+  border-right: none;
+  border-top: none;
+}
+.crop-corner-bracket.corner-br {
+  bottom: -3px;
+  right: -3px;
+  border-left: none;
+  border-top: none;
+}
+
+/* Midpoint bars */
+.crop-edge-bar {
+  position: absolute;
+  background: #ffffff;
+  pointer-events: none;
+  z-index: 3;
+  transition: background-color 0.2s ease;
+}
+.crop-edge-bar.bar-top {
+  top: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+}
+.crop-edge-bar.bar-bottom {
+  bottom: -3px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 3px;
+}
+.crop-edge-bar.bar-left {
+  left: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 12px;
+}
+.crop-edge-bar.bar-right {
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 12px;
+}
+
+
