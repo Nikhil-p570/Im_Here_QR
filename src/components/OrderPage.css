@@ -435,7 +435,7 @@
 
 .keychain-idle-swing {
   transform-origin: calc(100% - 30px) 25px;
-  animation: idle-swing 5.5s ease-in-out infinite;
+  animation: idle-swing 3.2s ease-in-out infinite;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
