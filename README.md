@@ -14,19 +14,6 @@
 * **📍 GPS Drop Location**: Finders can share their current GPS coordinates with a single tap. The system leverages the browser's Geolocation API to construct a precise Google Maps coordinate link and opens a WhatsApp conversation to drop the location directly to the owner.
 * **📞 Premium Phone Formatting**: Display numbers automatically format country codes and mobile digits (`+91 XXXXX-XXXXX`) for maximum readability, with direct international calling hooks.
 
-### 🎛️ Admin Cockpit Dashboard (`/admin1226`)
-A secure cockpit panel for generating and designing custom branded assets side-by-side:
-* **🔑 Secure Authorization**: Protected by password-verified access.
-* **🏷️ Customer Link Generator**: Generates unique tag IDs and pre-registers claimable URLs in the Firestore database.
-* **🎨 Aesthetic QR Code Designer**: 
-  * Seamlessly overlay high-contrast QR matrices on solid background colors or custom uploaded background images.
-  * Adjust parameter sliders: Overlay opacity/darkness, dot matrix scale on the canvas.
-  * Custom shapes: Select dot styles (circular, rounded, square) and corner boundary styles (circular, rounded, square).
-  * Brand frames: Add customizable banners with dynamic frame text, frame background colors, and text colors.
-  * Central branding chips: Integrate central logo chips directly on the QR code canvas.
-  * Contrast drop shadows: Canvas shadow rendering behind dots ensures 100% scanning scannability on light background images.
-  * Direct downloads: Instantly save high-quality PNGs of the designed codes.
-
 ---
 
 ## 🛠️ Technology Stack

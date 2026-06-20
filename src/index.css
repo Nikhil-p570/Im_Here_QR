@@ -825,3 +825,43 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   }
 }
+
+/* Owner Change Info Floating Button */
+.change-info-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99;
+  padding: 10px 18px;
+  font-size: 0.85rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.change-info-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+}
+
+.change-info-btn:active {
+  transform: translateY(0) scale(1);
+}
+
+/* Adjust button layout for mobile devices to not overlap */
+@media (max-width: 480px) {
+  .change-info-btn {
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+}
