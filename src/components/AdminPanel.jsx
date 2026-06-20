@@ -513,7 +513,7 @@ const AdminPanel = ({
 
       // 3. Draw dimension guides around the first card on each page for measurement reference
       if (pageIndex === 0) {
-        pdf.saveState();
+        pdf.saveGraphicsState();
         
         // Define arrow helper inside to prevent polluting scope
         const drawArrow = (x1, y1, x2, y2, size = 0.8) => {
@@ -537,10 +537,10 @@ const AdminPanel = ({
 
         // Define extension line helper
         const drawExtension = (x1, y1, x2, y2) => {
-          pdf.saveState();
+          pdf.saveGraphicsState();
           pdf.setLineWidth(0.08);
           pdf.line(x1, y1, x2, y2);
-          pdf.restoreState();
+          pdf.restoreGraphicsState();
         };
 
         // Red color for Outer Box Dimensions
@@ -609,7 +609,7 @@ const AdminPanel = ({
         drawExtension(x, yGap2 + gapY, xGap2 - 0.5, yGap2 + gapY);
         pdf.text(`${gapY} mm`, xGap2 - 1.2, yGap2 + gapY / 2, { align: "center" });
 
-        pdf.restoreState();
+        pdf.restoreGraphicsState();
       }
     });
 
