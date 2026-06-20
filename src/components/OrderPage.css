@@ -443,7 +443,7 @@
 }
 
 .keychain-idle-swing.classic-swing {
-  transform-origin: calc(100% - 17px) 11px;
+  transform-origin: calc(100% - 21px) 14px;
 }
 
 /* ── Qty + Add To Cart ─────────────────────────────── */
@@ -564,11 +564,11 @@
 }
 
 .classic-canvas {
-  border-radius: 10px;
+  border-radius: 12px;
   display: block;
-  width: 140px;
-  height: 153px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  width: 180px;
+  height: 197px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.4);
 }
 
 .classic-preset-name {

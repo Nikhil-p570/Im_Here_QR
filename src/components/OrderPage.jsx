@@ -202,46 +202,7 @@ const OrderPage = () => {
   const fileInputRef = useRef(null);
   const cartRef = useRef(null);
 
-  /* ── Scroll swing velocity tracking ── */
-  const [scrollRotation, setScrollRotation] = useState(0);
-  const lastScrollY = useRef(window.scrollY);
-  const scrollTimeout = useRef(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const deltaY = currentScrollY - lastScrollY.current;
-      lastScrollY.current = currentScrollY;
-
-      // Temporary swing based on scroll velocity (capped at 28 deg)
-      const targetRotation = Math.max(-28, Math.min(28, deltaY * 0.28));
-      setScrollRotation(targetRotation);
-
-      // Swing back home smoothly
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-      scrollTimeout.current = setTimeout(() => {
-        setScrollRotation(0);
-      }, 100);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    };
-  }, []);
-
-  const getSwingStyle = (isClassic = false) => {
-    return {
-      transformOrigin: isClassic ? 'calc(100% - 17px) 11px' : 'calc(100% - 30px) 25px', // Pivot exactly at the top-right keyring center!
-      transform: `rotate(${scrollRotation}deg)`,
-      transition: scrollRotation === 0 
-        ? 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Springy return bounce
-        : 'transform 0.15s ease-out'
-    };
-  };
-
-  const swingStyle = getSwingStyle(false);
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -859,7 +820,7 @@ const OrderPage = () => {
                     <div className="section-label">Live Preview</div>
                     <div className="keychain-frame">
                       <div className="keychain-idle-swing">
-                        <div className="hanging-keychain-wrapper" style={swingStyle}>
+                        <div className="hanging-keychain-wrapper">
                           <KeyringSvg />
                           <div style={{ position: 'relative' }}>
                             <canvas ref={keychainCanvasRef} className="keychain-canvas" />
@@ -953,8 +914,8 @@ const OrderPage = () => {
                   id={`btn-preset-${preset.id}`}
                 >
                   <div className="keychain-idle-swing classic-swing">
-                    <div className="hanging-keychain-wrapper" style={getSwingStyle(true)}>
-                      <KeyringSvg width={32} height={62} marginBottom="-20px" marginRight="1px" />
+                    <div className="hanging-keychain-wrapper">
+                      <KeyringSvg width={42} height={80} marginBottom="-26px" marginRight="0px" />
                       <div style={{ position: 'relative' }}>
                         <canvas
                           ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
@@ -962,12 +923,12 @@ const OrderPage = () => {
                         />
                         <div className="tag-hole-eyelet" style={{
                           position: 'absolute',
-                          top: '7px',
-                          right: '12px',
-                          width: '10px',
-                          height: '10px',
+                          top: '9px',
+                          right: '15px',
+                          width: '12px',
+                          height: '12px',
                           borderRadius: '50%',
-                          border: '2.2px solid #cbd5e1',
+                          border: '2.5px solid #cbd5e1',
                           background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
                           boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
                           zIndex: 6
