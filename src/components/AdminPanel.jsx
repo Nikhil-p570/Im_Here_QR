@@ -199,15 +199,15 @@ const AdminPanel = ({
         const isFinder = (row < 7 && col < 7) || (row < 7 && col >= moduleCount - 7) || (row >= moduleCount - 7 && col < 7);
         if (isFinder) continue;
         if (qr.isDark(row, col)) {
-          drawDot(ctx, row, col, margin, moduleSize, dotColor, dotShape, 0, dotSize / 100);
+          drawDot(ctx, row, col, margin, moduleSize, dotColor, dotShape, bannerH, dotSize / 100);
         }
       }
     }
 
     // Draw corners
-    drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
-    drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
-    drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, 0);
+    drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
+    drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
+    drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, cornerShape, bannerH);
 
     // Reset shadow properties before drawing logo and banner
     ctx.shadowColor = 'transparent';
@@ -217,12 +217,12 @@ const AdminPanel = ({
 
     // Draw Logo Chip
     if (logoCanvas && showLogoChip) {
-      drawLogo(ctx, logoCanvas, qrSize, 0, logoScale / 100, bgColor);
+      drawLogo(ctx, logoCanvas, qrSize, bannerH, logoScale / 100, bgColor);
     }
 
-    // Draw banner frame (below QR code)
+    // Draw banner frame (at the top)
     if (hasFrame) {
-      drawBanner(ctx, qrSize, bannerH, frameText, frameBgColor, frameTextColor, qrSize);
+      drawBanner(ctx, qrSize, bannerH, frameText, frameBgColor, frameTextColor, 0);
     }
 
     // Warnings and notes mapping
