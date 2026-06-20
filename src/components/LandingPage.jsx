@@ -1,4 +1,5 @@
 import { Tag, MapPin, Globe } from 'lucide-react';
+import './LandingPage.css';
 
 const LandingPage = () => {
   return (

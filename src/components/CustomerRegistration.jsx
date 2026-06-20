@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import './CustomerRegistration.css';
 import { doc, setDoc } from 'firebase/firestore';
 import { AlertTriangle, User, Phone, Lock, Plus, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 

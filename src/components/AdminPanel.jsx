@@ -1,5 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
+import './AdminPanel.css';
 import { jsPDF } from 'jspdf';
 import {
   collection,

@@ -1,4 +1,5 @@
 import { Phone, Globe, Lock, ExternalLink, Mail } from 'lucide-react';
+import './CustomerProfile.css';
 
 const BrandIcon = ({ type, size = 16, className, style }) => {
   if (type === 'Email') {
