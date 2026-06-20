@@ -28,8 +28,8 @@ const CLASSIC_PRESETS = [
   }
 ];
 
-const KeyringSvg = () => (
-  <svg width="60" height="115" viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom: '-38px', marginRight: '0px', zIndex: 5, position: 'relative' }}>
+const KeyringSvg = ({ width = 60, height = 115, marginBottom = '-38px', marginRight = '0px' }) => (
+  <svg width={width} height={height} viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom, marginRight, zIndex: 5, position: 'relative' }}>
     {/* Matte Silver Ring (Keyring) */}
     <circle cx="30" cy="20" r="16" stroke="url(#metal-grad)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))"/>
     <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none"/>
@@ -231,13 +231,17 @@ const OrderPage = () => {
     };
   }, []);
 
-  const swingStyle = {
-    transformOrigin: 'calc(100% - 30px) 25px', // Pivot exactly at the top-right keyring center!
-    transform: `rotate(${scrollRotation}deg)`,
-    transition: scrollRotation === 0 
-      ? 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Springy return bounce
-      : 'transform 0.15s ease-out'
+  const getSwingStyle = (isClassic = false) => {
+    return {
+      transformOrigin: isClassic ? 'calc(100% - 17px) 11px' : 'calc(100% - 30px) 25px', // Pivot exactly at the top-right keyring center!
+      transform: `rotate(${scrollRotation}deg)`,
+      transition: scrollRotation === 0 
+        ? 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Springy return bounce
+        : 'transform 0.15s ease-out'
+    };
   };
+
+  const swingStyle = getSwingStyle(false);
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -948,10 +952,29 @@ const OrderPage = () => {
                   onClick={() => setClassicPreset(preset.id)}
                   id={`btn-preset-${preset.id}`}
                 >
-                  <canvas
-                    ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
-                    className="classic-canvas"
-                  />
+                  <div className="keychain-idle-swing classic-swing">
+                    <div className="hanging-keychain-wrapper" style={getSwingStyle(true)}>
+                      <KeyringSvg width={32} height={62} marginBottom="-20px" marginRight="1px" />
+                      <div style={{ position: 'relative' }}>
+                        <canvas
+                          ref={idx === 0 ? midnightCanvasRef : daylightCanvasRef}
+                          className="classic-canvas"
+                        />
+                        <div className="tag-hole-eyelet" style={{
+                          position: 'absolute',
+                          top: '7px',
+                          right: '12px',
+                          width: '10px',
+                          height: '10px',
+                          borderRadius: '50%',
+                          border: '2.2px solid #cbd5e1',
+                          background: preset.id === 'midnight' ? '#0a0a0a' : '#ffffff',
+                          boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.8), 0 0.5px 1px rgba(255,255,255,0.1)',
+                          zIndex: 6
+                        }} />
+                      </div>
+                    </div>
+                  </div>
                   <div className="classic-preset-name" style={{ color: preset.dotColor }}>
                     {preset.name}
                   </div>

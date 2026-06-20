@@ -285,7 +285,7 @@
 .section-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -413,7 +413,7 @@
 
 .keychain-label {
   font-size: 0.74rem;
-  color: var(--text-secondary);
+  color: #cbd5e1;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -440,6 +440,10 @@
   flex-direction: column;
   align-items: flex-end;
   position: relative;
+}
+
+.keychain-idle-swing.classic-swing {
+  transform-origin: calc(100% - 17px) 11px;
 }
 
 /* ── Qty + Add To Cart ─────────────────────────────── */
