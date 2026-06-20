@@ -553,7 +553,7 @@ const AdminPanel = ({
         };
 
         // Red color for Outer Box Dimensions
-        pdf.setStrokeColor(220, 38, 38);
+        pdf.setDrawColor(220, 38, 38);
         pdf.setFillColor(220, 38, 38);
         pdf.setTextColor(220, 38, 38);
         pdf.setLineWidth(0.15);
@@ -575,7 +575,7 @@ const AdminPanel = ({
         pdf.text(`${rowHeight} mm`, xLine1 - 1.2, y + rowHeight / 2, { align: "center" });
 
         // Blue color for Inner QR Dimensions
-        pdf.setStrokeColor(37, 99, 235);
+        pdf.setDrawColor(37, 99, 235);
         pdf.setFillColor(37, 99, 235);
         pdf.setTextColor(37, 99, 235);
 
@@ -594,7 +594,7 @@ const AdminPanel = ({
         pdf.text("55 mm", xLine2 + 1, y + rowHeight / 2, { align: "left" });
 
         // Green color for Margins & Gaps
-        pdf.setStrokeColor(16, 185, 129);
+        pdf.setDrawColor(16, 185, 129);
         pdf.setFillColor(16, 185, 129);
         pdf.setTextColor(16, 185, 129);
 
@@ -683,19 +683,21 @@ const AdminPanel = ({
     try {
       const querySnapshot = await getDocs(collection(firestoreDb, 'links'));
 
-      if (querySnapshot.empty) {
-        setAdminSuccess("Database is already empty!");
+      const deletableDocs = querySnapshot.docs.filter(docSnap => docSnap.id !== 'v16o66eq');
+
+      if (deletableDocs.length === 0) {
+        setAdminSuccess("Database is already empty (except for your protected ID v16o66eq)!");
         setShowConfirm(false);
         return;
       }
 
-      const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+      const deletePromises = deletableDocs.map(docSnap => deleteDoc(docSnap.ref));
       await Promise.all(deletePromises);
 
       setResult(null);
       setQrImageUrl("");
       setHasBeenGeneratedOnce(false);
-      setAdminSuccess("All documents deleted successfully!");
+      setAdminSuccess("All documents deleted successfully (except for your protected ID v16o66eq)!");
       setShowConfirm(false);
     } catch (err) {
       console.error(err);
