@@ -194,6 +194,16 @@ const OrderPage = () => {
   /* ── QR library loaded state ── */
   const [qrLibLoaded, setQrLibLoaded] = useState(false);
 
+  /* ── Flip Preview State ── */
+  const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
+  const [logoImage, setLogoImage] = useState(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/full logo.png';
+    img.onload = () => setLogoImage(img);
+  }, []);
+
   /* ── Refs ── */
   const cropCanvasRef = useRef(null);
   const keychainCanvasRef = useRef(null);
@@ -262,29 +272,81 @@ const OrderPage = () => {
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    // User photo / branded QR
-    if (uploadedImg && cropState.dispW > 0) {
-      const brandedCanvas = drawBrandedQr(uploadedImg, cropState, {
-        dotColor: '#ffffff',
-        bgColor: '#000000',
-        bgMode: 'image',
-        overlayDarkness: 40,
-        dotShape: 'circle',
-        cornerShape: 'circle',
-        dotSize: 80,
-        frameText: "SCAN ME TO FIND ME",
-        frameBgColor: '#000000',
-        frameTextColor: '#ffffff'
-      });
+    const isPersonalised = (step === 'personalised');
+    const preset = !isPersonalised && step === 'classic' ? CLASSIC_PRESETS.find(p => p.id === classicPreset) : null;
 
-      if (brandedCanvas) {
-        ctx.drawImage(brandedCanvas, 0, 0);
+    if (isPreviewFlipped) {
+      // Back-side rendering (Logo brand in full cover)
+      // 1. Draw appropriate background
+      if (isPersonalised && uploadedImg && cropState.dispW > 0) {
+        const s = cropState.scale || 1;
+        const srcX = cropState.x * s;
+        const srcY = cropState.y * s;
+        const srcSize = cropState.size * s;
+        try {
+          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.4)"; // overlay darkness
+          ctx.fillRect(0, 0, W, H);
+        } catch (e) {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, W, H);
+        }
+      } else if (preset) {
+        ctx.fillStyle = preset.bgColor;
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // 2. Draw brand logo in full cover
+      if (logoImage) {
+        // Easily adjustable logo coordinates for the user
+        const logoX = 0;
+        const logoY = 0;
+        const logoW = W;
+        const logoH = H;
+        ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
       }
     } else {
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, W, H);
+      // Front-side rendering (QR code tag design)
+      if (isPersonalised && uploadedImg && cropState.dispW > 0) {
+        const brandedCanvas = drawBrandedQr(uploadedImg, cropState, {
+          dotColor: '#ffffff',
+          bgColor: '#000000',
+          bgMode: 'image',
+          overlayDarkness: 40,
+          dotShape: 'circle',
+          cornerShape: 'circle',
+          dotSize: 80,
+          frameText: "SCAN ME TO FIND ME",
+          frameBgColor: '#000000',
+          frameTextColor: '#ffffff'
+        });
+        if (brandedCanvas) {
+          ctx.drawImage(brandedCanvas, 0, 0);
+        }
+      } else if (preset) {
+        const brandedCanvas = drawBrandedQr(null, null, {
+          dotColor: preset.dotColor,
+          bgColor: preset.bgColor,
+          bgMode: 'solid',
+          dotShape: 'circle',
+          cornerShape: 'circle',
+          dotSize: 80,
+          frameText: "SCAN ME TO FIND ME",
+          frameBgColor: preset.id === 'midnight' ? '#000000' : '#111111',
+          frameTextColor: '#ffffff'
+        });
+        if (brandedCanvas) {
+          ctx.drawImage(brandedCanvas, 0, 0);
+        }
+      } else {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, W, H);
+      }
     }
-  }, [uploadedImg, cropState, qrLibLoaded]);
+  }, [uploadedImg, cropState, classicPreset, step, isPreviewFlipped, logoImage, qrLibLoaded]);
 
   useEffect(() => { drawKeychain(); }, [drawKeychain]);
 
@@ -827,14 +889,20 @@ const OrderPage = () => {
                     <div className="section-label">Live Preview</div>
                     <div className="keychain-frame">
                       <div className="keychain-idle-swing">
-                        <div className="hanging-keychain-wrapper">
+                        <div
+                          className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
+                          style={{
+                            alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                          }}
+                        >
                           <KeyringSvg />
                           <div style={{ position: 'relative' }}>
                             <canvas ref={keychainCanvasRef} className="keychain-canvas" />
                             <div className="tag-hole-eyelet" style={{
                               position: 'absolute',
                               top: '12px',
-                              right: '22px',
+                              right: isPreviewFlipped ? 'auto' : '22px',
+                              left: isPreviewFlipped ? '22px' : 'auto',
                               width: '16px',
                               height: '16px',
                               borderRadius: '50%',
@@ -847,6 +915,27 @@ const OrderPage = () => {
                         </div>
                       </div>
                       <div className="keychain-label">Your I'm Here Tag</div>
+                      <button
+                        className="btn-flip-preview"
+                        onClick={() => setIsPreviewFlipped(prev => !prev)}
+                        style={{
+                          marginTop: '8px',
+                          padding: '6px 16px',
+                          borderRadius: '20px',
+                          background: 'rgba(255, 255, 255, 0.08)',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          color: '#ffffff',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <RotateCw size={14} /> Flip Tag
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -957,36 +1046,93 @@ const OrderPage = () => {
             </div>
 
             {classicPreset && (
-              <div className="qty-and-add">
-                <div className="qty-control">
-                  <label>How many tags?</label>
-                  <div className="qty-stepper">
-                    <button className="qty-btn" onClick={() => setClassicQty(q => Math.max(1, q - 1))}>
-                      <Minus size={16} />
-                    </button>
-                    <span className="qty-value">{classicQty}</span>
-                    <button
-                      className="qty-btn"
-                      onClick={() => {
-                        if (classicQty === 1) {
-                          setShowQtyAlert(true);
-                        }
-                        setClassicQty(q => q + 1);
-                      }}
-                    >
-                      <Plus size={16} />
-                    </button>
+              <div className="crop-preview-grid" style={{ marginTop: '30px' }}>
+                <div className="qty-and-add" style={{ marginTop: 0, width: '100%' }}>
+                  <div className="qty-control">
+                    <label>How many tags?</label>
+                    <div className="qty-stepper">
+                      <button className="qty-btn" onClick={() => setClassicQty(q => Math.max(1, q - 1))}>
+                        <Minus size={16} />
+                      </button>
+                      <span className="qty-value">{classicQty}</span>
+                      <button
+                        className="qty-btn"
+                        onClick={() => {
+                          if (classicQty === 1) {
+                            setShowQtyAlert(true);
+                          }
+                          setClassicQty(q => q + 1);
+                        }}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                    <p className="qty-hint">₹{prices.classic} × {classicQty} = ₹{prices.classic * classicQty}</p>
                   </div>
-                  <p className="qty-hint">₹{prices.classic} × {classicQty} = ₹{prices.classic * classicQty}</p>
+
+                  <button
+                    className="btn-add-to-cart"
+                    onClick={handleAddToCart}
+                    id="btn-add-classic-to-cart"
+                  >
+                    <ShoppingCart size={18} /> Add to Order
+                  </button>
                 </div>
 
-                <button
-                  className="btn-add-to-cart"
-                  onClick={handleAddToCart}
-                  id="btn-add-classic-to-cart"
-                >
-                  <ShoppingCart size={18} /> Add to Order
-                </button>
+                {/* Right: Live Preview */}
+                <div className="keychain-preview-section">
+                  <div className="section-label">Live Preview</div>
+                  <div className="keychain-frame">
+                    <div className="keychain-idle-swing">
+                      <div
+                        className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
+                        style={{
+                          alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                        }}
+                      >
+                        <KeyringSvg />
+                        <div style={{ position: 'relative' }}>
+                          <canvas ref={keychainCanvasRef} className="keychain-canvas" />
+                          <div className="tag-hole-eyelet" style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: isPreviewFlipped ? 'auto' : '22px',
+                            left: isPreviewFlipped ? '22px' : 'auto',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            border: '3.5px solid #cbd5e1',
+                            background: '#0a0a0a',
+                            boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                            zIndex: 6
+                          }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="keychain-label">Your I'm Here Tag</div>
+                    <button
+                      className="btn-flip-preview"
+                      onClick={() => setIsPreviewFlipped(prev => !prev)}
+                      style={{
+                        marginTop: '8px',
+                        padding: '6px 16px',
+                        borderRadius: '20px',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.15)',
+                        color: '#ffffff',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <RotateCw size={14} /> Flip Tag
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
