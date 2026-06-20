@@ -1,9 +1,44 @@
-import { Tag, MapPin, Globe } from 'lucide-react';
+import { Tag, MapPin, Globe, ShoppingBag } from 'lucide-react';
 import './LandingPage.css';
 
-const LandingPage = () => {
+const OrderPage = () => {
   return (
     <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
+      {/* Top-right Order Now button */}
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', paddingBottom: '4px' }}>
+        <a
+          href="/orders"
+          id="btn-order-now-top"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.12) 100%)',
+            border: '1px solid rgba(99,102,241,0.3)',
+            borderRadius: '12px',
+            color: '#a5b4fc',
+            textDecoration: 'none',
+            fontWeight: 700,
+            fontSize: '0.9rem',
+            transition: 'all 0.25s',
+            backdropFilter: 'blur(8px)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.2))';
+            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.55)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.12))';
+            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <ShoppingBag size={16} /> Order Now
+        </a>
+      </div>
+
       <header className="header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
         {/* Logo with glow effect */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
@@ -222,12 +257,75 @@ const LandingPage = () => {
         </div>
       </div>
 
+      {/* ── Bottom CTA ── */}
+      <div style={{
+        width: '100%',
+        background: 'linear-gradient(135deg, rgba(99,102,241,0.1) 0%, rgba(6,182,212,0.07) 50%, rgba(139,92,246,0.1) 100%)',
+        border: '1px solid rgba(99,102,241,0.2)',
+        borderRadius: '24px',
+        padding: '40px 32px',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px'
+      }}>
+        <h2 style={{ fontSize: '1.9rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 30%, #a5b4fc 70%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+          Ready to protect your belongings?
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '400px', lineHeight: '1.6', margin: 0 }}>
+          Order your personalised or classic I'm Here Smart QR tag today.
+        </p>
+        <a
+          href="/orders"
+          id="btn-order-now-bottom"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '16px 36px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%)',
+            color: 'white',
+            textDecoration: 'none',
+            fontWeight: 800,
+            fontSize: '1.05rem',
+            borderRadius: '14px',
+            boxShadow: '0 6px 24px rgba(99,102,241,0.4)',
+            transition: 'all 0.25s',
+            marginTop: '4px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'translateY(-3px)';
+            e.currentTarget.style.boxShadow = '0 10px 32px rgba(99,102,241,0.5)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.4)';
+          }}
+        >
+          <ShoppingBag size={20} /> Order Your Tag →
+        </a>
+      </div>
+
       {/* Footer info */}
-      <footer style={{ marginTop: '24px', fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
-        © 2026 I'M HERE. Reuniting belongings with their owners.
+      <footer className="policy-footer" style={{ marginTop: '36px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', opacity: 0.7 }}>
+          © 2026 I'M HERE. Reuniting belongings with their owners.
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
+          <a href="/terms" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Terms & Conditions</a>
+          <span style={{ color: 'var(--border-light)' }}>•</span>
+          <a href="/privacy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Privacy Policy</a>
+          <span style={{ color: 'var(--border-light)' }}>•</span>
+          <a href="/return_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Return Policy</a>
+          <span style={{ color: 'var(--border-light)' }}>•</span>
+          <a href="/shipping_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Shipping Policy</a>
+          <span style={{ color: 'var(--border-light)' }}>•</span>
+          <a href="/refund_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Refund Policy</a>
+        </div>
       </footer>
     </div>
   );
 };
 
-export default LandingPage;
+export default OrderPage;

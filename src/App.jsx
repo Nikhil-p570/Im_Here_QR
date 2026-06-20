@@ -11,6 +11,8 @@ import CustomerProfile from './components/CustomerProfile';
 import CustomerRegistration from './components/CustomerRegistration';
 import CustomerEditProfile from './components/CustomerEditProfile';
 import AdminPanel from './components/AdminPanel';
+import OrderPage from './components/OrderPage';
+import PolicyPage from './components/PolicyPage';
 
 const formatDisplayPhone = (num) => {
   if (!num) return "";
@@ -41,7 +43,18 @@ const getTelLink = (num) => {
 };
 
 function App() {
-  const isMainLanding = window.location.pathname !== '/admin1226';
+  const path = window.location.pathname;
+  const isMainLanding = path !== '/admin1226';
+
+  // Orders page — render standalone, no auth needed
+  if (path === '/orders') {
+    return <OrderPage />;
+  }
+
+  // Policy pages — render standalone, no auth needed
+  if (['/terms', '/privacy', '/return_policy', '/shipping_policy', '/refund_policy'].includes(path)) {
+    return <PolicyPage />;
+  }
 
   // Auth States (Admin Cockpit authentication)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -108,6 +121,29 @@ function App() {
   // Load customer QR tag details if ID is present
   useEffect(() => {
     if (!customerId) return;
+
+    if (customerId === 'preview') {
+      setCustomerData({
+        id: 'preview',
+        status: 'registered',
+        name: 'John Doe (Preview)',
+        number: '919999999999',
+        whatsappEnabled: true,
+        altNumber: '',
+        message: 'This is a preview QR tag. Scanning a registered keychain tag will show the owner\'s contact info.',
+        rewardEnabled: true,
+        rewardAmount: '500',
+        password: 'preview_password',
+        isPreview: true,
+        socials: [
+          { label: 'Instagram', type: 'Instagram', value: 'instagram.com/preview' },
+          { label: 'GitHub', type: 'GitHub', value: 'github.com/preview' }
+        ]
+      });
+      setCustomerLoading(false);
+      setCustomerError("");
+      return;
+    }
 
     const initCustomerDb = async () => {
       setCustomerLoading(true);

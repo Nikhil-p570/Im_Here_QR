@@ -277,3 +277,77 @@ body {
     font-size: 0.9rem;
   }
 }
+
+/* Policy Pages Custom Styling */
+.policy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.policy-section h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: 8px;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #ffffff 60%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.policy-section p {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  text-align: justify;
+  margin: 0;
+}
+
+.policy-section ul,
+.policy-section ol {
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.policy-section li {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+  text-align: justify;
+}
+
+.policy-section li a {
+  color: var(--accent-cyan);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.policy-section li a:hover {
+  text-decoration: underline;
+}
+
+.policy-footer {
+  margin-top: 36px;
+  text-align: center;
+  border-top: 1px solid var(--border-light);
+  padding-top: 20px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+}
+
+.policy-footer a {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.policy-footer a:hover {
+  color: var(--accent-indigo);
+}
+

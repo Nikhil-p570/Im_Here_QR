@@ -1170,7 +1170,7 @@ const AdminPanel = ({
             {/* Logo File upload */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
               <label className="form-label" style={{ fontSize: '0.75rem' }}>Logo / Center graphic (Optional)</label>
-              <div style={{ position: 'relative', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <input
                   type="file"
                   id="qrImageInput"
@@ -1181,12 +1181,28 @@ const AdminPanel = ({
                 <button
                   type="button"
                   className="btn btn-danger-outline"
-                  style={{ width: '100%', borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{ flex: 1, borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                   onClick={() => document.getElementById('qrImageInput').click()}
                 >
                   <ImageIcon size={18} />
                   {uploadedImg ? "Change Logo Image" : "Upload Logo Image"}
                 </button>
+
+                {uploadedImg && (
+                  <button
+                    type="button"
+                    className="btn btn-danger-outline"
+                    title="Remove uploaded image"
+                    style={{ padding: '10px 14px', borderStyle: 'solid', flexShrink: 0 }}
+                    onClick={() => {
+                      setUploadedImg(null);
+                      setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1, showCropStep: false });
+                      document.getElementById('qrImageInput').value = '';
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
 
               {/* Cropper step */}

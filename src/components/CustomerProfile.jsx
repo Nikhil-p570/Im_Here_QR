@@ -50,6 +50,24 @@ const CustomerProfile = ({
   return (
     <div className="app-container" style={{ maxWidth: '480px', alignSelf: 'center', position: 'relative' }}>
       <main className="glass-panel card-content" style={{ padding: '36px 28px', textAlign: 'center' }}>
+        {customerData.isPreview && (
+          <div style={{
+            background: 'rgba(249, 115, 22, 0.08)',
+            border: '1px solid rgba(249, 115, 22, 0.28)',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            marginBottom: '20px',
+            textAlign: 'left',
+            color: '#f97316'
+          }}>
+            <h3 style={{ margin: '0 0 6px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ⚠️ PREVIEW QR TAG PAGE
+            </h3>
+            <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.4' }}>
+              This is a demonstration of how your smart keychain profile looks when someone scans your <strong>I'm Here</strong> tag. The actual page will contain your contact info.
+            </p>
+          </div>
+        )}
         <div style={{ marginBottom: '24px' }}>
           <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text-primary)' }}>Hey there! Looking for me? 👀</h2>
@@ -73,11 +91,17 @@ const CustomerProfile = ({
               <div>
                 <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
                 <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                  {formatDisplayPhone(customerData.number)}
+                  {customerData.isPreview ? "+91 XXXXX-XXXXX" : formatDisplayPhone(customerData.number)}
                 </span>
               </div>
               <a
-                href={getTelLink(customerData.number)}
+                href={customerData.isPreview ? "#" : getTelLink(customerData.number)}
+                onClick={(e) => {
+                  if (customerData.isPreview) {
+                    e.preventDefault();
+                    alert("This is a preview page. Calling is disabled.");
+                  }
+                }}
                 className="btn"
                 style={{
                   padding: '6px 12px',
@@ -112,8 +136,14 @@ const CustomerProfile = ({
 
             <button
               type="button"
-              onClick={handleDropLocation}
-              disabled={locLoading}
+              onClick={(e) => {
+                if (customerData.isPreview) {
+                  alert("This is a preview page. Sending GPS location via WhatsApp is disabled.");
+                } else {
+                  handleDropLocation();
+                }
+              }}
+              disabled={locLoading && !customerData.isPreview}
               className="btn"
               style={{
                 padding: '10px 16px',
@@ -131,7 +161,7 @@ const CustomerProfile = ({
                 boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
               }}
             >
-              {locLoading ? (
+              {locLoading && !customerData.isPreview ? (
                 <>
                   <div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px', borderTopColor: '#ffffff' }}></div>
                   Fetching current location...
@@ -157,8 +187,14 @@ const CustomerProfile = ({
                   return (
                     <a
                       key={idx}
-                      href={linkHref}
-                      target={isEmail ? '_self' : '_blank'}
+                      href={customerData.isPreview ? "#" : linkHref}
+                      target={customerData.isPreview ? "_self" : (isEmail ? '_self' : '_blank')}
+                      onClick={(e) => {
+                        if (customerData.isPreview) {
+                          e.preventDefault();
+                          alert("This is a preview page. Social links are disabled.");
+                        }
+                      }}
                       rel="noopener noreferrer"
                       style={{
                         textDecoration: 'none',
@@ -208,20 +244,22 @@ const CustomerProfile = ({
       </main>
 
       {/* floating bottom right change info button */}
-      <button
-        type="button"
-        className="change-info-btn"
-        onClick={() => {
-          setShowAuthModal(true);
-          setAuthModalStep("password");
-          setEnteredPassword("");
-          setEnteredSecurityAnswer("");
-          setAuthModalError("");
-        }}
-      >
-        <Lock size={12} />
-        <span>Change Info</span>
-      </button>
+      {!customerData.isPreview && (
+        <button
+          type="button"
+          className="change-info-btn"
+          onClick={() => {
+            setShowAuthModal(true);
+            setAuthModalStep("password");
+            setEnteredPassword("");
+            setEnteredSecurityAnswer("");
+            setAuthModalError("");
+          }}
+        >
+          <Lock size={12} />
+          <span>Change Info</span>
+        </button>
+      )}
     </div>
   );
 };
