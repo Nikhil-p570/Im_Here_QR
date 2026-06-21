@@ -382,7 +382,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         </a>
       </div>
 
-      <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '-50px' }}>
+      <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '-20px' }}>
         {/* Logo with glow effect */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
           <div style={{
