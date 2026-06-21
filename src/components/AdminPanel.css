@@ -46,7 +46,7 @@
 
 .output-link-box {
   display: flex;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.03);
   border: 1px solid var(--border-light);
   border-radius: 8px;
   overflow: hidden;
@@ -63,7 +63,7 @@
 }
 
 .btn-copy {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.02);
   border: none;
   border-left: 1px solid var(--border-light);
   color: var(--text-primary);
@@ -76,13 +76,13 @@
 }
 
 .btn-copy:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--accent-cyan);
 }
 
 /* Confirmation Modal */
 .confirmation-box {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(244, 63, 94, 0.3);
   border-radius: 10px;
   padding: 16px;
@@ -127,7 +127,7 @@
 }
 
 .btn-confirm-no:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.03);
   color: var(--text-primary);
 }
 
@@ -174,16 +174,16 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--border-light);
   border-radius: 10px;
   font-size: 0.9rem;
   transition: all 0.2s ease;
 }
 
 .history-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(99, 102, 241, 0.15);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(99, 102, 241, 0.25);
 }
 
 .history-domain {
@@ -207,7 +207,7 @@
   padding: 12px 8px;
   border-radius: 8px;
   border: 1px solid var(--border-light);
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.02);
   color: var(--text-secondary);
   font-family: var(--font-sans);
   font-size: 0.85rem;
@@ -221,15 +221,15 @@
 }
 
 .shape-btn:hover:not(:disabled), .corner-btn:hover:not(:disabled), .mode-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.04);
   color: var(--text-primary);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .shape-btn.active, .corner-btn.active, .mode-btn.active {
   border-color: var(--accent-indigo);
   color: white;
-  background: rgba(99, 102, 241, 0.2);
+  background: var(--accent-indigo);
   box-shadow: 0 0 0 2px var(--border-glow);
 }
 
@@ -265,7 +265,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   padding: 6px 12px;
   border-radius: 8px;
@@ -273,8 +273,8 @@
 }
 
 .color-field:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .color-picker-input {
@@ -355,7 +355,7 @@
 .admin-header-main h1 {
   font-size: 2.2rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 30%, #a5b4fc 70%, #22d3ee 100%);
+  background: linear-gradient(135deg, #0f172a 30%, #4f46e5 70%, #0891b2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
@@ -496,7 +496,7 @@
 .orders-panel-title {
   font-size: 1.15rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+  background: linear-gradient(135deg, #0f172a 30%, #4f46e5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
@@ -540,8 +540,8 @@
 
 /* Individual Order Card */
 .order-card {
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border-light);
   border-radius: 16px;
   padding: 18px 20px;
   display: flex;
@@ -552,9 +552,9 @@
 }
 
 .order-card:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(99, 102, 241, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #ffffff;
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 10px 30px rgba(99, 102, 241, 0.08);
 }
 
 .order-card-header {
@@ -604,9 +604,9 @@
 }
 
 .badge-online {
-  background: rgba(99, 102, 241, 0.12);
-  border: 1px solid rgba(99, 102, 241, 0.3);
-  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #4f46e5;
 }
 
 /* Order Items */
@@ -623,9 +623,9 @@
   align-items: center;
   gap: 12px;
   padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-light);
 }
 
 .order-item-thumb {
@@ -676,9 +676,9 @@
   color: var(--text-secondary);
   line-height: 1.4;
   padding: 8px 10px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(0, 0, 0, 0.02);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
 }
 
 /* Card Footer */

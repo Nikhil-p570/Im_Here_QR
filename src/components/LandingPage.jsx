@@ -107,23 +107,24 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
   useEffect(() => {
     const loadAttempts = [];
 
-    // 1. Attempt Firestore configured base64 or path
-    if (base64Image && base64Image.trim() !== '') {
-      loadAttempts.push(base64Image);
-    }
-
-    // 2. Fall back to local cropped images in the public folder, then the ultimate default logo
+    // Prioritize pic1, pic2, pic3 directly so they load instantly
     if (tagId === 'tag1') {
-      loadAttempts.push('/cropped_tag1.png');
-      loadAttempts.push('/cropped_tag1.jpg');
+      loadAttempts.push('/pic1.png');
+      if (base64Image && base64Image.trim() !== '') {
+        loadAttempts.push(base64Image);
+      }
       loadAttempts.push('/logo icon.png');
     } else if (tagId === 'tag2') {
-      loadAttempts.push('/cropped_tag2.png');
-      loadAttempts.push('/cropped_tag2.jpg');
+      loadAttempts.push('/pic2.png');
+      if (base64Image && base64Image.trim() !== '') {
+        loadAttempts.push(base64Image);
+      }
       loadAttempts.push('/customised.png');
     } else if (tagId === 'tag3') {
-      loadAttempts.push('/cropped_tag3.png');
-      loadAttempts.push('/cropped_tag3.jpg');
+      loadAttempts.push('/pic3.png');
+      if (base64Image && base64Image.trim() !== '') {
+        loadAttempts.push(base64Image);
+      }
       loadAttempts.push('/logo icon.png');
     }
 
@@ -244,12 +245,12 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
         style={{
           padding: '6px 14px',
           borderRadius: '20px',
-          background: 'rgba(255, 255, 255, 0.08)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          color: '#ffffff',
+          background: 'rgba(0, 0, 0, 0.04)',
+          border: '1px solid rgba(0, 0, 0, 0.12)',
+          color: 'var(--text-primary)',
           cursor: 'pointer',
           fontSize: '0.78rem',
-          fontWeight: 600,
+          fontWeight: 700,
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
@@ -267,9 +268,9 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
   const [db, setDb] = useState(firestoreDb);
   const [fetchingLandingQrs, setFetchingLandingQrs] = useState(true);
   const [landingQrs, setLandingQrs] = useState({
-    tag1: { label: 'Your Pet', base64Image: '/logo icon.png', visible: true },
-    tag2: { label: 'Your Memory', base64Image: '/customised.png', visible: true },
-    tag3: { label: 'Your Art', base64Image: '/logo icon.png', visible: true }
+    tag1: { label: 'Your Pet', base64Image: '/pic1.png', visible: true },
+    tag2: { label: 'Your Memory', base64Image: '/pic2.png', visible: true },
+    tag3: { label: 'Your Art', base64Image: '/pic3.png', visible: true }
   });
 
   // Dynamic DB Initialization
@@ -333,17 +334,17 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           setLandingQrs({
             tag1: {
               label: data.tag1?.label || 'Your Pet',
-              base64Image: data.tag1?.base64Image || '/logo icon.png',
+              base64Image: data.tag1?.base64Image || '/pic1.png',
               visible: data.tag1?.visible !== undefined ? data.tag1.visible : true
             },
             tag2: {
               label: data.tag2?.label || 'Your Memory',
-              base64Image: data.tag2?.base64Image || '/customised.png',
+              base64Image: data.tag2?.base64Image || '/pic2.png',
               visible: data.tag2?.visible !== undefined ? data.tag2.visible : true
             },
             tag3: {
               label: data.tag3?.label || 'Your Art',
-              base64Image: data.tag3?.base64Image || '/logo icon.png',
+              base64Image: data.tag3?.base64Image || '/pic3.png',
               visible: data.tag3?.visible !== undefined ? data.tag3.visible : true
             }
           });
@@ -395,25 +396,23 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             alignItems: 'center',
             gap: '8px',
             padding: '10px 20px',
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.12) 100%)',
-            border: '1px solid rgba(99,102,241,0.3)',
+            background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+            border: 'none',
             borderRadius: '12px',
-            color: '#a5b4fc',
+            color: '#ffffff',
             textDecoration: 'none',
             fontWeight: 700,
             fontSize: '0.9rem',
             transition: 'all 0.25s',
-            backdropFilter: 'blur(8px)'
+            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.2)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.2))';
-            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.55)';
             e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.35)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.12))';
-            e.currentTarget.style.borderColor = 'rgba(99,102,241,0.3)';
             e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 15px rgba(99, 102, 241, 0.2)';
           }}
         >
           <ShoppingBag size={16} /> Order Now
@@ -425,31 +424,42 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         <div style={{ position: 'relative', marginBottom: '8px' }}>
           <div style={{
             position: 'absolute',
-            top: '-15px',
-            left: '-15px',
-            right: '-15px',
-            bottom: '-15px',
-            background: 'radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, transparent 70%)',
-            borderRadius: '24px',
-            filter: 'blur(16px)',
+            top: '-20px',
+            left: '-20px',
+            right: '-20px',
+            bottom: '-20px',
+            background: 'radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 75%)',
+            borderRadius: '30px',
+            filter: 'blur(20px)',
             zIndex: -1
           }} />
-          <img
-            src="/full logo.png"
-            alt="I'm here Logo"
-            style={{
-              width: '260px',
-              height: 'auto',
-              borderRadius: '16px',
-              boxShadow: '0 12px 36px rgba(0,0,0,0.65)',
-              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-            }}
-            onMouseEnter={(e) => e.target.style.transform = 'scale(1.06) rotate(1deg)'}
-            onMouseLeave={(e) => e.target.style.transform = 'scale(1) rotate(0deg)'}
-          />
+          <div style={{
+            background: 'linear-gradient(135deg, #090d16 0%, #111827 100%)',
+            padding: '12px 24px',
+            borderRadius: '20px',
+            boxShadow: '0 12px 40px rgba(99, 102, 241, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04) rotate(1deg)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
+          >
+            <img
+              src="/full logo.png"
+              alt="I'm here Logo"
+              style={{
+                width: '240px',
+                height: 'auto',
+                display: 'block'
+              }}
+            />
+          </div>
         </div>
 
-        <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+        <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 20%, #4f46e5 60%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
           Smart QR Tags
         </h1>
 
@@ -491,7 +501,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         )}
       </div>
 
-      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0px', marginBottom: '-8px', background: 'linear-gradient(135deg, #0f172a 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         The Problem
       </h2>
 
@@ -518,7 +528,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             />
           </div>
           <div>
-            <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
               Lost belongings are a common part of everyday life. From forgotten keys to misplaced bags, small mistakes can quickly become frustrating problems.
             </p>
           </div>
@@ -545,14 +555,14 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             />
           </div>
           <div>
-            <p style={{ color: '#ffffff', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: 500, lineHeight: '1.6', margin: 0, textAlign: 'justify' }}>
               Many people notice lost belongings and genuinely want to help, but with no way to identify or contact the owner, they simply leave them where they found them.
             </p>
           </div>
         </div>
       </div>
 
-      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '32px', marginBottom: '-8px', background: 'linear-gradient(135deg, #0f172a 40%, #4f46e5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         How It Works
       </h2>
 
@@ -571,7 +581,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
             <Tag size={20} />
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Attach & Protect</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Attach & Protect</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
             Secure your valuables with a smart recovery tag. If your item ever goes missing, anyone who finds it can scan the tag to instantly initiate a secure return process.
           </p>
@@ -584,7 +594,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
             <MapPin size={20} />
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Location Ping</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Instant Location Ping</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
             No need to wait for a phone call to connect. With a single tap, finders can instantly drop their current GPS location, sending an immediate alert straight to your phone.
           </p>
@@ -597,7 +607,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
             <Globe size={20} />
           </div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: '#ffffff' }}>Instant Call & Connect</h3>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '8px', color: 'var(--text-primary)' }}>Instant Call & Connect</h3>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: '1.5', textAlign: 'justify' }}>
             Finders can easily call, email, or message you directly through a simple contact interface. You stay connected and get your items back quickly, without exposing your private details.
           </p>
@@ -605,7 +615,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       </div>
 
       {/* Why Us Section */}
-      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #8b5cf6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '40px', marginBottom: '-8px', background: 'linear-gradient(135deg, #0f172a 40%, #7c3aed 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         Why Us?
       </h2>
 
@@ -663,7 +673,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', background: 'linear-gradient(135deg, #ffffff 40%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', background: 'linear-gradient(135deg, #0f172a 40%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
           <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent-cyan)', marginBottom: '16px' }}>Your Favorite Visuals. Your Safety Net.</h4>
           <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.6', textAlign: 'justify' }}>
             We don't just generate codes; we embed them. Blend your high-contrast QR matrix seamlessly over a picture of your pet, a favorite memory, or custom artwork. It acts as a stunning personal accessory that solves the "what if it's lost" problem beautifully behind the scenes.
@@ -684,7 +694,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         alignItems: 'center',
         gap: '16px'
       }}>
-        <h2 style={{ fontSize: '1.9rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 30%, #a5b4fc 70%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+        <h2 style={{ fontSize: '1.9rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 30%, #4f46e5 70%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
           Ready to protect your belongings?
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '400px', lineHeight: '1.6', margin: 0 }}>

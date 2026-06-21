@@ -13,7 +13,7 @@
 
 .social-dropdown-btn {
   width: 100%;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   color: var(--text-primary);
   border-radius: 8px;
@@ -29,13 +29,13 @@
 }
 
 .social-dropdown-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
 .social-title-input {
   flex: 0.4;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   color: var(--text-primary);
   border-radius: 8px;
@@ -48,12 +48,12 @@
 
 .social-title-input:focus {
   border-color: var(--accent-indigo);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .social-value-input {
   flex: 1;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   color: var(--text-primary);
   border-radius: 8px;
@@ -65,7 +65,7 @@
 
 .social-value-input:focus {
   border-color: var(--accent-indigo);
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.8);
 }
 
 .social-delete-btn {
@@ -83,7 +83,7 @@
     border: 1px solid var(--border-light);
     padding: 12px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.01);
+    background: rgba(0, 0, 0, 0.01);
   }
   
   .social-dropdown-wrapper {

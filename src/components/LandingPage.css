@@ -97,8 +97,8 @@
 }
 
 .btn-flip-preview:hover {
-  background: rgba(255, 255, 255, 0.16) !important;
-  border-color: rgba(255, 255, 255, 0.35) !important;
-  color: var(--accent-cyan, #22d3ee) !important;
-  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.2);
+  background: rgba(0, 0, 0, 0.08) !important;
+  border-color: rgba(0, 0, 0, 0.25) !important;
+  color: var(--accent-indigo) !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
 }

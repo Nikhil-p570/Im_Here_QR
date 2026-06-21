@@ -3,11 +3,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-primary, #0b0f19);
+  background: var(--bg-primary, #f8fafc);
   position: relative;
   overflow: hidden;
   font-family: 'Outfit', sans-serif;
-  color: #f8fafc;
+  color: var(--text-primary, #0f172a);
   padding: 24px;
 }
 
@@ -18,7 +18,7 @@
   transform: translate(-50%, -50%);
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
   z-index: 1;
   pointer-events: none;
 }
@@ -77,7 +77,7 @@
 }
 
 .status-icon {
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
 }
 
 .text-success {
@@ -89,7 +89,7 @@
 }
 
 .text-danger-light {
-  color: #fca5a5;
+  color: #ef4444;
   font-weight: 500;
 }
 
@@ -98,20 +98,20 @@
   font-weight: 800;
   letter-spacing: -0.02em;
   margin-bottom: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
 }
 
 .status-subtitle {
   font-size: 0.95rem;
-  color: #94a3b8;
+  color: var(--text-secondary);
   line-height: 1.5;
   margin-bottom: 32px;
 }
 
 .details-box {
   width: 100%;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.01);
+  border: 1px solid var(--border-light);
   border-radius: 14px;
   padding: 20px;
   margin-bottom: 24px;
@@ -133,7 +133,7 @@
 }
 
 .detail-val {
-  color: #e2e8f0;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -153,13 +153,13 @@
 
 .badge.success {
   background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
+  color: #059669;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 .badge.failure {
   background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+  color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
@@ -189,22 +189,22 @@
 .btn-success {
   background: var(--accent-indigo, #6366f1);
   color: #ffffff;
-  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
 }
 
 .btn-success:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
 }
 
 .btn-failure {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
 }
 
 .btn-failure:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.04);
   transform: translateY(-2px);
 }
 
