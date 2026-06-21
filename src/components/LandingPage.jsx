@@ -459,7 +459,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           </div>
         </div>
 
-        <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 20%, #4f46e5 60%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
+        <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 20%, #4f46e5 60%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.25', paddingBottom: '0.1em' }}>
           Smart QR Tags
         </h1>
 
@@ -694,7 +694,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         alignItems: 'center',
         gap: '16px'
       }}>
-        <h2 style={{ fontSize: '1.9rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 30%, #4f46e5 70%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>
+        <h2 style={{ fontSize: '1.9rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 30%, #4f46e5 70%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0, lineHeight: '1.25', paddingBottom: '0.1em' }}>
           Ready to protect your belongings?
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '400px', lineHeight: '1.6', margin: 0 }}>
