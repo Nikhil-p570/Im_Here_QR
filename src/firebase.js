@@ -12,3 +12,4 @@ export const initializeFirebase = (config) => {
   const dbInstance = getFirestore(app);
   return dbInstance;
 };
+

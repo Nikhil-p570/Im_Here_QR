@@ -35,3 +35,70 @@
 .delay-300 { transition-delay: 300ms; }
 .delay-400 { transition-delay: 400ms; }
 
+/* ── Swinging keychain animations ── */
+@keyframes idle-swing-left {
+  0% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+  100% { transform: rotate(-3deg); }
+}
+
+@keyframes idle-swing-mid {
+  0% { transform: rotate(2.5deg); }
+  50% { transform: rotate(-2.5deg); }
+  100% { transform: rotate(2.5deg); }
+}
+
+@keyframes idle-swing-right {
+  0% { transform: rotate(-2.2deg); }
+  50% { transform: rotate(2.2deg); }
+  100% { transform: rotate(-2.2deg); }
+}
+
+.keychain-idle-swing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  position: relative;
+  transform-origin: calc(100% - 22px) 20px;
+}
+
+.keychain-idle-swing.flipped {
+  align-items: flex-start !important;
+  transform-origin: 22px 20px !important;
+}
+
+.swing-phase-1 {
+  animation: idle-swing-left 4.2s ease-in-out infinite;
+}
+
+.swing-phase-2 {
+  animation: idle-swing-mid 4.8s ease-in-out infinite;
+}
+
+.swing-phase-3 {
+  animation: idle-swing-right 4.5s ease-in-out infinite;
+}
+
+.hanging-keychain-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hanging-keychain-wrapper:hover {
+  transform: scale(1.05) translateY(2px);
+}
+
+.btn-flip-preview {
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.btn-flip-preview:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  color: var(--accent-cyan, #22d3ee) !important;
+  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.2);
+}

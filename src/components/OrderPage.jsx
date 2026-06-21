@@ -1,9 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
-  Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw
+  Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
+import { initializeFirebase } from '../firebase';
+import {
+  collection, addDoc, serverTimestamp, doc, getDoc
+} from 'firebase/firestore';
 import './OrderPage.css';
 
 /* ── Constants ─────────────────────────────────────── */
@@ -157,14 +161,23 @@ function drawBrandedQr(uploadedImg, cropState, presetOptions) {
    OrderPage Component
    ══════════════════════════════════════════════════════ */
 const OrderPage = () => {
-  /* ── Prices (from localStorage, set by admin) ── */
-  const [prices, setPrices] = useState({ personalised: 199, classic: 129 });
+  /* ── Prices (from Firestore / default values) ── */
+  const [prices, setPrices] = useState({
+    personalisedOriginal: 299,
+    personalisedDiscounted: 199,
+    classicOriginal: 199,
+    classicDiscounted: 129
+  });
+
+  /* ── Firebase DB (local instance for order saving) ── */
+  const [firestoreDb, setFirestoreDb] = useState(null);
 
   /* ── Page step ── */
-  const [step, setStep] = useState('home'); // 'home' | 'personalised' | 'classic'
+  const [step, setStep] = useState('home'); // 'home' | 'personalised' | 'classic' | 'checkout'
 
   /* ── Personalised flow ── */
   const [uploadedImg, setUploadedImg] = useState(null);
+  const [uploadedBlob, setUploadedBlob] = useState(null); // Original file/blob for Storage upload
   const [cropState, setCropState] = useState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
   const [cropLocked, setCropLocked] = useState(false);
   const [qty, setQty] = useState(1);
@@ -199,6 +212,7 @@ const OrderPage = () => {
   const [isMidnightFlipped, setIsMidnightFlipped] = useState(false);
   const [isDaylightFlipped, setIsDaylightFlipped] = useState(false);
   const [logoImage, setLogoImage] = useState(null);
+  const [isStruck, setIsStruck] = useState(false);
 
   /* ── Checkout form states ── */
   const [checkoutForm, setCheckoutForm] = useState({
@@ -213,11 +227,48 @@ const OrderPage = () => {
   });
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [isCodLoading, setIsCodLoading] = useState(false);
 
   useEffect(() => {
     const img = new Image();
     img.src = '/full logo.png';
     img.onload = () => setLogoImage(img);
+  }, []);
+
+  /* ─────────────────────────────────────────────────
+     Initialize Firebase on mount for order saving
+  ───────────────────────────────────────────────── */
+  useEffect(() => {
+    const initFirebase = async () => {
+      try {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        let config = null;
+        if (isLocal) {
+          config = {
+            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+            authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+            projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+            storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+            messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+            appId: import.meta.env.VITE_FIREBASE_APP_ID,
+            measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+          };
+        } else {
+          const res = await fetch('/api/config');
+          if (res.ok) {
+            const data = await res.json();
+            config = data.config;
+          }
+        }
+        if (config && config.apiKey) {
+          const db = initializeFirebase(config);
+          setFirestoreDb(db);
+        }
+      } catch (e) {
+        console.warn('Firebase init for orders failed:', e);
+      }
+    };
+    initFirebase();
   }, []);
 
   /* ── Refs ── */
@@ -227,19 +278,63 @@ const OrderPage = () => {
   const daylightCanvasRef = useRef(null);
   const fileInputRef = useRef(null);
   const cartRef = useRef(null);
+  const isSubmitting = useRef(false);
 
 
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
   /* ─────────────────────────────────────────────────
-     Load prices from localStorage (admin saves them)
+     Fetch prices from Firestore on mount
   ───────────────────────────────────────────────── */
   useEffect(() => {
+    // 1. Try loading from localStorage first as fallback
     try {
       const saved = localStorage.getItem('imhere_prices');
-      if (saved) setPrices(JSON.parse(saved));
-    } catch { }
+      if (saved) {
+        const data = JSON.parse(saved);
+        setPrices(prev => ({
+          ...prev,
+          personalisedOriginal: data.personalisedOriginal !== undefined ? data.personalisedOriginal : prev.personalisedOriginal,
+          personalisedDiscounted: data.personalisedDiscounted !== undefined ? data.personalisedDiscounted : prev.personalisedDiscounted,
+          classicOriginal: data.classicOriginal !== undefined ? data.classicOriginal : prev.classicOriginal,
+          classicDiscounted: data.classicDiscounted !== undefined ? data.classicDiscounted : prev.classicDiscounted
+        }));
+      }
+    } catch {}
+
+    // 2. Fetch from Firestore for remote sync
+    if (!firestoreDb) return;
+    const fetchPrices = async () => {
+      try {
+        const docRef = doc(firestoreDb, 'settings', 'prices');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setPrices({
+            personalisedOriginal: data.personalisedOriginal !== undefined ? data.personalisedOriginal : 299,
+            personalisedDiscounted: data.personalisedDiscounted !== undefined ? data.personalisedDiscounted : 199,
+            classicOriginal: data.classicOriginal !== undefined ? data.classicOriginal : 199,
+            classicDiscounted: data.classicDiscounted !== undefined ? data.classicDiscounted : 129
+          });
+          // Cache in localStorage
+          try {
+            localStorage.setItem('imhere_prices', JSON.stringify(data));
+          } catch {}
+        }
+      } catch (err) {
+        console.warn("Failed to fetch settings/prices from Firestore in client:", err);
+      }
+    };
+    fetchPrices();
+  }, [firestoreDb]);
+
+  /* ─────────────────────────────────────────────────
+     Trigger pricing strike-through animation
+  ───────────────────────────────────────────────── */
+  useEffect(() => {
+    const timer = setTimeout(() => setIsStruck(true), 350);
+    return () => clearTimeout(timer);
   }, []);
 
   /* ─────────────────────────────────────────────────
@@ -256,6 +351,7 @@ const OrderPage = () => {
   ───────────────────────────────────────────────── */
   useEffect(() => {
     const handleBeforeUnload = (e) => {
+      if (isSubmitting.current) return;
       if (cartItems.length > 0) {
         e.preventDefault();
         e.returnValue = 'You have items in your cart. If you reload, your cart will be cleared. Are you sure you want to leave?';
@@ -424,6 +520,7 @@ const OrderPage = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    setUploadedBlob(file); // Store original file for Storage upload
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
@@ -463,6 +560,11 @@ const OrderPage = () => {
     ctx.translate(canvas.width / 2, canvas.height / 2);
     ctx.rotate((90 * Math.PI) / 180);
     ctx.drawImage(uploadedImg, -uploadedImg.width / 2, -uploadedImg.height / 2);
+
+    // Store rotated image as blob for Storage upload
+    canvas.toBlob((blob) => {
+      if (blob) setUploadedBlob(blob);
+    }, 'image/jpeg', 0.97);
 
     const rotatedImg = new Image();
     rotatedImg.onload = () => {
@@ -553,20 +655,50 @@ const OrderPage = () => {
   /* ─────────────────────────────────────────────────
      Add to Cart
   ───────────────────────────────────────────────── */
+  /* ── Helper: create small thumbnail (max 200px) for Firestore preview ── */
+  const createThumbnail = (canvas) => {
+    const maxSize = 200;
+    const aspect = canvas.width / canvas.height;
+    const w = aspect >= 1 ? maxSize : Math.round(maxSize * aspect);
+    const h = aspect >= 1 ? Math.round(maxSize / aspect) : maxSize;
+    const thumb = document.createElement('canvas');
+    thumb.width = w; thumb.height = h;
+    thumb.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    return thumb.toDataURL('image/jpeg', 0.72);
+  };
+
   const handleAddToCart = () => {
     if (step === 'personalised') {
       if (!uploadedImg) return;
       drawKeychain();
-      const previewUrl = keychainCanvasRef.current?.toDataURL() || '';
+      const keychainCanvas = keychainCanvasRef.current;
+      const previewUrl = keychainCanvas?.toDataURL() || '';
+      const thumbnailUrl = keychainCanvas ? createThumbnail(keychainCanvas) : previewUrl;
+
+      // Compute source crop coordinates (original image pixels)
+      const s = cropState.scale || 1;
+      const srcCropX = Math.round(cropState.x * s);
+      const srcCropY = Math.round(cropState.y * s);
+      const srcCropSize = Math.round(cropState.size * s);
+
       setCartItems(prev => [...prev, {
         id: Date.now(),
         type: 'personalised',
+        typeofqr: 'personalised',
         previewUrl,
+        thumbnailUrl,
         label: 'Personalised Tag',
         qty,
-        unitPrice: prices.personalised
+        unitPrice: prices.personalisedDiscounted,
+        originalPrice: prices.personalisedOriginal,
+        // Store blob and crop info for order saving
+        _uploadedBlob: uploadedBlob,
+        _srcCropX: srcCropX,
+        _srcCropY: srcCropY,
+        _srcCropSize: srcCropSize,
       }]);
       setUploadedImg(null);
+      setUploadedBlob(null);
       setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
       setCropLocked(false);
       setQty(1);
@@ -575,14 +707,20 @@ const OrderPage = () => {
       if (!classicPreset) return;
       const preset = CLASSIC_PRESETS.find(p => p.id === classicPreset);
       const canvasRef = classicPreset === 'midnight' ? midnightCanvasRef : daylightCanvasRef;
-      const previewUrl = canvasRef.current?.toDataURL() || '';
+      const canvasEl = canvasRef.current;
+      const previewUrl = canvasEl?.toDataURL() || '';
+      const thumbnailUrl = canvasEl ? createThumbnail(canvasEl) : previewUrl;
+      const typeofqr = classicPreset === 'midnight' ? 'classic_black' : 'classic_white';
       setCartItems(prev => [...prev, {
         id: Date.now(),
         type: 'classic',
+        typeofqr,
         previewUrl,
+        thumbnailUrl,
         label: `Classic ${preset.name} Tag`,
         qty: classicQty,
-        unitPrice: prices.classic
+        unitPrice: prices.classicDiscounted,
+        originalPrice: prices.classicOriginal
       }]);
       setClassicPreset(null);
       setClassicQty(1);
@@ -591,6 +729,101 @@ const OrderPage = () => {
     setStep('home');
     setForceShowSelection(false);
     setTimeout(() => cartRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  };
+
+  /* ─────────────────────────────────────────────────
+     Upload personalised image blob to Cloudinary
+     Keys set via VITE_CLOUDINARY_CLOUD_NAME + VITE_CLOUDINARY_UPLOAD_PRESET
+  ───────────────────────────────────────────────── */
+  const uploadImageToCloudinary = async (blob, orderTempId, itemIdx) => {
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+    if (!cloudName || !uploadPreset) {
+      console.warn('Cloudinary config missing (VITE_CLOUDINARY_CLOUD_NAME / VITE_CLOUDINARY_UPLOAD_PRESET) — skipping image upload');
+      return { url: '', publicId: '' };
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', blob, `item_${itemIdx}.jpg`);
+      formData.append('upload_preset', uploadPreset);
+      formData.append('folder', 'items');
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Cloudinary HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      return { url: data.secure_url, publicId: data.public_id };
+    } catch (err) {
+      console.error('Cloudinary upload error:', err);
+      return { url: '', publicId: '' };
+    }
+  };
+
+  /* ─────────────────────────────────────────────────
+     Save order to Firestore 'orders' collection
+     Returns the Firestore document ID
+  ───────────────────────────────────────────────── */
+  const handleSaveOrder = async (paymentMode, initialStatus = 'paymentPending') => {
+    if (!firestoreDb) throw new Error('Database not available.');
+
+    // Build items array (upload images first)
+    const tempOrderId = `temp_${Date.now()}`;
+    const orderItems = [];
+
+    for (let idx = 0; idx < cartItems.length; idx++) {
+      const item = cartItems[idx];
+      let imageDownloadUrl = '';
+      let cloudinaryPublicId = '';
+
+      if (item.typeofqr === 'personalised' && item._uploadedBlob) {
+        const uploadResult = await uploadImageToCloudinary(item._uploadedBlob, tempOrderId, idx);
+        imageDownloadUrl = uploadResult.url;
+        cloudinaryPublicId = uploadResult.publicId;
+      }
+
+      orderItems.push({
+        typeofqr: item.typeofqr,
+        quantity: item.qty,
+        unitPrice: item.unitPrice,
+        thumbnailUrl: item.thumbnailUrl || '',
+        ...(item.typeofqr === 'personalised' ? {
+          imageUrl: imageDownloadUrl,       // Cloudinary secure_url
+          cloudinaryPublicId,
+          srcCropX: item._srcCropX || 0,
+          srcCropY: item._srcCropY || 0,
+          srcCropSize: item._srcCropSize || 0,
+        } : {})
+      });
+    }
+
+    const orderDoc = {
+      orderedPhoneNumber: checkoutForm.phone,
+      orderedEmail: checkoutForm.email,
+      customerName: `${checkoutForm.firstName} ${checkoutForm.lastName}`.trim(),
+      shippingAddress: {
+        address: checkoutForm.address,
+        city: checkoutForm.city,
+        state: checkoutForm.state,
+        pincode: checkoutForm.pincode
+      },
+      items: orderItems,
+      totalAmount: total,
+      paymentMode,
+      orderStatus: initialStatus,
+      createdAt: serverTimestamp()
+    };
+
+    const docRef = await addDoc(collection(firestoreDb, 'orders'), orderDoc);
+    return docRef.id;
   };
 
   const handlePayNow = async (e) => {
@@ -602,8 +835,20 @@ const OrderPage = () => {
 
     setCheckoutLoading(true);
     setCheckoutError('');
+    isSubmitting.current = true;
 
     try {
+      // 1. Save order to Firestore first (status: paymentPending)
+      let firestoreOrderId = '';
+      if (firestoreDb) {
+        try {
+          firestoreOrderId = await handleSaveOrder('online', 'paymentPending');
+        } catch (err) {
+          console.warn('Order pre-save failed:', err);
+        }
+      }
+
+      // 2. Initiate Zaakpay payment (pass firestoreOrderId as metadata)
       const response = await fetch('/api/initiate-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -616,7 +861,8 @@ const OrderPage = () => {
           buyerAddress: checkoutForm.address,
           buyerCity: checkoutForm.city,
           buyerState: checkoutForm.state,
-          buyerPincode: checkoutForm.pincode
+          buyerPincode: checkoutForm.pincode,
+          firestoreOrderId
         })
       });
 
@@ -625,7 +871,7 @@ const OrderPage = () => {
         throw new Error(data.error || 'Failed to initiate payment transaction.');
       }
 
-      // Dynamically create a post form and submit it to redirect to Zaakpay gateway
+      // 3. Submit form to Zaakpay gateway
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = data.gatewayUrl;
@@ -638,13 +884,51 @@ const OrderPage = () => {
         form.appendChild(input);
       });
 
+      // Pass firestoreOrderId as a hidden field so payment-response can include it in the redirect
+      if (firestoreOrderId) {
+        const fsInput = document.createElement('input');
+        fsInput.type = 'hidden';
+        fsInput.name = 'firestoreOrderId';
+        fsInput.value = firestoreOrderId;
+        form.appendChild(fsInput);
+      }
+
       document.body.appendChild(form);
       form.submit();
 
     } catch (err) {
+      isSubmitting.current = false;
       console.error("Payment submission error:", err);
       setCheckoutError(err.message || 'Something went wrong. Please try again.');
       setCheckoutLoading(false);
+    }
+  };
+
+  /* ─────────────────────────────────────────────────
+     Cash on Delivery handler
+  ───────────────────────────────────────────────── */
+  const handleCOD = async () => {
+    if (!checkoutForm.firstName || !checkoutForm.email || !checkoutForm.phone || !checkoutForm.address || !checkoutForm.city || !checkoutForm.state || !checkoutForm.pincode) {
+      setCheckoutError('Please fill in all required fields.');
+      return;
+    }
+
+    setIsCodLoading(true);
+    setCheckoutError('');
+    isSubmitting.current = true;
+
+    try {
+      let orderId = `COD-${Date.now()}`;
+      if (firestoreDb) {
+        orderId = await handleSaveOrder('cod', 'orderplaced');
+      }
+      // Redirect to success page with COD mode
+      window.location.href = `/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&mode=cod&amount=${encodeURIComponent(total)}`;
+    } catch (err) {
+      isSubmitting.current = false;
+      console.error('COD order save error:', err);
+      setCheckoutError(err.message || 'Failed to place order. Please try again.');
+      setIsCodLoading(false);
     }
   };
 
@@ -660,6 +944,7 @@ const OrderPage = () => {
   };
 
   const total = cartItems.reduce((s, i) => s + i.qty * i.unitPrice, 0);
+  const totalSavings = cartItems.reduce((s, i) => s + i.qty * ((i.originalPrice || i.unitPrice) - i.unitPrice), 0);
 
   /* ══════════════════════════════════════════════════
      RENDER
@@ -709,7 +994,9 @@ const OrderPage = () => {
                       anything you love. Makes your tag truly yours.
                     </p>
                     <div className="tag-type-price">
-                      ₹{prices.personalised} <span>per tag</span>
+                      <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.personalisedOriginal}</span>
+                      <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.personalisedDiscounted}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)' }}> per tag</span>
                     </div>
                     <div className="tag-type-cta">Customise Mine →</div>
                   </div>
@@ -728,7 +1015,9 @@ const OrderPage = () => {
                       combinations that always look sharp.
                     </p>
                     <div className="tag-type-price">
-                      ₹{prices.classic} <span>per tag</span>
+                      <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.classicOriginal}</span>
+                      <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.classicDiscounted}</span>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)' }}> per tag</span>
                     </div>
                     <div className="tag-type-cta">Pick a Style →</div>
                   </div>
@@ -771,9 +1060,14 @@ const OrderPage = () => {
                   ))}
                 </div>
 
-                <div className="cart-divider" />
+                {totalSavings > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: '#10b981', fontWeight: 600, marginBottom: '8px' }}>
+                    <span>✨ Total Savings</span>
+                    <span>−₹{totalSavings}</span>
+                  </div>
+                )}
 
-                <div className="cart-total-row">
+                <div className="cart-total-row" style={{ marginTop: '4px' }}>
                   <span>Order Total</span>
                   <span className="total-amount">₹{total}</span>
                 </div>
@@ -1051,7 +1345,7 @@ const OrderPage = () => {
                         <Plus size={16} />
                       </button>
                     </div>
-                    <p className="qty-hint">₹{prices.personalised} × {qty} = ₹{prices.personalised * qty}</p>
+                    <p className="qty-hint">₹{prices.personalisedDiscounted} × {qty} = ₹{prices.personalisedDiscounted * qty}</p>
                   </div>
 
                   <button
@@ -1147,9 +1441,9 @@ const OrderPage = () => {
                         marginBottom: '10px',
                         padding: '6px 14px',
                         borderRadius: '20px',
-                        background: 'rgba(255, 255, 255, 0.08)',
-                        border: '1px solid rgba(255, 255, 255, 0.15)',
-                        color: '#ffffff',
+                        background: preset.id === 'midnight' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
+                        border: preset.id === 'midnight' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
+                        color: preset.id === 'midnight' ? '#ffffff' : '#111111',
                         cursor: 'pointer',
                         fontSize: '0.78rem',
                         fontWeight: 600,
@@ -1198,7 +1492,7 @@ const OrderPage = () => {
                       <Plus size={16} />
                     </button>
                   </div>
-                  <p className="qty-hint">₹{prices.classic} × {classicQty} = ₹{prices.classic * classicQty}</p>
+                  <p className="qty-hint">₹{prices.classicDiscounted} × {classicQty} = ₹{prices.classicDiscounted * classicQty}</p>
                 </div>
 
                 <button
@@ -1290,8 +1584,15 @@ const OrderPage = () => {
                       type="tel"
                       className="text-input"
                       required
+                      maxLength={10}
+                      pattern="[0-9]{10}"
                       value={checkoutForm.phone}
-                      onChange={(e) => setCheckoutForm(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        if (val.length <= 10) {
+                          setCheckoutForm(prev => ({ ...prev, phone: val }));
+                        }
+                      }}
                       placeholder="9876543210"
                     />
                   </div>
@@ -1367,7 +1668,13 @@ const OrderPage = () => {
                       <span>₹{item.qty * item.unitPrice}</span>
                     </div>
                   ))}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: '#ffffff' }}>
+                  {totalSavings > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#10b981', fontWeight: 600, marginTop: '4px' }}>
+                      <span>✨ Total Savings</span>
+                      <span>−₹{totalSavings}</span>
+                    </div>
+                  )}
+                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: '#ffffff', marginTop: '6px' }}>
                     <span>Total Amount</span>
                     <span style={{ color: 'var(--accent-cyan)' }}>₹{total}</span>
                   </div>
@@ -1375,7 +1682,7 @@ const OrderPage = () => {
 
                 <button
                   type="submit"
-                  disabled={checkoutLoading}
+                  disabled={checkoutLoading || isCodLoading}
                   className="btn-checkout"
                   style={{
                     width: '100%',
@@ -1391,14 +1698,63 @@ const OrderPage = () => {
                 >
                   {checkoutLoading ? (
                     <>
-                      <div className="payment-spinner" /> Processing Secure Payment...
+                      <div className="payment-spinner" /> Saving & Redirecting to Zaakpay...
                     </>
                   ) : (
                     <>
-                      Pay ₹{total} via Zaakpay
+                      💳 Pay ₹{total} via Zaakpay
                     </>
                   )}
                 </button>
+
+                {/* Divider */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>OR</span>
+                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                </div>
+
+                {/* COD Button */}
+                <button
+                  type="button"
+                  onClick={handleCOD}
+                  disabled={checkoutLoading || isCodLoading}
+                  style={{
+                    width: '100%',
+                    padding: '15px',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    color: '#10b981',
+                    borderRadius: '12px',
+                    cursor: (checkoutLoading || isCodLoading) ? 'not-allowed' : 'pointer',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-sans)',
+                    transition: 'all 0.2s',
+                    opacity: (checkoutLoading || isCodLoading) ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!checkoutLoading && !isCodLoading) {
+                      e.currentTarget.style.background = 'rgba(16, 185, 129, 0.18)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+                  }}
+                >
+                  {isCodLoading ? (
+                    <><div className="payment-spinner" style={{ borderTopColor: '#10b981' }} /> Placing Order...</>
+                  ) : (
+                    <><Truck size={20} /> Cash on Delivery (COD)</>
+                  )}
+                </button>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', margin: 0 }}>
+                  COD available · Pay when your order arrives 🚚
+                </p>
               </div>
 
             </form>

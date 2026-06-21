@@ -55,6 +55,7 @@ export default function handler(req, res) {
     const isSuccess = isAuthentic && (params.responseCode === '100');
     const orderId = params.orderId || 'UNKNOWN';
     const amount = params.amount ? (parseFloat(params.amount) / 100).toFixed(2) : '0.00';
+    const firestoreOrderId = params.firestoreOrderId || '';
 
     // Redirect user back to frontend page
     const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -62,7 +63,7 @@ export default function handler(req, res) {
     
     let redirectUrl;
     if (isSuccess) {
-      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}`;
+      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}${firestoreOrderId ? `&fsOrderId=${encodeURIComponent(firestoreOrderId)}` : ''}`;
     } else {
       const errorMsg = !isAuthentic ? 'Checksum Verification Failed' : (params.responseDescription || 'Payment Failed');
       redirectUrl = `${protocol}://${host}/payment-status?status=failure&orderId=${encodeURIComponent(orderId)}&error=${encodeURIComponent(errorMsg)}`;

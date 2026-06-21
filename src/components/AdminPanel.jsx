@@ -8,8 +8,14 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
-  getDocs
+  getDocs,
+  query,
+  where,
+  onSnapshot,
+  updateDoc,
+  orderBy
 } from 'firebase/firestore';
+
 import {
   Globe,
   Sparkles,
@@ -21,7 +27,17 @@ import {
   LogOut,
   Image as ImageIcon,
   Download,
-  Plus
+  Plus,
+  ShoppingBag,
+  Phone,
+  Mail,
+  Package,
+  RefreshCw,
+  Zap,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import {
   ensureQrLib,
@@ -109,6 +125,222 @@ const AdminPanel = ({
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
+
+  // Admin tab state
+  const [activeAdminTab, setActiveAdminTab] = useState('generator'); // 'generator' | 'orders'
+
+  // Orders state
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [appendProgress, setAppendProgress] = useState({ active: false, total: 0, done: 0, message: '' });
+  const [ordersError, setOrdersError] = useState('');
+  const [expandedOrders, setExpandedOrders] = useState({});
+
+  // Dynamic Pricing states
+  const [personalisedOriginal, setPersonalisedOriginal] = useState(299);
+  const [personalisedDiscounted, setPersonalisedDiscounted] = useState(199);
+  const [classicOriginal, setClassicOriginal] = useState(199);
+  const [classicDiscounted, setClassicDiscounted] = useState(129);
+  const [savingPrices, setSavingPrices] = useState(false);
+  const [pricingSuccess, setPricingSuccess] = useState("");
+  const [pricingError, setPricingError] = useState("");
+  const [showLogoDownloadPrompt, setShowLogoDownloadPrompt] = useState(false);
+  const [logoImage, setLogoImage] = useState(null);
+
+  // Landing QRs Tab States
+  const [landingQrs, setLandingQrs] = useState({
+    tag1: { label: 'Your Pet', base64Image: '', visible: true },
+    tag2: { label: 'Your Memory', base64Image: '', visible: true },
+    tag3: { label: 'Your Art', base64Image: '', visible: true }
+  });
+  const [savingLandingQrs, setSavingLandingQrs] = useState(false);
+  const [landingSuccess, setLandingSuccess] = useState("");
+  const [landingError, setLandingError] = useState("");
+
+  const [croppingLandingTag, setCroppingLandingTag] = useState(null); // 'tag1' | 'tag2' | 'tag3' | null
+  const [landingCropImage, setLandingCropImage] = useState(null); // Image object being cropped
+  const landingPreviewCanvasRef = useRef(null);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/full logo.png';
+    img.onload = () => setLogoImage(img);
+  }, []);
+
+  // Fetch Landing QRs from Firestore on mount
+  useEffect(() => {
+    if (!firestoreDb) return;
+    const fetchLandingQrs = async () => {
+      try {
+        const docRef = doc(firestoreDb, 'settings', 'landing_page_qrs');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setLandingQrs({
+            tag1: {
+              label: data.tag1?.label || 'Your Pet',
+              base64Image: data.tag1?.base64Image || '',
+              visible: data.tag1?.visible !== undefined ? data.tag1.visible : true
+            },
+            tag2: {
+              label: data.tag2?.label || 'Your Memory',
+              base64Image: data.tag2?.base64Image || '',
+              visible: data.tag2?.visible !== undefined ? data.tag2.visible : true
+            },
+            tag3: {
+              label: data.tag3?.label || 'Your Art',
+              base64Image: data.tag3?.base64Image || '',
+              visible: data.tag3?.visible !== undefined ? data.tag3.visible : true
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to fetch settings/landing_page_qrs from Firestore:", err);
+      }
+    };
+    fetchLandingQrs();
+  }, [firestoreDb]);
+
+  const handleLandingImageUpload = (tagKey, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        setLandingCropImage(img);
+        setCroppingLandingTag(tagKey);
+        initCrop(img);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleApplyLandingCrop = (tagKey) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 320;
+    canvas.height = 320;
+    const ctx = canvas.getContext('2d');
+    const s = cropState.scale || 1;
+    const srcX = cropState.x * s;
+    const srcY = cropState.y * s;
+    const srcSize = cropState.size * s;
+
+    try {
+      ctx.drawImage(landingCropImage, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
+      const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+      setLandingQrs(prev => ({
+        ...prev,
+        [tagKey]: {
+          ...prev[tagKey],
+          base64Image: compressedBase64
+        }
+      }));
+    } catch (e) {
+      console.warn("Failed to apply crop:", e);
+    }
+    setCroppingLandingTag(null);
+    setLandingCropImage(null);
+  };
+
+  // Render dynamic preview of landing tag in cropper
+  useEffect(() => {
+    if (activeAdminTab !== 'landing_qrs' || !croppingLandingTag || !landingCropImage || !landingPreviewCanvasRef.current) return;
+    
+    const drawPreview = async () => {
+      const canvas = landingPreviewCanvasRef.current;
+      canvas.width = 320;
+      canvas.height = 350;
+      const ctx = canvas.getContext('2d');
+      
+      const s = cropState.scale || 1;
+      const srcX = cropState.x * s;
+      const srcY = cropState.y * s;
+      const srcSize = cropState.size * s;
+      
+      const logoCanvas = document.createElement('canvas');
+      logoCanvas.width = 320;
+      logoCanvas.height = 320;
+      try {
+        logoCanvas.getContext('2d').drawImage(landingCropImage, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
+      } catch (e) {
+        console.warn("Failed to draw logoCanvas for landing preview:", e);
+      }
+      
+      const ok = await ensureQrLib();
+      if (!ok) return;
+      
+      let qrResult;
+      try {
+        qrResult = makeQR('https://im-here-qr.vercel.app/id?=preview');
+      } catch (err) {
+        return;
+      }
+      
+      const { qr } = qrResult;
+      const moduleCount = qr.getModuleCount();
+      const qrSize = 320;
+      const margin = 1.5;
+      const totalModules = moduleCount + margin * 2;
+      const moduleSize = qrSize / totalModules;
+      const bannerH = 30; // scaled down banner
+      
+      // Fill background
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw background image
+      ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw dots
+      for (let row = 0; row < moduleCount; row++) {
+        for (let col = 0; col < moduleCount; col++) {
+          const isFinder = (row < 7 && col < 7) || (row < 7 && col >= moduleCount - 7) || (row >= moduleCount - 7 && col < 7);
+          if (isFinder) continue;
+          if (qr.isDark(row, col)) {
+            drawDot(ctx, row, col, margin, moduleSize, '#ffffff', 'circle', bannerH, 0.8);
+          }
+        }
+      }
+      
+      // Draw corners
+      drawFinder(ctx, 0, 0, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
+      drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
+      drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
+      
+      // Draw banner frame
+      drawBanner(ctx, qrSize, bannerH, "SCAN ME TO FIND ME", '#000000', '#ffffff', 0);
+    };
+    
+    drawPreview();
+  }, [activeAdminTab, croppingLandingTag, landingCropImage, cropState.x, cropState.y, cropState.size, cropState.scale]);
+
+  const handleSaveLandingQrs = async (e) => {
+    e.preventDefault();
+    setSavingLandingQrs(true);
+    setLandingSuccess("");
+    setLandingError("");
+    if (firestoreDb) {
+      try {
+        await setDoc(doc(firestoreDb, 'settings', 'landing_page_qrs'), {
+          ...landingQrs,
+          updatedAt: new Date()
+        });
+        setLandingSuccess("Landing page keychains saved successfully!");
+        setTimeout(() => setLandingSuccess(""), 3000);
+      } catch (err) {
+        console.error("Failed to save landing page keychains:", err);
+        setLandingError(`Failed to save: ${err.message}`);
+      } finally {
+        setSavingLandingQrs(false);
+      }
+    } else {
+      setLandingError("Database not connected.");
+      setSavingLandingQrs(false);
+    }
+  };
 
   const cropCanvasRef = useRef(null);
   const qrCanvasRef = useRef(null);
@@ -292,13 +524,16 @@ const AdminPanel = ({
 
   // Render crop preview canvas
   useEffect(() => {
-    if (cropState.showCropStep && cropCanvasRef.current && uploadedImg) {
-      const ctx = cropCanvasRef.current.getContext('2d');
-      cropCanvasRef.current.width = cropState.dispW;
-      cropCanvasRef.current.height = cropState.dispH;
-      ctx.drawImage(uploadedImg, 0, 0, cropState.dispW, cropState.dispH);
+    if (cropState.showCropStep && cropCanvasRef.current) {
+      const activeImg = activeAdminTab === 'landing_qrs' ? landingCropImage : uploadedImg;
+      if (activeImg) {
+        const ctx = cropCanvasRef.current.getContext('2d');
+        cropCanvasRef.current.width = cropState.dispW;
+        cropCanvasRef.current.height = cropState.dispH;
+        ctx.drawImage(activeImg, 0, 0, cropState.dispW, cropState.dispH);
+      }
     }
-  }, [cropState.showCropStep, cropState.dispW, cropState.dispH, uploadedImg]);
+  }, [cropState.showCropStep, cropState.dispW, cropState.dispH, uploadedImg, landingCropImage, activeAdminTab]);
 
   // Handle keyboard crop box movement (1px precision nudges)
   useEffect(() => {
@@ -351,6 +586,114 @@ const AdminPanel = ({
     return () => clearTimeout(timer);
   }, [showConfirm, countdown]);
 
+  // Fetch prices from Firestore settings/prices on mount
+  useEffect(() => {
+    // Try local fallback first
+    try {
+      const saved = localStorage.getItem('imhere_prices');
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.personalisedOriginal !== undefined) setPersonalisedOriginal(data.personalisedOriginal);
+        if (data.personalisedDiscounted !== undefined) setPersonalisedDiscounted(data.personalisedDiscounted);
+        if (data.classicOriginal !== undefined) setClassicOriginal(data.classicOriginal);
+        if (data.classicDiscounted !== undefined) setClassicDiscounted(data.classicDiscounted);
+      }
+    } catch {}
+
+    if (!firestoreDb) return;
+    const fetchPrices = async () => {
+      try {
+        const docRef = doc(firestoreDb, 'settings', 'prices');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.personalisedOriginal !== undefined) setPersonalisedOriginal(data.personalisedOriginal);
+          if (data.personalisedDiscounted !== undefined) setPersonalisedDiscounted(data.personalisedDiscounted);
+          if (data.classicOriginal !== undefined) setClassicOriginal(data.classicOriginal);
+          if (data.classicDiscounted !== undefined) setClassicDiscounted(data.classicDiscounted);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch settings/prices from Firestore:", err);
+      }
+    };
+    fetchPrices();
+  }, [firestoreDb]);
+
+  const handleSavePrices = async (e) => {
+    e.preventDefault();
+    setSavingPrices(true);
+    setPricingSuccess("");
+    setPricingError("");
+    
+    const pricesObj = {
+      personalisedOriginal: Number(personalisedOriginal),
+      personalisedDiscounted: Number(personalisedDiscounted),
+      classicOriginal: Number(classicOriginal),
+      classicDiscounted: Number(classicDiscounted)
+    };
+
+    // 1. Save to localStorage immediately so it reflects locally
+    try {
+      localStorage.setItem('imhere_prices', JSON.stringify(pricesObj));
+    } catch {}
+
+    // 2. Save to Firestore for remote sync
+    if (firestoreDb) {
+      try {
+        await setDoc(doc(firestoreDb, 'settings', 'prices'), {
+          ...pricesObj,
+          updatedAt: new Date()
+        });
+        setPricingSuccess("Prices saved successfully to Firestore & Local Storage!");
+        setTimeout(() => setPricingSuccess(""), 3000);
+      } catch (err) {
+        console.error("Failed to save prices to Firestore:", err);
+        setPricingError(`Saved locally only. Firestore failed: ${err.message}. (Check Firestore Security Rules to allow writes to '/settings/prices')`);
+      } finally {
+        setSavingPrices(false);
+      }
+    } else {
+      setPricingSuccess("Saved locally! (Database offline/initializing)");
+      setTimeout(() => setPricingSuccess(""), 3000);
+      setSavingPrices(false);
+    }
+  };
+
+  // Prevent reload if there are appended QR codes
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (appendedQrs.length > 0) {
+        e.preventDefault();
+        e.returnValue = 'You have appended QR codes. If you reload, you may lose your current progress. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [appendedQrs]);
+
+  // Real-time listener for orders with orderStatus === 'orderplaced'
+  useEffect(() => {
+    if (!firestoreDb || activeAdminTab !== 'orders') return;
+    setOrdersLoading(true);
+    setOrdersError('');
+    const q = query(
+      collection(firestoreDb, 'orders'),
+      where('orderStatus', '==', 'orderplaced'),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setOrders(docs);
+      setOrdersLoading(false);
+    }, (err) => {
+      console.error('Orders listener error:', err);
+      setOrdersError('Failed to load orders: ' + err.message);
+      setOrdersLoading(false);
+    });
+    return () => unsubscribe();
+  }, [firestoreDb, activeAdminTab]);
+
   // Helper: generates an 8 character random alphanumeric ID
   const generateRandomCode = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -382,6 +725,197 @@ const AdminPanel = ({
       throw new Error("Unable to generate a unique ID after several attempts.");
     }
     return newId;
+  };
+
+  // Helper: load customer's image from Storage and create a cropped logoCanvas
+  const loadLogoCanvas = (imageUrl, srcX, srcY, srcSize) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const out = document.createElement('canvas');
+        out.width = 320;
+        out.height = 320;
+        try {
+          out.getContext('2d').drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
+        } catch (e) {
+          console.warn('loadLogoCanvas drawImage failed:', e);
+        }
+        resolve(out);
+      };
+      img.onerror = () => resolve(null);
+      img.src = imageUrl;
+    });
+  };
+
+  // Helper: generate a QR code dataUrl for a given URL + order item type
+  const generateQrDataUrlForOrder = async (url, typeofqr, logoCanvas) => {
+    const ok = await ensureQrLib();
+    if (!ok) throw new Error('QR library unavailable');
+
+    let qrResult;
+    try {
+      qrResult = makeQR(url);
+    } catch (err) {
+      throw new Error(`makeQR failed: ${err.message}`);
+    }
+
+    const { qr } = qrResult;
+    const moduleCount = qr.getModuleCount();
+    const qrSize = 640;
+    const margin = 1.5;
+    const totalModules = moduleCount + margin * 2;
+    const moduleSize = qrSize / totalModules;
+    const bannerH = 60;
+
+    // Set colors based on typeofqr
+    let dotColor = '#ffffff';
+    let bgColor = '#000000';
+    const bgMode = typeofqr === 'personalised' ? 'image' : 'solid';
+    let frameBgColor = '#000000';
+    let frameTextColor = '#ffffff';
+
+    if (typeofqr === 'classic_white') {
+      dotColor = '#111111';
+      bgColor = '#ffffff';
+      frameBgColor = '#111111';
+    } else if (typeofqr === 'classic_black') {
+      dotColor = '#ffffff';
+      bgColor = '#000000';
+    } else if (typeofqr === 'personalised') {
+      dotColor = '#ffffff';
+      bgColor = '#000000';
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = qrSize;
+    canvas.height = qrSize + bannerH;
+    const ctx = canvas.getContext('2d');
+
+    // Fill background
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw image background for personalised
+    if (bgMode === 'image' && logoCanvas) {
+      ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 1;
+      ctx.shadowOffsetY = 1;
+    }
+
+    // Draw dots
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        const isFinder = (row < 7 && col < 7) || (row < 7 && col >= moduleCount - 7) || (row >= moduleCount - 7 && col < 7);
+        if (isFinder) continue;
+        if (qr.isDark(row, col)) {
+          drawDot(ctx, row, col, margin, moduleSize, dotColor, 'circle', bannerH, 0.8);
+        }
+      }
+    }
+
+    // Draw corners
+    drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+    drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+    drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+
+    // Draw banner
+    drawBanner(ctx, qrSize, bannerH, 'SCAN ME TO FIND ME', frameBgColor, frameTextColor, 0);
+
+    return canvas.toDataURL('image/png');
+  };
+
+  // Action: Append All orders to PDF
+  const handleAppendAllToPdf = async () => {
+    if (orders.length === 0 || appendProgress.active) return;
+
+    const totalQrs = orders.reduce((sum, order) =>
+      sum + (order.items || []).reduce((s, item) => s + (item.quantity || 1), 0), 0
+    );
+
+    if (totalQrs === 0) return;
+
+    setAppendProgress({ active: true, total: totalQrs, done: 0, message: 'Starting up...' });
+
+    const newEntries = [];
+    let done = 0;
+
+    try {
+      for (const order of orders) {
+        for (const item of (order.items || [])) {
+          let logoCanvas = null;
+
+          // Load customer image for personalised QR
+          if (item.typeofqr === 'personalised' && item.imageUrl) {
+            setAppendProgress(prev => ({ ...prev, message: `Loading personalised image...` }));
+            logoCanvas = await loadLogoCanvas(
+              item.imageUrl,
+              item.srcCropX || 0,
+              item.srcCropY || 0,
+              item.srcCropSize || 320
+            );
+          }
+
+          for (let q = 0; q < (item.quantity || 1); q++) {
+            setAppendProgress(prev => ({
+              ...prev,
+              message: `Generating QR ${done + 1} of ${totalQrs}...`
+            }));
+
+            // Generate unique ID
+            const newId = await getUniqueId();
+            const url = `${predefinedDomain}/id?=${newId}`;
+
+            // Generate QR image
+            const qrDataUrl = await generateQrDataUrlForOrder(url, item.typeofqr, logoCanvas);
+
+            // Save ID to Firestore links with order metadata
+            await setDoc(doc(firestoreDb, 'links', newId), {
+              id: newId,
+              domain: predefinedDomain,
+              createdAt: new Date(),
+              status: 'unregistered',
+              orderedPhoneNumber: order.orderedPhoneNumber || '',
+              orderedEmail: order.orderedEmail || '',
+              typeofqr: item.typeofqr || 'classic_black',
+              firestoreOrderId: order.id
+            });
+
+            newEntries.push({ qrUrl: qrDataUrl, id: newId, orderedPhoneNumber: order.orderedPhoneNumber });
+            done++;
+            setAppendProgress(prev => ({ ...prev, done, message: `Generated ${done} of ${totalQrs} QR codes...` }));
+          }
+        }
+
+        // Mark this order as appended
+        await updateDoc(doc(firestoreDb, 'orders', order.id), {
+          orderStatus: 'appended'
+        });
+      }
+
+      // Append all new QRs to the PDF sheet
+      setAppendedQrs(prev => [...prev, ...newEntries]);
+      setUndoneQrs([]);
+      setAppendProgress({ active: false, total: 0, done: 0, message: `Done! Added ${totalQrs} QR codes to PDF.` });
+
+      // Clear success message after 3 seconds
+      setTimeout(() => setAppendProgress({ active: false, total: 0, done: 0, message: '' }), 3000);
+
+    } catch (err) {
+      console.error('Append all failed:', err);
+      setAppendProgress({ active: false, total: 0, done: 0, message: '' });
+      setOrdersError(`Append failed: ${err.message}`);
+    }
   };
 
   const handleAppendToPdf = () => {
@@ -466,90 +1000,7 @@ const AdminPanel = ({
   };
 
   const renderGuideOverlay = (pageIdx, slotIdx) => {
-    if (pageIdx !== 0 || slotIdx !== 0) return null;
-    return (
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 10
-      }}>
-        <svg
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            overflow: 'visible'
-          }}
-          viewBox="0 0 45 60"
-        >
-          <defs>
-            <marker id="arrow-red" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-              <path d="M 0 2 L 10 5 L 0 8 z" fill="#dc2626" />
-            </marker>
-            <marker id="arrow-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-              <path d="M 0 2 L 10 5 L 0 8 z" fill="#2563eb" />
-            </marker>
-            <marker id="arrow-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
-              <path d="M 0 2 L 10 5 L 0 8 z" fill="#10b981" />
-            </marker>
-          </defs>
-
-          {/* 1. Outer Box Dimensions (Red) */}
-          {/* Width (45mm) above card */}
-          <line x1="0" y1="-4" x2="45" y2="-4" stroke="#dc2626" strokeWidth="0.4" markerStart="url(#arrow-red)" markerEnd="url(#arrow-red)" />
-          <text x="22.5" y="-5.5" fill="#dc2626" fontSize="2.8" fontWeight="bold" textAnchor="middle">45 mm</text>
-          {/* Extension lines for width */}
-          <line x1="0" y1="0" x2="0" y2="-5" stroke="#dc2626" strokeWidth="0.15" />
-          <line x1="45" y1="0" x2="45" y2="-5" stroke="#dc2626" strokeWidth="0.15" />
-
-          {/* Height (60mm) left of card */}
-          <line x1="-4" y1="0" x2="-4" y2="60" stroke="#dc2626" strokeWidth="0.4" markerStart="url(#arrow-red)" markerEnd="url(#arrow-red)" />
-          <text x="-5.5" y="30" fill="#dc2626" fontSize="2.8" fontWeight="bold" textAnchor="middle" transform="rotate(-90, -5.5, 30)">60 mm</text>
-          {/* Extension lines for height */}
-          <line x1="0" y1="0" x2="-5" y2="0" stroke="#dc2626" strokeWidth="0.15" />
-          <line x1="0" y1="60" x2="-5" y2="60" stroke="#dc2626" strokeWidth="0.15" />
-
-          {/* 2. Inner QR Dimensions (Blue) */}
-          {/* Width (40mm) inside card near bottom */}
-          <line x1="2.5" y1="52" x2="42.5" y2="52" stroke="#2563eb" strokeWidth="0.4" markerStart="url(#arrow-blue)" markerEnd="url(#arrow-blue)" />
-          <text x="22.5" y="50.5" fill="#2563eb" fontSize="2.8" fontWeight="bold" textAnchor="middle">40 mm</text>
-          {/* Extension lines for inner width */}
-          <line x1="2.5" y1="52" x2="2.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
-          <line x1="42.5" y1="52" x2="42.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
-
-          {/* Height (55mm) inside card right side */}
-          <line x1="38" y1="2.5" x2="38" y2="57.5" stroke="#2563eb" strokeWidth="0.4" markerStart="url(#arrow-blue)" markerEnd="url(#arrow-blue)" />
-          <text x="36.5" y="30" fill="#2563eb" fontSize="2.8" fontWeight="bold" textAnchor="middle" transform="rotate(-90, 36.5, 30)">55 mm</text>
-          {/* Extension lines for inner height */}
-          <line x1="38" y1="2.5" x2="42.5" y2="2.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
-          <line x1="38" y1="57.5" x2="42.5" y2="57.5" stroke="#2563eb" strokeWidth="0.15" strokeDasharray="1,1" />
-
-          {/* 3. Margin (2.5mm) inside card near top left */}
-          <line x1="0" y1="8" x2="2.5" y2="8" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
-          <text x="1.25" y="6.8" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="middle">2.5 mm</text>
-
-          {/* 4. Column Gap (2mm) to the right of the first card */}
-          <line x1="45" y1="12" x2="47" y2="12" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
-          <text x="46.0" y="10.5" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="middle">2 mm gap</text>
-          {/* Extension line for gap column start */}
-          <line x1="45" y1="0" x2="45" y2="13" stroke="#10b981" strokeWidth="0.15" />
-          <line x1="47" y1="0" x2="47" y2="13" stroke="#10b981" strokeWidth="0.15" />
-
-          {/* 5. Row Gap (4mm) below the first card */}
-          <line x1="12" y1="60" x2="12" y2="64" stroke="#10b981" strokeWidth="0.3" markerStart="url(#arrow-green)" markerEnd="url(#arrow-green)" />
-          <text x="13.5" y="62.5" fill="#10b981" fontSize="2" fontWeight="bold" textAnchor="start">4 mm gap</text>
-          {/* Extension line for gap row start */}
-          <line x1="0" y1="60" x2="13" y2="60" stroke="#10b981" strokeWidth="0.15" />
-          <line x1="0" y1="64" x2="13" y2="64" stroke="#10b981" strokeWidth="0.15" />
-        </svg>
-      </div>
-    );
+    return null;
   };
 
   const handleDownloadPdf = () => {
@@ -696,6 +1147,56 @@ const AdminPanel = ({
     });
 
     pdf.save("qr-print-sheet.pdf");
+    setShowLogoDownloadPrompt(true);
+  };
+
+  const handleDownloadLogoPdf = () => {
+    if (appendedQrs.length === 0) return;
+
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
+
+    const itemsPerPage = 16;
+    const colWidth = 45;
+    const rowHeight = 60;
+    const marginX = 12;
+    const marginY = 22.5;
+    const gapX = 2;
+    const gapY = 4;
+
+    appendedQrs.forEach((entry, index) => {
+      const pageIndex = index % itemsPerPage;
+
+      if (index > 0 && pageIndex === 0) {
+        pdf.addPage();
+      }
+
+      const row = Math.floor(pageIndex / 4);
+      const col = pageIndex % 4;
+
+      const x = marginX + col * (colWidth + gapX);
+      const y = marginY + row * (rowHeight + gapY);
+
+      // 1. Draw outer grey border (45mm x 60mm)
+      pdf.setDrawColor(209, 213, 219);
+      pdf.setLineWidth(0.5);
+      pdf.rect(x, y, colWidth, rowHeight);
+
+      // 2. Add brand logo in full cover (45mm x 60mm)
+      if (logoImage) {
+        pdf.addImage(logoImage, "PNG", x, y, colWidth, rowHeight);
+      } else {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.text("I'm Here Logo", x + colWidth / 2, y + rowHeight / 2, { align: "center" });
+      }
+    });
+
+    pdf.save("logo-print-sheet.pdf");
+    setShowLogoDownloadPrompt(false);
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -850,7 +1351,7 @@ const AdminPanel = ({
     setCropState(prev => ({
       ...prev,
       x: clamp(dragStart.boxX + dx, 0, prev.dispW - prev.size),
-      y: clamp(dragStart.boxY + dy, 0, prev.dispW - prev.size)
+      y: clamp(dragStart.boxY + dy, 0, prev.dispH - prev.size)
     }));
   };
 
@@ -969,6 +1470,82 @@ const AdminPanel = ({
         </div>
 
         <div className="admin-header-actions">
+          {/* Tab switcher buttons */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('generator')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'generator' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'generator' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s'
+              }}
+            >
+              QR Generator
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('orders')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'orders' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'orders' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <ShoppingBag size={13} /> Orders
+              {orders.length > 0 && (
+                <span style={{
+                  background: 'var(--accent-rose)',
+                  color: 'white',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  borderRadius: '50%',
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1
+                }}>{orders.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('landing_qrs')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'landing_qrs' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'landing_qrs' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              🎨 Landing QRs
+            </button>
+          </div>
+
           {/* New Button */}
           <button
             type="button"
@@ -1090,6 +1667,7 @@ const AdminPanel = ({
       )}
 
       {/* Two-Column Cockpit Layout */}
+      {activeAdminTab === 'generator' && (
       <div className="dashboard-grid">
 
         {/* Left Column: Configuration Forms */}
@@ -1500,6 +2078,91 @@ const AdminPanel = ({
               </div>
             )}
           </section>
+
+          {/* Card 3: Price Settings */}
+          <section className="glass-panel card-content">
+            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
+              3. Smart Keychain Pricing
+            </h2>
+            <form onSubmit={handleSavePrices} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Personalised Price */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Personalised Tag Prices</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
+                    <input
+                      type="number"
+                      className="text-input"
+                      required
+                      value={personalisedOriginal}
+                      onChange={(e) => setPersonalisedOriginal(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
+                    <input
+                      type="number"
+                      className="text-input"
+                      required
+                      value={personalisedDiscounted}
+                      onChange={(e) => setPersonalisedDiscounted(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Classic Price */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Classic Tag Prices</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
+                    <input
+                      type="number"
+                      className="text-input"
+                      required
+                      value={classicOriginal}
+                      onChange={(e) => setClassicOriginal(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
+                    <input
+                      type="number"
+                      className="text-input"
+                      required
+                      value={classicDiscounted}
+                      onChange={(e) => setClassicDiscounted(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {pricingSuccess && (
+                <div className="status-msg status-msg-success" style={{ margin: 0, fontSize: '0.8rem' }}>
+                  <CheckCircle2 size={16} />
+                  <span>{pricingSuccess}</span>
+                </div>
+              )}
+
+              {pricingError && (
+                <div className="status-msg status-msg-error" style={{ margin: 0, fontSize: '0.8rem' }}>
+                  <AlertTriangle size={16} />
+                  <span>{pricingError}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={savingPrices}
+                style={{ width: '100%', marginTop: '4px' }}
+              >
+                {savingPrices ? "Saving..." : "Save Prices to Firestore"}
+              </button>
+            </form>
+          </section>
         </div>
 
         {/* Right Column: Previews & Results */}
@@ -1623,6 +2286,816 @@ const AdminPanel = ({
         </div>
 
       </div>
+      )}
+
+      {/* ═══════════════════════════════════════════
+          ORDERS TAB
+      ═══════════════════════════════════════════ */}
+      {activeAdminTab === 'orders' && (
+        <div className="orders-tab-layout">
+
+          {/* LEFT: Orders List */}
+          <div className="orders-list-panel">
+            <div className="orders-panel-header">
+              <div>
+                <h2 className="orders-panel-title">📦 Pending Orders</h2>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {orders.length === 0 ? 'No new orders' : `${orders.length} order${orders.length > 1 ? 's' : ''} waiting to be processed`}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={handleAppendAllToPdf}
+                  disabled={orders.length === 0 || appendProgress.active}
+                  className="btn btn-primary"
+                  style={{
+                    padding: '9px 16px',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    opacity: (orders.length === 0 || appendProgress.active) ? 0.5 : 1,
+                    cursor: (orders.length === 0 || appendProgress.active) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {appendProgress.active ? (
+                    <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} /> Processing...</>
+                  ) : (
+                    <><Zap size={14} /> Append All to PDF</>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Progress Banner */}
+            {(appendProgress.active || appendProgress.message) && (
+              <div className="append-progress-banner">
+                {appendProgress.active ? (
+                  <>
+                    <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#a5b4fc' }}>
+                        {appendProgress.message}
+                      </div>
+                      {appendProgress.total > 0 && (
+                        <div className="append-progress-bar-track">
+                          <div
+                            className="append-progress-bar-fill"
+                            style={{ width: `${Math.round((appendProgress.done / appendProgress.total) * 100)}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, flexShrink: 0 }}>
+                      {appendProgress.done}/{appendProgress.total}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#10b981' }}>{appendProgress.message}</span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {ordersError && (
+              <div className="status-msg status-msg-error" style={{ marginBottom: '12px' }}>
+                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                <span>{ordersError}</span>
+              </div>
+            )}
+
+            {/* Orders Cards */}
+            {ordersLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading orders...</p>
+              </div>
+            ) : orders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No pending orders</p>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                  New orders will appear here when customers place them.
+                </p>
+              </div>
+            ) : (
+              <div className="orders-cards-list">
+                {orders.map((order, oIdx) => (
+                  <div key={order.id} className="order-card">
+                    {/* Order Header */}
+                    <div className="order-card-header" style={{ cursor: 'pointer' }} onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="order-card-name">{order.customerName || 'Unknown Customer'}</div>
+                        <div className="order-card-meta">
+                          <span><Phone size={11} /> {order.orderedPhoneNumber || '—'}</span>
+                          <span><Mail size={11} /> {order.orderedEmail || '—'}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                          <span className={`order-badge ${order.paymentMode === 'cod' ? 'badge-cod' : 'badge-online'}`}>
+                            {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>₹{order.totalAmount}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn-toggle-order"
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#10b981',
+                            cursor: 'pointer',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {expandedOrders[order.id] ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Collapsible Content */}
+                    {expandedOrders[order.id] && (
+                      <>
+                        {/* Items */}
+                        <div className="order-card-items">
+                          {(order.items || []).map((item, iIdx) => (
+                            <div key={iIdx} className="order-item-row">
+                              {item.thumbnailUrl ? (
+                                <img src={item.thumbnailUrl} alt={item.typeofqr} className="order-item-thumb" />
+                              ) : (
+                                <div className="order-item-thumb-placeholder">
+                                  {item.typeofqr === 'classic_black' ? '⬛' : item.typeofqr === 'classic_white' ? '⬜' : '🎨'}
+                                </div>
+                              )}
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="order-item-type">
+                                  {item.typeofqr === 'personalised' ? '🎨 Personalised' :
+                                   item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
+                                </div>
+                                <div className="order-item-qty">Qty: <strong>{item.quantity}</strong> × ₹{item.unitPrice}</div>
+                                {item.typeofqr === 'personalised' && item.imageUrl && (
+                                  <div style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)', marginTop: '2px' }}>✓ Image on Cloudinary</div>
+                                )}
+                              </div>
+                              <div className="order-item-total">₹{(item.quantity * item.unitPrice)}</div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Shipping address */}
+                        {order.shippingAddress && (
+                          <div className="order-card-address">
+                            📍 {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
+                          </div>
+                        )}
+
+                        {/* Total QR tags to generate for this order */}
+                        <div className="order-card-footer">
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                            Will generate <strong style={{ color: 'var(--accent-cyan)' }}>
+                              {(order.items || []).reduce((s, i) => s + (i.quantity || 1), 0)}
+                            </strong> QR tag{(order.items || []).reduce((s, i) => s + (i.quantity || 1), 0) > 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* RIGHT: PDF Preview (sticky) */}
+          <div className="orders-pdf-panel">
+            <div className="glass-panel card-content" style={{ position: 'sticky', top: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>PDF Sheet Preview</h3>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                    {appendedQrs.length} tag{appendedQrs.length !== 1 ? 's' : ''} appended
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  {appendedQrs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadPdf}
+                      className="btn btn-primary"
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px' }}
+                    >
+                      <Download size={12} /> PDF ({appendedQrs.length})
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {appendedQrs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 12px', color: 'var(--text-secondary)' }}>
+                  <ImageIcon size={40} style={{ opacity: 0.2, marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: '0.85rem' }}>No QR codes yet.</p>
+                  <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Press "Append All to PDF" to generate.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  {(() => {
+                    const pages = [];
+                    for (let i = 0; i < appendedQrs.length; i += 16) {
+                      pages.push(appendedQrs.slice(i, i + 16));
+                    }
+                    return pages.map((pageItems, pageIdx) => (
+                      <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Page {pageIdx + 1} of {pages.length}
+                        </span>
+                        <div className="pdf-preview-page">
+                          {Array.from({ length: 16 }).map((_, slotIdx) => {
+                            const hasItem = slotIdx < pageItems.length;
+                            if (hasItem) {
+                              const slotEntry = pageItems[slotIdx];
+                              const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
+                              return (
+                                <div key={slotIdx} className="pdf-preview-item">
+                                  <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" />
+                                  {renderGuideOverlay(pageIdx, slotIdx)}
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
+                                  {renderGuideOverlay(pageIdx, slotIdx)}
+                                </div>
+                              );
+                            }
+                          })}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════
+          LANDING PAGE QRs TAB
+      ═══════════════════════════════════════════ */}
+      {activeAdminTab === 'landing_qrs' && (
+        <div className="glass-panel card-content" style={{ marginTop: '12px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '20px' }}>
+            🎨 Landing Page Keychains Configuration
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px', lineHeight: 1.5 }}>
+            Configure the three hanging keychains that are displayed on the landing page of the website. 
+            For each keychain, upload a background logo/picture, and enter a label. When saved, these will immediately update the homepage.
+            Scanning these keychains or clicking them redirects users to the demo profile page (id=preview).
+          </p>
+
+          <form onSubmit={handleSaveLandingQrs} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+              
+              {/* Tag 1: Left Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Left Tag (Tag 1)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag1: { ...prev.tag1, visible: !prev.tag1.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag1.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag1.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag1.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag1.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag1: { ...prev.tag1, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Pet"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      {landingQrs.tag1.base64Image ? (
+                        <img src={landingQrs.tag1.base64Image} alt="Tag 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag1-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag1', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag1-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 1 */}
+                {croppingLandingTag === 'tag1' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag1')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tag 2: Center Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Center Tag (Tag 2)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag2: { ...prev.tag2, visible: !prev.tag2.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag2.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag2.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag2.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag2.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag2: { ...prev.tag2, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Memory"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      {landingQrs.tag2.base64Image ? (
+                        <img src={landingQrs.tag2.base64Image} alt="Tag 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag2-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag2', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag2-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 2 */}
+                {croppingLandingTag === 'tag2' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag2')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tag 3: Right Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Right Tag (Tag 3)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag3: { ...prev.tag3, visible: !prev.tag3.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag3.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag3.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag3.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag3.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag3: { ...prev.tag3, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Art"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      {landingQrs.tag3.base64Image ? (
+                        <img src={landingQrs.tag3.base64Image} alt="Tag 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag3-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag3', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag3-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 3 */}
+                {croppingLandingTag === 'tag3' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag3')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Save Status messages */}
+            {landingSuccess && (
+              <div className="status-msg status-msg-success" style={{ margin: 0 }}>
+                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                <span>{landingSuccess}</span>
+              </div>
+            )}
+            {landingError && (
+              <div className="status-msg status-msg-error" style={{ margin: 0 }}>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <span>{landingError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={savingLandingQrs}
+              style={{ padding: '14px 24px', fontSize: '0.95rem', fontWeight: 800, alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {savingLandingQrs ? (
+                <>
+                  <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                  Saving Keychains...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  Save Landing Page QRs
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* PDF Print Sheet Preview Section */}
       <div className="glass-panel card-content" style={{ marginTop: '32px', width: '100%' }}>
@@ -1636,68 +3109,16 @@ const AdminPanel = ({
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {(appendedQrs.length > 0 || undoneQrs.length > 0) && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleRemoveLastQr}
-                  disabled={appendedQrs.length === 0}
-                  className="btn"
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '0.8rem',
-                    background: appendedQrs.length === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(244, 63, 94, 0.1)',
-                    color: appendedQrs.length === 0 ? 'var(--text-muted)' : 'var(--accent-rose)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    cursor: appendedQrs.length === 0 ? 'not-allowed' : 'pointer',
-                    opacity: appendedQrs.length === 0 ? 0.4 : 1
-                  }}
-                >
-                  Undo
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRedoLastQr}
-                  disabled={undoneQrs.length === 0}
-                  className="btn"
-                  style={{
-                    padding: '8px 14px',
-                    fontSize: '0.8rem',
-                    background: undoneQrs.length === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(99, 102, 241, 0.1)',
-                    color: undoneQrs.length === 0 ? 'var(--text-muted)' : 'var(--accent-indigo)',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: 600,
-                    cursor: undoneQrs.length === 0 ? 'not-allowed' : 'pointer',
-                    opacity: undoneQrs.length === 0 ? 0.4 : 1
-                  }}
-                >
-                  Redo
-                </button>
-                {appendedQrs.length > 0 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleClearPdfSheet}
-                      className="btn"
-                      style={{ padding: '8px 14px', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-secondary)', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
-                    >
-                      Clear Sheet
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadPdf}
-                      className="btn btn-primary"
-                      style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
-                    >
-                      <Download size={14} />
-                      DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
-                    </button>
-                  </>
-                )}
-              </>
+            {appendedQrs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="btn btn-primary"
+                style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
+              >
+                <Download size={14} />
+                DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
+              </button>
             )}
           </div>
         </div>
@@ -1770,6 +3191,74 @@ const AdminPanel = ({
           </div>
         )}
       </div>
+
+      {/* Logo Download Prompt Overlay Modal */}
+      {showLogoDownloadPrompt && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            background: '#111827',
+            border: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '400px',
+            width: '90%',
+            textAlign: 'center',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)'
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏷️</div>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '8px' }}>
+              Download Back-side Logos?
+            </h3>
+            <p style={{ fontSize: '0.88rem', color: '#9ca3af', lineHeight: 1.5, marginBottom: '20px' }}>
+              Your front-side QR codes PDF has been downloaded. Would you like to download the matching back-side brand logos PDF with the same dimensions?
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                type="button"
+                onClick={() => setShowLogoDownloadPrompt(false)}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'transparent',
+                  color: '#9ca3af',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                No, thanks
+              </button>
+              <button
+                type="button"
+                onClick={handleDownloadLogoPdf}
+                style={{
+                  padding: '10px 18px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                }}
+              >
+                Download Logo PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

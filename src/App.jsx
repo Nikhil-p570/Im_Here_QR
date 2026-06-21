@@ -513,7 +513,7 @@ function App() {
     }
 
     // Default main landing page
-    return <LandingPage />;
+    return <LandingPage firestoreDb={firestoreDb} setFirestoreDb={setFirestoreDb} />;
   }
 
   // RENDER PASSWORD PROMPT (UNAUTHENTICATED ADMIN)

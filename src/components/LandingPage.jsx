@@ -1,8 +1,320 @@
-import { useEffect } from 'react';
-import { Tag, MapPin, Globe, ShoppingBag } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Tag, MapPin, Globe, ShoppingBag, Sparkles } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { initializeFirebase } from '../firebase';
+import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner } from '../utils/qrDrawer';
 import './LandingPage.css';
 
-const OrderPage = () => {
+/* ── Keyring SVG ── */
+const KeyringSvg = ({ width = 50, height = 96, marginBottom = '-32px' }) => (
+  <svg width={width} height={height} viewBox="0 0 60 115" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginBottom, zIndex: 5, position: 'relative' }}>
+    <circle cx="30" cy="20" r="16" stroke="url(#metal-grad-landing)" strokeWidth="4" fill="none" filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.35))" />
+    <circle cx="30" cy="20" r="14.25" stroke="rgba(255,255,255,0.15)" strokeWidth="0.5" fill="none" />
+    <rect x="27.5" y="34" width="5" height="12" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="43" width="5" height="12" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(15, 30, 49)" />
+    <rect x="27.5" y="52" width="5" height="12" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="61" width="5" height="12" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" transform="rotate(-15, 30, 67)" />
+    <rect x="27.5" y="70" width="5" height="12" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.2" fill="none" filter="drop-shadow(0px 1px 1.5px rgba(0,0,0,0.2))" />
+    <rect x="27.5" y="79" width="5" height="16" rx="2.5" stroke="url(#metal-grad-landing)" strokeWidth="2.5" fill="none" filter="drop-shadow(0px 1.5px 2px rgba(0,0,0,0.35))" />
+    <defs>
+      <linearGradient id="metal-grad-landing" x1="14" y1="6" x2="46" y2="38" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#e5e7eb" />
+        <stop offset="25%" stopColor="#9ca3af" />
+        <stop offset="50%" stopColor="#d1d5db" />
+        <stop offset="75%" stopColor="#6b7280" />
+        <stop offset="100%" stopColor="#cbd5e1" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+/* ── Helper: draw branded QR code (matching admin) ── */
+function drawBrandedQr(uploadedImg, presetOptions) {
+  if (typeof window.qrcode === 'undefined') return null;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 640;
+  canvas.height = 700;
+  const ctx = canvas.getContext('2d');
+
+  let qrResult;
+  try {
+    qrResult = makeQR('https://im-here-qr.vercel.app/id?=preview');
+  } catch (err) {
+    console.warn("makeQR failed in preview:", err);
+    return null;
+  }
+
+  const { qr } = qrResult;
+  const moduleCount = qr.getModuleCount();
+
+  const qrSize = 640;
+  const margin = 1.5;
+  const totalModules = moduleCount + margin * 2;
+  const moduleSize = qrSize / totalModules;
+  const bannerH = 60;
+
+  const dotColor = presetOptions.dotColor || '#ffffff';
+  const bgColor = presetOptions.bgColor || '#000000';
+  const overlayDarkness = presetOptions.overlayDarkness !== undefined ? presetOptions.overlayDarkness : 40;
+
+  // Fill background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (uploadedImg) {
+    try {
+      ctx.drawImage(uploadedImg, 0, 0, canvas.width, canvas.height);
+      if (overlayDarkness > 0) {
+        ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+    } catch (e) {
+      console.warn("Failed to draw background image:", e);
+    }
+  }
+
+  // Draw dots
+  for (let row = 0; row < moduleCount; row++) {
+    for (let col = 0; col < moduleCount; col++) {
+      const isFinder = (row < 7 && col < 7) || (row < 7 && col >= moduleCount - 7) || (row >= moduleCount - 7 && col < 7);
+      if (isFinder) continue;
+      if (qr.isDark(row, col)) {
+        drawDot(ctx, row, col, margin, moduleSize, dotColor, 'circle', bannerH, 0.8);
+      }
+    }
+  }
+
+  // Draw corners
+  drawFinder(ctx, 0, 0, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+  drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+  drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, dotColor, bgColor, 'circle', bannerH);
+
+  // Draw banner frame (at the top)
+  drawBanner(ctx, qrSize, bannerH, "SCAN ME TO FIND ME", '#000000', '#ffffff', 0);
+
+  return canvas;
+}
+
+/* ── Hanging Keychain Subcomponent ── */
+const HangingKeychain = ({ tagId, base64Image, label, index }) => {
+  const [flipped, setFlipped] = useState(false);
+  const canvasRef = useRef(null);
+  const [imgLoaded, setImgLoaded] = useState(null);
+  const [logoLoaded, setLogoLoaded] = useState(null);
+
+  // Load background image
+  useEffect(() => {
+    if (!base64Image) {
+      setImgLoaded(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setImgLoaded(img);
+    img.src = base64Image;
+  }, [base64Image]);
+
+  // Load logo image
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setLogoLoaded(img);
+    img.src = '/full logo.png';
+  }, []);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const W = 640;
+    const H = 700;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    if (flipped) {
+      // Draw back side
+      if (imgLoaded) {
+        ctx.drawImage(imgLoaded, 0, 0, W, H);
+        ctx.fillStyle = "rgba(0,0,0,0.45)"; // overlay darkness
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        ctx.fillStyle = '#0f172a'; // Slate background if no image
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Draw brand logo
+      if (logoLoaded) {
+        ctx.drawImage(logoLoaded, 0, 0, W, H);
+      }
+    } else {
+      // Draw front side (Branded QR)
+      const qrCanvas = drawBrandedQr(imgLoaded, {
+        dotColor: '#ffffff',
+        bgColor: '#000000',
+        overlayDarkness: 40
+      });
+      if (qrCanvas) {
+        ctx.drawImage(qrCanvas, 0, 0);
+      } else {
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, W, H);
+      }
+    }
+  }, [flipped, imgLoaded, logoLoaded]);
+
+  useEffect(() => {
+    ensureQrLib().then(() => {
+      draw();
+    });
+  }, [draw]);
+
+  const handlePreviewClick = () => {
+    window.open('/id?=preview', '_blank');
+  };
+
+  const swingClass = `keychain-idle-swing swing-phase-${index} ${flipped ? 'flipped' : ''}`;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+      <div className={swingClass}>
+        <div className={`hanging-keychain-wrapper ${flipped ? 'flipped' : ''}`} style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: flipped ? 'flex-start' : 'flex-end' }} onClick={handlePreviewClick} title="Click to test recovery scan">
+          <KeyringSvg />
+          <div style={{ position: 'relative' }}>
+            <canvas ref={canvasRef} className="keychain-canvas" style={{ width: '180px', height: '197px', borderRadius: '12px', boxShadow: '0 12px 32px rgba(0,0,0,0.6)' }} />
+            <div className="tag-hole-eyelet" style={{
+              position: 'absolute',
+              top: '8px',
+              right: flipped ? 'auto' : '16px',
+              left: flipped ? '16px' : 'auto',
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              border: '2.5px solid #cbd5e1',
+              background: '#0a0a0a',
+              boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+              zIndex: 6
+            }} />
+          </div>
+        </div>
+      </div>
+      <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+        {label}
+      </span>
+      <button
+        onClick={() => setFlipped(f => !f)}
+        className="btn-flip-preview"
+        style={{
+          padding: '6px 14px',
+          borderRadius: '20px',
+          background: 'rgba(255, 255, 255, 0.08)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          color: '#ffffff',
+          cursor: 'pointer',
+          fontSize: '0.78rem',
+          fontWeight: 600,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '6px',
+          transition: 'all 0.2s'
+        }}
+      >
+        Flip Tag
+      </button>
+    </div>
+  );
+};
+
+/* ── Main Landing Page Component ── */
+const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
+  const [db, setDb] = useState(firestoreDb);
+  const [landingQrs, setLandingQrs] = useState({
+    tag1: { label: 'Your Pet', base64Image: '/logo icon.png', visible: true },
+    tag2: { label: 'Your Memory', base64Image: '/customised.png', visible: true },
+    tag3: { label: 'Your Art', base64Image: '/logo icon.png', visible: true }
+  });
+
+  // Dynamic DB Initialization
+  useEffect(() => {
+    if (db) return;
+
+    const initDb = async () => {
+      let config = null;
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (isLocal) {
+        config = {
+          apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+          authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+          projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+          storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+          messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+          appId: import.meta.env.VITE_FIREBASE_APP_ID,
+          measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+        };
+      } else {
+        try {
+          const res = await fetch('/api/config');
+          if (res.ok) {
+            const data = await res.json();
+            config = data.config;
+          }
+        } catch (e) {
+          console.error("Failed to load Firebase config:", e);
+        }
+      }
+
+      if (config && config.apiKey) {
+        try {
+          const dbInstance = initializeFirebase(config);
+          setDb(dbInstance);
+          if (setFirestoreDb) {
+            setFirestoreDb(dbInstance);
+          }
+        } catch (err) {
+          console.error("Firebase init failed in LandingPage:", err);
+        }
+      }
+    };
+
+    initDb();
+  }, [db, firestoreDb, setFirestoreDb]);
+
+  // Load configured Landing QRs from Firestore
+  useEffect(() => {
+    if (!db) return;
+
+    const fetchLandingQrs = async () => {
+      try {
+        const docRef = doc(db, 'settings', 'landing_page_qrs');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setLandingQrs({
+            tag1: {
+              label: data.tag1?.label || 'Your Pet',
+              base64Image: data.tag1?.base64Image || '/logo icon.png',
+              visible: data.tag1?.visible !== undefined ? data.tag1.visible : true
+            },
+            tag2: {
+              label: data.tag2?.label || 'Your Memory',
+              base64Image: data.tag2?.base64Image || '/customised.png',
+              visible: data.tag2?.visible !== undefined ? data.tag2.visible : true
+            },
+            tag3: {
+              label: data.tag3?.label || 'Your Art',
+              base64Image: data.tag3?.base64Image || '/logo icon.png',
+              visible: data.tag3?.visible !== undefined ? data.tag3.visible : true
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Failed to fetch settings/landing_page_qrs from Firestore:", err);
+      }
+    };
+
+    fetchLandingQrs();
+  }, [db]);
+
+  // Scroll Reveal hook
   useEffect(() => {
     const observerOptions = {
       root: null,
@@ -101,6 +413,30 @@ const OrderPage = () => {
           Securely connect your physical belongings to your digital space. No apps to download. Just scan, claim, and protect your items.
         </p>
       </header>
+
+      {/* Hanging Keychains Section (Interactive Product Showcase) */}
+      <div className="reveal-on-scroll" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        gap: '40px',
+        flexWrap: 'wrap',
+        margin: '20px auto 40px auto',
+        width: '100%',
+        padding: '20px',
+        borderBottom: '1px solid var(--border-light)',
+        paddingBottom: '50px'
+      }}>
+        {landingQrs.tag1?.visible !== false && (
+          <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} />
+        )}
+        {landingQrs.tag2?.visible !== false && (
+          <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} />
+        )}
+        {landingQrs.tag3?.visible !== false && (
+          <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} />
+        )}
+      </div>
 
       <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         The Problem
@@ -351,4 +687,4 @@ const OrderPage = () => {
   );
 };
 
-export default OrderPage;
+export default LandingPage;

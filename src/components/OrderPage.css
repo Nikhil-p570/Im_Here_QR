@@ -233,22 +233,31 @@
 }
 
 .back-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  color: #ffffff;
   font-family: var(--font-sans);
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
   cursor: pointer;
-  padding: 0;
+  padding: 8px 18px;
+  margin-left: 0;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  transition: color 0.2s;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.back-btn:hover { color: var(--text-primary); }
+.back-btn:hover {
+  color: var(--accent-cyan, #22d3ee);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(34, 211, 238, 0.45);
+  transform: translateX(-4px);
+  box-shadow: 0 4px 20px rgba(34, 211, 238, 0.25);
+}
 
 /* ── Upload Zone ───────────────────────────────────── */
 .upload-zone {
@@ -916,4 +925,46 @@
 
 @keyframes payment-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Strike-through Pricing Animations */
+.price-original {
+  position: relative;
+  color: #64748b !important;
+  font-size: 0.95rem;
+  margin-right: 8px;
+  display: inline-block;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.price-original::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0;
+  height: 2px;
+  background: #ef4444; /* red line */
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.price-original.struck::after {
+  width: 100%;
+}
+
+.price-discounted {
+  color: var(--accent-cyan) !important;
+  font-weight: 900;
+  font-size: 1.35rem;
+  opacity: 0;
+  transform: translateY(4px);
+  display: inline-block;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition-delay: 0.8s;
+}
+
+.price-discounted.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
