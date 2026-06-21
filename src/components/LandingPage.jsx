@@ -227,6 +227,7 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
 /* ── Main Landing Page Component ── */
 const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
   const [db, setDb] = useState(firestoreDb);
+  const [fetchingLandingQrs, setFetchingLandingQrs] = useState(true);
   const [landingQrs, setLandingQrs] = useState({
     tag1: { label: 'Your Pet', base64Image: '/logo icon.png', visible: true },
     tag2: { label: 'Your Memory', base64Image: '/customised.png', visible: true },
@@ -271,7 +272,10 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           }
         } catch (err) {
           console.error("Firebase init failed in LandingPage:", err);
+          setFetchingLandingQrs(false);
         }
+      } else {
+        setFetchingLandingQrs(false);
       }
     };
 
@@ -308,6 +312,8 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         }
       } catch (err) {
         console.warn("Failed to fetch settings/landing_page_qrs from Firestore:", err);
+      } finally {
+        setFetchingLandingQrs(false);
       }
     };
 
@@ -425,16 +431,25 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         width: '100%',
         padding: '20px',
         borderBottom: '1px solid var(--border-light)',
-        paddingBottom: '50px'
+        paddingBottom: '50px',
+        minHeight: '342px'
       }}>
-        {landingQrs.tag1?.visible !== false && (
-          <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} />
-        )}
-        {landingQrs.tag2?.visible !== false && (
-          <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} />
-        )}
-        {landingQrs.tag3?.visible !== false && (
-          <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} />
+        {fetchingLandingQrs ? (
+          <div style={{ display: 'flex', gap: '40px', justifyContent: 'center', alignItems: 'center', width: '100%', height: '300px' }}>
+            <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px', borderTopColor: 'var(--accent-indigo)' }} />
+          </div>
+        ) : (
+          <>
+            {landingQrs.tag1?.visible !== false && (
+              <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} />
+            )}
+            {landingQrs.tag2?.visible !== false && (
+              <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} />
+            )}
+            {landingQrs.tag3?.visible !== false && (
+              <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} />
+            )}
+          </>
         )}
       </div>
 
