@@ -1538,7 +1538,7 @@ const OrderPage = () => {
               
               {/* Shipping Address Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '8px', color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '8px', color: 'var(--text-primary)' }}>
                   Shipping Information
                 </h3>
 
@@ -1649,8 +1649,8 @@ const OrderPage = () => {
 
               {/* Order Summary & Pay CTA */}
               <div style={{
-                background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid rgba(255, 255, 255, 0.05)',
+                background: 'rgba(15, 23, 42, 0.02)',
+                border: '1px solid var(--border-light)',
                 borderRadius: '14px',
                 padding: '24px',
                 display: 'flex',
@@ -1658,12 +1658,12 @@ const OrderPage = () => {
                 gap: '16px',
                 marginTop: '12px'
               }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '8px' }}>
                   Order Summary
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {cartItems.map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#94a3b8' }}>
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                       <span>{item.label} (x{item.qty})</span>
                       <span>₹{item.qty * item.unitPrice}</span>
                     </div>
@@ -1674,9 +1674,9 @@ const OrderPage = () => {
                       <span>−₹{totalSavings}</span>
                     </div>
                   )}
-                  <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: '#ffffff', marginTop: '6px' }}>
+                  <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginTop: '6px' }}>
                     <span>Total Amount</span>
-                    <span style={{ color: 'var(--accent-cyan)' }}>₹{total}</span>
+                    <span style={{ color: 'var(--accent-indigo)' }}>₹{total}</span>
                   </div>
                 </div>
 
@@ -1709,9 +1709,9 @@ const OrderPage = () => {
 
                 {/* Divider */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }} />
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                  <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }} />
                 </div>
 
                 {/* COD Button */}
