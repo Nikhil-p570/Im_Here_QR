@@ -138,7 +138,7 @@
 }
 
 .amount-highlight {
-  color: var(--accent-cyan, #06b6d4);
+  color: var(--accent-indigo, #6366f1);
   font-size: 1.05rem;
   font-weight: 800;
 }

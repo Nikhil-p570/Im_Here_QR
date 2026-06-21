@@ -63,7 +63,7 @@ const CustomerProfile = ({
             <h3 style={{ margin: '0 0 6px', fontSize: '0.9rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '6px' }}>
               ⚠️ PREVIEW QR TAG PAGE
             </h3>
-            <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.75)', lineHeight: '1.4' }}>
+            <p style={{ margin: 0, fontSize: '0.78rem', color: '#9a3412', lineHeight: '1.4' }}>
               This is a demonstration of how your smart keychain profile looks when someone scans your <strong>I'm Here</strong> tag. The actual page will contain your contact info.
             </p>
           </div>
@@ -81,7 +81,7 @@ const CustomerProfile = ({
           {customerData.name && (
             <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px' }}>
               <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Owner Name</span>
-              <span style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff' }}>{customerData.name}</span>
+              <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{customerData.name}</span>
             </div>
           )}
 
@@ -90,7 +90,7 @@ const CustomerProfile = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '4px' }}>Primary Phone</span>
-                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
+                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent-indigo)' }}>
                   {customerData.isPreview ? "+91 XXXXX-XXXXX" : formatDisplayPhone(customerData.number)}
                 </span>
               </div>
@@ -225,7 +225,7 @@ const CustomerProfile = ({
                         <span style={{ fontSize: '0.65rem', display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>
                           {social.label}
                         </span>
-                        <span style={{ fontSize: '0.88rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'var(--accent-cyan)' }}>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', display: 'block', color: 'var(--accent-indigo)' }}>
                           {social.value}
                         </span>
                       </div>
