@@ -2609,11 +2609,21 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      {landingQrs.tag1.base64Image ? (
-                        <img src={landingQrs.tag1.base64Image} alt="Tag 1" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
-                      )}
+                      <img 
+                        src={landingQrs.tag1.base64Image || '/cropped_tag1.png'} 
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag1.png')) {
+                            e.target.src = '/cropped_tag1.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag1.jpg')) {
+                            e.target.src = '/logo icon.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }} 
+                        alt="Tag 1" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
                     </div>
                     <input
                       type="file"
@@ -2774,11 +2784,21 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      {landingQrs.tag2.base64Image ? (
-                        <img src={landingQrs.tag2.base64Image} alt="Tag 2" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
-                      )}
+                      <img 
+                        src={landingQrs.tag2.base64Image || '/cropped_tag2.png'} 
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag2.png')) {
+                            e.target.src = '/cropped_tag2.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag2.jpg')) {
+                            e.target.src = '/customised.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }} 
+                        alt="Tag 2" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
                     </div>
                     <input
                       type="file"
@@ -2939,11 +2959,21 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      {landingQrs.tag3.base64Image ? (
-                        <img src={landingQrs.tag3.base64Image} alt="Tag 3" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>No image</div>
-                      )}
+                      <img 
+                        src={landingQrs.tag3.base64Image || '/cropped_tag3.png'} 
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag3.png')) {
+                            e.target.src = '/cropped_tag3.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag3.jpg')) {
+                            e.target.src = '/logo icon.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }} 
+                        alt="Tag 3" 
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      />
                     </div>
                     <input
                       type="file"

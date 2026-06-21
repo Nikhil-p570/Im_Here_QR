@@ -1,6 +1,7 @@
 export const ensureQrLib = async () => {
   if (typeof window.qrcode !== 'undefined') return true;
   const urls = [
+    '/qrcode.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/2.0.4/qrcode.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.js'

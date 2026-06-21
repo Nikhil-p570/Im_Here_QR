@@ -103,16 +103,54 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
   const [imgLoaded, setImgLoaded] = useState(null);
   const [logoLoaded, setLogoLoaded] = useState(null);
 
-  // Load background image
+  // Load background image with robust fallbacks (Firestore, public folder cropped, and default logo)
   useEffect(() => {
-    if (!base64Image) {
-      setImgLoaded(null);
-      return;
+    const loadAttempts = [];
+
+    // 1. Attempt Firestore configured base64 or path
+    if (base64Image && base64Image.trim() !== '') {
+      loadAttempts.push(base64Image);
     }
-    const img = new Image();
-    img.onload = () => setImgLoaded(img);
-    img.src = base64Image;
-  }, [base64Image]);
+
+    // 2. Fall back to local cropped images in the public folder, then the ultimate default logo
+    if (tagId === 'tag1') {
+      loadAttempts.push('/cropped_tag1.png');
+      loadAttempts.push('/cropped_tag1.jpg');
+      loadAttempts.push('/logo icon.png');
+    } else if (tagId === 'tag2') {
+      loadAttempts.push('/cropped_tag2.png');
+      loadAttempts.push('/cropped_tag2.jpg');
+      loadAttempts.push('/customised.png');
+    } else if (tagId === 'tag3') {
+      loadAttempts.push('/cropped_tag3.png');
+      loadAttempts.push('/cropped_tag3.jpg');
+      loadAttempts.push('/logo icon.png');
+    }
+
+    let attemptIndex = 0;
+
+    const tryNext = () => {
+      if (attemptIndex >= loadAttempts.length) {
+        setImgLoaded(null);
+        return;
+      }
+
+      const currentSrc = loadAttempts[attemptIndex];
+      attemptIndex++;
+
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        setImgLoaded(tempImg);
+      };
+      tempImg.onerror = () => {
+        console.warn(`HangingKeychain (${tagId}): Failed to load image from source: ${currentSrc}. Trying next fallback...`);
+        tryNext();
+      };
+      tempImg.src = currentSrc;
+    };
+
+    tryNext();
+  }, [base64Image, tagId]);
 
   // Load logo image
   useEffect(() => {
