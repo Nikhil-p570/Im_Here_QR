@@ -417,6 +417,7 @@
   width: 260px;
   height: 284px;
   border-radius: 16px;
+  overflow: hidden;
   box-shadow: 0 14px 48px rgba(99, 102, 241, 0.15), 0 0 0 1px var(--border-light);
 }
 
@@ -593,11 +594,14 @@
   display: block;
   width: 300px;
   height: 328px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 0 0 1.5px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .classic-canvas.midnight-canvas {
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.12), 0 0 0 1.5px rgba(255, 255, 255, 0.18);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.12);
 }
 
 .classic-preset-name {
