@@ -1551,7 +1551,7 @@ const OrderPage = () => {
                       required
                       value={checkoutForm.firstName}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
-                      placeholder="Nikhil"
+                      placeholder=""
                     />
                   </div>
                   <div className="form-group">
@@ -1561,7 +1561,7 @@ const OrderPage = () => {
                       className="text-input"
                       value={checkoutForm.lastName}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
-                      placeholder="Sharma"
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -1575,7 +1575,7 @@ const OrderPage = () => {
                       required
                       value={checkoutForm.email}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="nikhil@example.com"
+                      placeholder=""
                     />
                   </div>
                   <div className="form-group">
@@ -1593,7 +1593,7 @@ const OrderPage = () => {
                           setCheckoutForm(prev => ({ ...prev, phone: val }));
                         }
                       }}
-                      placeholder="9876543210"
+                      placeholder=""
                     />
                   </div>
                 </div>
@@ -1606,7 +1606,7 @@ const OrderPage = () => {
                     required
                     value={checkoutForm.address}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, address: e.target.value }))}
-                    placeholder="Flat No, Building, Street Name"
+                    placeholder=""
                   />
                 </div>
 
@@ -1619,7 +1619,7 @@ const OrderPage = () => {
                       required
                       value={checkoutForm.city}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
-                      placeholder="Mumbai"
+                      placeholder=""
                     />
                   </div>
                   <div className="form-group">
@@ -1630,7 +1630,7 @@ const OrderPage = () => {
                       required
                       value={checkoutForm.state}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, state: e.target.value }))}
-                      placeholder="Maharashtra"
+                      placeholder=""
                     />
                   </div>
                   <div className="form-group">
@@ -1641,7 +1641,7 @@ const OrderPage = () => {
                       required
                       value={checkoutForm.pincode}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, pincode: e.target.value }))}
-                      placeholder="400001"
+                      placeholder=""
                     />
                   </div>
                 </div>
