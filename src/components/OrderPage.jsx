@@ -1774,7 +1774,7 @@ const OrderPage = () => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.85)',
+            background: 'rgba(15, 23, 42, 0.6)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1786,16 +1786,16 @@ const OrderPage = () => {
           <div
             style={{
               position: 'relative',
-              background: '#0e1217',
-              padding: '16px',
-              borderRadius: '20px',
+              background: '#ffffff',
+              padding: '24px',
+              borderRadius: '24px',
               border: '1px solid var(--border-light)',
               maxWidth: '90%',
               maxHeight: '90%',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.8)'
+              boxShadow: '0 20px 48px rgba(15, 23, 42, 0.15)'
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1810,8 +1810,8 @@ const OrderPage = () => {
                       width: '300px',
                       height: 'auto',
                       borderRadius: '18px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                      border: '1px solid rgba(15, 23, 42, 0.1)',
+                      boxShadow: '0 8px 32px rgba(15, 23, 42, 0.12)',
                       display: 'block'
                     }}
                   />
@@ -1833,11 +1833,11 @@ const OrderPage = () => {
             <button
               onClick={() => setActivePreviewUrl(null)}
               style={{
-                marginTop: '16px',
+                marginTop: '20px',
                 padding: '10px 24px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid var(--border-light)',
-                color: 'var(--text-secondary)',
+                background: 'rgba(15, 23, 42, 0.05)',
+                border: '1px solid rgba(15, 23, 42, 0.15)',
+                color: 'var(--text-primary)',
                 borderRadius: '10px',
                 cursor: 'pointer',
                 fontWeight: 600,
