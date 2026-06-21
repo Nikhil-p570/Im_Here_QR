@@ -155,62 +155,20 @@ function App() {
     const initCustomerDb = async () => {
       setCustomerLoading(true);
       setCustomerError("");
-      let db = firestoreDb;
 
-      if (!db) {
-        let config = null;
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocal) {
-          config = {
-            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-            authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-            projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-            storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-            appId: import.meta.env.VITE_FIREBASE_APP_ID,
-            measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-          };
+      try {
+        const res = await fetch(`/api/profile?id=${encodeURIComponent(customerId)}`);
+        const data = await res.json();
+        
+        if (res.ok && data.success && data.profile) {
+          setCustomerData(data.profile);
         } else {
-          try {
-            const res = await fetch('/api/config');
-            if (res.ok) {
-              const data = await res.json();
-              config = data.config;
-            }
-          } catch (e) {
-            console.error("Failed to load Firebase config:", e);
-          }
+          setCustomerError(data.error || "This QR Tag ID does not exist or has been removed.");
         }
-
-        if (config && config.apiKey) {
-          try {
-            const dbInstance = initializeFirebase(config);
-            setFirestoreDb(dbInstance);
-            db = dbInstance;
-          } catch (err) {
-            console.error("Firebase dynamic initialization failed:", err);
-          }
-        }
-      }
-
-      if (db) {
-        try {
-          const docRef = doc(db, 'links', customerId);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            setCustomerData(data);
-          } else {
-            setCustomerError("This QR Tag ID does not exist or has been removed.");
-          }
-        } catch (err) {
-          console.error(err);
-          setCustomerError(`Failed to fetch QR details: ${err.message}`);
-        } finally {
-          setCustomerLoading(false);
-        }
-      } else {
-        setCustomerError("Could not connect to database.");
+      } catch (err) {
+        console.error(err);
+        setCustomerError(`Failed to fetch QR details: ${err.message}`);
+      } finally {
         setCustomerLoading(false);
       }
     };
@@ -305,7 +263,7 @@ function App() {
   }
 
   // Submit Password Verification for Changing Customer Info
-  const handlePasswordSubmit = (e) => {
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setAuthModalError("");
     
@@ -314,17 +272,35 @@ function App() {
       return;
     }
 
-    if (enteredPassword.trim() === customerData.password) {
-      setIsEditing(true);
-      setShowAuthModal(false);
-      setEnteredPassword("");
-    } else {
-      setAuthModalError("Incorrect password. Please try again.");
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify',
+          id: customerId,
+          password: enteredPassword
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        // Save the correct password temporarily for edit authorization on submission
+        sessionStorage.setItem(`owner_session_pass_${customerId}`, enteredPassword);
+        setIsEditing(true);
+        setShowAuthModal(false);
+        setEnteredPassword("");
+      } else {
+        setAuthModalError(data.error || "Incorrect password. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setAuthModalError("Failed to verify password. Please try again.");
     }
   };
 
   // Submit Security Answer Recovery for Changing Customer Info
-  const handleSecuritySubmit = (e) => {
+  const handleSecuritySubmit = async (e) => {
     e.preventDefault();
     setAuthModalError("");
 
@@ -333,15 +309,30 @@ function App() {
       return;
     }
 
-    const storedAnswer = (customerData.securityAnswer || "").trim().toLowerCase();
-    const providedAnswer = enteredSecurityAnswer.trim().toLowerCase();
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'verify',
+          id: customerId,
+          securityAnswer: enteredSecurityAnswer
+        })
+      });
 
-    if (providedAnswer === storedAnswer) {
-      setIsEditing(true);
-      setShowAuthModal(false);
-      setEnteredSecurityAnswer("");
-    } else {
-      setAuthModalError("Incorrect answer. Please try again.");
+      const data = await res.json();
+      if (res.ok && data.success) {
+        // Store verification method (security answer used)
+        sessionStorage.setItem(`owner_session_bypass_${customerId}`, enteredSecurityAnswer);
+        setIsEditing(true);
+        setShowAuthModal(false);
+        setEnteredSecurityAnswer("");
+      } else {
+        setAuthModalError(data.error || "Incorrect answer. Please try again.");
+      }
+    } catch (err) {
+      console.error(err);
+      setAuthModalError("Failed to verify security answer. Please try again.");
     }
   };
 

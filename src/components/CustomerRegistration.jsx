@@ -156,27 +156,39 @@ const CustomerRegistration = ({
 
     try {
       if (!customerId) throw new Error("No customer ID found in URL.");
-      const docRef = doc(firestoreDb, 'links', customerId);
-
+      
       const updatePayload = {
-        status: 'registered',
-        registeredAt: new Date(),
+        action: 'register',
+        id: customerId,
         name: nameVal,
         number: combinedNumber,
-        countryCode: selectedCountry.code,
-        localNumber: numberVal,
+        altNumber: '',
+        whatsappEnabled: true,
+        message: 'Hi! If you found my item, please get in touch.',
+        rewardEnabled: false,
+        rewardAmount: '',
+        socials: cleanedSocials,
         password: passwordVal,
         securityQuestion: questionTypeVal === 'custom' ? customQuestionVal : questionTypeVal,
-        securityAnswer: answerVal.toLowerCase(), // Lowercase for easier matching on recovery
-        socials: cleanedSocials
+        securityAnswer: answerVal
       };
 
-      await setDoc(docRef, updatePayload, { merge: true });
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload)
+      });
 
-      setRegSuccess("Finally claimed! We're official now. 😉🎉");
-      setTimeout(() => {
-        onSuccess(updatePayload);
-      }, 1000);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setRegSuccess("Finally claimed! We're official now. 😉🎉");
+        setTimeout(() => {
+          onSuccess(data.profile);
+        }, 1000);
+      } else {
+        setRegError(data.error || 'Failed to save details.');
+      }
     } catch (err) {
       console.error(err);
       setRegError(`Failed to save details: ${err.message}`);

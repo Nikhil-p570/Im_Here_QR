@@ -13,7 +13,7 @@ const CustomerEditProfile = ({
 }) => {
   const [editName, setEditName] = useState(customerData.name || "");
   const [editNumber, setEditNumber] = useState(customerData.localNumber || "");
-  const [editPassword, setEditPassword] = useState(customerData.password || "");
+  const [editPassword, setEditPassword] = useState(sessionStorage.getItem(`owner_session_pass_${customerId}`) || "");
   const [showPassword, setShowPassword] = useState(false);
 
   const presetQuestions = [
@@ -38,7 +38,7 @@ const CustomerEditProfile = ({
   const [editCustomSecurityQuestion, setEditCustomSecurityQuestion] = useState(
     presetQuestions.includes(currentQuestion) ? "" : currentQuestion
   );
-  const [editSecurityAnswer, setEditSecurityAnswer] = useState(customerData.securityAnswer || "");
+  const [editSecurityAnswer, setEditSecurityAnswer] = useState(sessionStorage.getItem(`owner_session_bypass_${customerId}`) || "");
   const [editSocials, setEditSocials] = useState(customerData.socials || []);
 
   const getInitialCountry = () => {
@@ -146,27 +146,48 @@ const CustomerEditProfile = ({
 
     try {
       if (!customerId) throw new Error("No customer ID found in URL.");
-      const docRef = doc(firestoreDb, 'links', customerId);
+      
+      const savedPass = sessionStorage.getItem(`owner_session_pass_${customerId}`) || '';
+      const savedBypass = sessionStorage.getItem(`owner_session_bypass_${customerId}`) || '';
 
       const updatePayload = {
+        action: 'update',
+        id: customerId,
+        verificationPassword: savedPass,
+        verificationSecurityAnswer: savedBypass,
         name: nameVal,
         number: combinedNumber,
-        countryCode: editSelectedCountry.code,
-        localNumber: numberVal,
-        password: passwordVal,
-        securityQuestion: questionTypeVal === 'custom' ? customQuestionVal : questionTypeVal,
-        securityAnswer: answerVal.toLowerCase(),
+        altNumber: customerData.altNumber || '',
+        whatsappEnabled: customerData.whatsappEnabled !== false,
+        message: customerData.message || 'Hi! If you found my item, please get in touch.',
+        rewardEnabled: !!customerData.rewardEnabled,
+        rewardAmount: customerData.rewardAmount || '',
         socials: cleanedSocials,
-        updatedAt: new Date()
+        ...(passwordVal ? { newPassword: passwordVal } : {}),
+        newSecurityQuestion: questionTypeVal === 'custom' ? customQuestionVal : questionTypeVal,
+        ...(answerVal ? { newSecurityAnswer: answerVal } : {})
       };
 
-      await setDoc(docRef, updatePayload, { merge: true });
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatePayload)
+      });
 
-      setEditSuccess("Profile updated successfully! 🎉");
-      setTimeout(() => {
-        onSuccess(updatePayload);
-        setEditSuccess("");
-      }, 1000);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        if (passwordVal) {
+          sessionStorage.setItem(`owner_session_pass_${customerId}`, passwordVal);
+        }
+        setEditSuccess("Profile updated successfully! 🎉");
+        setTimeout(() => {
+          onSuccess(data.profile);
+          setEditSuccess("");
+        }, 1000);
+      } else {
+        setEditError(data.error || "Failed to update profile.");
+      }
     } catch (err) {
       console.error(err);
       setEditError(`Failed to update details: ${err.message}`);
