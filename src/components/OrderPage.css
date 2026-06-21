@@ -294,7 +294,7 @@
 .section-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -422,7 +422,7 @@
 
 .keychain-label {
   font-size: 0.74rem;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
