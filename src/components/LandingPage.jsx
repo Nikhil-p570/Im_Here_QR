@@ -437,7 +437,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         </div>
 
         <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 20%, #4f46e5 60%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.25', paddingBottom: '0.1em' }}>
-          Smart QR Tags
+          Smart & Customizable QR Tags
         </h1>
 
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '540px', lineHeight: '1.6', margin: '0 auto' }}>
