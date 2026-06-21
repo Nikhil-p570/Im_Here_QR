@@ -714,13 +714,13 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           © 2026 I'M HERE. Reuniting belongings with their owners.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px' }}>
-          <a href="/terms" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Terms & Conditions</a>
+          <a href="/terms" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#4f46e5'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Terms & Conditions</a>
           <span style={{ color: 'var(--border-light)' }}>•</span>
-          <a href="/privacy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Privacy Policy</a>
+          <a href="/privacy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#4f46e5'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Privacy Policy</a>
           <span style={{ color: 'var(--border-light)' }}>•</span>
-          <a href="/shipping_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Shipping Policy</a>
+          <a href="/shipping_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#4f46e5'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Shipping Policy</a>
           <span style={{ color: 'var(--border-light)' }}>•</span>
-          <a href="/refund_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#fff'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Refund Policy</a>
+          <a href="/refund_policy" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.82rem', transition: 'color 0.2s' }} onMouseEnter={e => e.target.style.color = '#4f46e5'} onMouseLeave={e => e.target.style.color = 'var(--text-secondary)'}>Refund Policy</a>
         </div>
       </footer>
     </div>
