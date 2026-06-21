@@ -346,9 +346,9 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
   }, []);
 
   return (
-    <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center' }}>
+    <div className="app-container" style={{ maxWidth: '1000px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '90vh', gap: '32px', alignSelf: 'center', paddingTop: '16px' }}>
       {/* Top-right Order Now button */}
-      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', paddingBottom: '4px' }}>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', paddingBottom: '4px', marginTop: '12px' }}>
         <a
           href="/orders"
           id="btn-order-now-top"
@@ -382,7 +382,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         </a>
       </div>
 
-      <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
+      <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '-50px' }}>
         {/* Logo with glow effect */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
           <div style={{
@@ -396,25 +396,25 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             filter: 'blur(16px)',
             zIndex: -1
           }} />
-          <img 
-            src="/full logo.png" 
-            alt="I'm here Logo" 
-            style={{ 
-              width: '260px', 
-              height: 'auto', 
-              borderRadius: '16px', 
-              boxShadow: '0 12px 36px rgba(0,0,0,0.65)', 
-              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' 
-            }} 
+          <img
+            src="/full logo.png"
+            alt="I'm here Logo"
+            style={{
+              width: '260px',
+              height: 'auto',
+              borderRadius: '16px',
+              boxShadow: '0 12px 36px rgba(0,0,0,0.65)',
+              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
             onMouseEnter={(e) => e.target.style.transform = 'scale(1.06) rotate(1deg)'}
             onMouseLeave={(e) => e.target.style.transform = 'scale(1) rotate(0deg)'}
           />
         </div>
-        
+
         <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #ffffff 20%, #a5b4fc 60%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.1' }}>
           Smart QR Item Tags
         </h1>
-        
+
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '540px', lineHeight: '1.6', margin: '0 auto' }}>
           Securely connect your physical belongings to your digital space. No apps to download. Just scan, claim, and protect your items.
         </p>
@@ -427,11 +427,11 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         alignItems: 'flex-start',
         gap: '40px',
         flexWrap: 'wrap',
-        margin: '20px auto 40px auto',
+        margin: '-30px auto 16px auto',
         width: '100%',
         padding: '20px',
         borderBottom: '1px solid var(--border-light)',
-        paddingBottom: '50px',
+        paddingBottom: '24px',
         minHeight: '342px'
       }}>
         {fetchingLandingQrs ? (
@@ -453,30 +453,30 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         )}
       </div>
 
-      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '24px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0px', marginBottom: '-8px', background: 'linear-gradient(135deg, #ffffff 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
         The Problem
       </h2>
 
       {/* Problem Section */}
       <div className="problem-grid">
         {/* Problem Card 1 */}
-        <div className="glass-panel reveal-on-scroll delay-100" style={{ 
-          padding: '20px', 
-          borderRadius: '16px', 
-          textAlign: 'justify', 
-          display: 'flex', 
-          flexDirection: 'column', 
+        <div className="glass-panel reveal-on-scroll delay-100" style={{
+          padding: '20px',
+          borderRadius: '16px',
+          textAlign: 'justify',
+          display: 'flex',
+          flexDirection: 'column',
           gap: '16px',
           border: '1px solid rgba(244, 63, 94, 0.15)',
-          transition: 'all 0.3s ease' 
+          transition: 'all 0.3s ease'
         }}
-             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
-             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
           <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
-            <img 
-              src="/problem s1.png" 
-              alt="Lost items situation" 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            <img
+              src="/problem s1.png"
+              alt="Lost items situation"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
           <div>
@@ -487,23 +487,23 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         </div>
 
         {/* Problem Card 2 */}
-        <div className="glass-panel reveal-on-scroll delay-200" style={{ 
-          padding: '20px', 
-          borderRadius: '16px', 
-          textAlign: 'justify', 
-          display: 'flex', 
-          flexDirection: 'column', 
+        <div className="glass-panel reveal-on-scroll delay-200" style={{
+          padding: '20px',
+          borderRadius: '16px',
+          textAlign: 'justify',
+          display: 'flex',
+          flexDirection: 'column',
           gap: '16px',
           border: '1px solid rgba(244, 63, 94, 0.15)',
-          transition: 'all 0.3s ease' 
+          transition: 'all 0.3s ease'
         }}
-             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
-             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.45)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(244, 63, 94, 0.15)'}>
           <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '400px', background: 'rgba(0,0,0,0.2)' }}>
-            <img 
-              src="/problem s2.png" 
-              alt="Helpful finder situation" 
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+            <img
+              src="/problem s2.png"
+              alt="Helpful finder situation"
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
           <div>
@@ -519,17 +519,17 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       </h2>
 
       {/* Feature Cards Grid */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-        gap: '20px', 
-        width: '100%', 
-        marginTop: '20px' 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '20px',
+        width: '100%',
+        marginTop: '20px'
       }}>
         {/* Card 1 */}
         <div className="glass-panel reveal-on-scroll delay-100" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
-             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.4)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.1)', color: 'var(--accent-indigo)', marginBottom: '16px' }}>
             <Tag size={20} />
           </div>
@@ -541,8 +541,8 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
 
         {/* Card 2 */}
         <div className="glass-panel reveal-on-scroll delay-200" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
-             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.4)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--accent-cyan)', marginBottom: '16px' }}>
             <MapPin size={20} />
           </div>
@@ -554,8 +554,8 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
 
         {/* Card 3 */}
         <div className="glass-panel reveal-on-scroll delay-300" style={{ padding: '24px', borderRadius: '16px', textAlign: 'left', transition: 'all 0.3s ease' }}
-             onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'}
-             onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
+          onMouseEnter={(e) => e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.4)'}
+          onMouseLeave={(e) => e.currentTarget.style.borderColor = 'var(--border-light)'}>
           <div style={{ display: 'inline-flex', padding: '10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--accent-emerald)', marginBottom: '16px' }}>
             <Globe size={20} />
           </div>
@@ -588,10 +588,10 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           transition: 'all 0.3s ease'
         }}>
           <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img 
-              src="/ordinary_qr.png" 
-              alt="Ordinary QR Code" 
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+            <img
+              src="/ordinary_qr.png"
+              alt="Ordinary QR Code"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-secondary)', marginBottom: '4px' }}>Ordinary QR Codes</h3>
@@ -610,19 +610,19 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           boxShadow: '0 8px 32px 0 rgba(99, 102, 241, 0.15)',
           transition: 'all 0.3s ease'
         }}
-             onMouseEnter={(e) => {
-               e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
-               e.currentTarget.style.boxShadow = '0 12px 36px 0 rgba(6, 182, 212, 0.25)';
-             }}
-             onMouseLeave={(e) => {
-               e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
-               e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(99, 102, 241, 0.15)';
-             }}>
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.5)';
+            e.currentTarget.style.boxShadow = '0 12px 36px 0 rgba(6, 182, 212, 0.25)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+            e.currentTarget.style.boxShadow = '0 8px 32px 0 rgba(99, 102, 241, 0.15)';
+          }}>
           <div style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', height: '240px', background: 'rgba(255,255,255,0.02)', marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img 
-              src="/customised.png" 
-              alt="Custom Aesthetic QR Code" 
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+            <img
+              src="/customised.png"
+              alt="Custom Aesthetic QR Code"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', marginBottom: '4px', background: 'linear-gradient(135deg, #ffffff 40%, #22d3ee 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
