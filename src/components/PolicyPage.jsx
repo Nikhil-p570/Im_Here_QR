@@ -310,7 +310,7 @@ const PolicyPage = () => {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '20px', marginBottom: '24px' }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
           <img src="/logo icon.png" alt="I'm Here" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '8px' }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #fff 50%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #0f172a 50%, #4f46e5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             I'm Here
           </span>
         </a>
@@ -321,7 +321,7 @@ const PolicyPage = () => {
 
       <main className="glass-panel" style={{ padding: '36px 28px' }}>
         <div style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '16px', marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: '#ffffff', margin: '0 0 6px' }}>{policy.title}</h1>
+          <h1 style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 6px' }}>{policy.title}</h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', margin: 0 }}>Last Updated: {policy.lastUpdated}</p>
         </div>
 

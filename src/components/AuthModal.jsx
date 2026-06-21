@@ -59,7 +59,7 @@ const AuthModal = ({
               }}>
                 <Lock size={24} style={{ color: 'var(--accent-indigo)' }} />
               </div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>Enter Tag Password</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>Enter Tag Password</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px', lineHeight: '1.4' }}>
                 Please enter your password to edit this tag's details.
               </p>
@@ -136,7 +136,7 @@ const AuthModal = ({
               style={{
                 background: 'none',
                 border: 'none',
-                color: 'var(--accent-cyan)',
+                color: 'var(--accent-indigo)',
                 fontSize: '0.82rem',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -151,7 +151,7 @@ const AuthModal = ({
         ) : (
           <form onSubmit={handleSecuritySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ marginBottom: '8px' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>Answer Security Question</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>Answer Security Question</h3>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '6px', lineHeight: '1.4' }}>
                 Verify your identity to reset password or edit details.
               </p>
@@ -163,7 +163,7 @@ const AuthModal = ({
               padding: '12px 16px',
               borderRadius: '10px',
               fontSize: '0.9rem',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               fontWeight: 500,
               textAlign: 'left'
             }}>
@@ -253,7 +253,7 @@ const AuthModal = ({
                 fontWeight: 600,
                 alignItems: 'center'
               }}>
-                <a href="mailto:nikhil.pabbisetti2006@gmail.com" style={{ color: 'var(--accent-cyan)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <a href="mailto:nikhil.pabbisetti2006@gmail.com" style={{ color: 'var(--accent-indigo)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <Mail size={12} /> nikhil.pabbisetti2006@gmail.com
                 </a>
                 <a href="tel:+918919626878" style={{ color: 'var(--accent-indigo)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
