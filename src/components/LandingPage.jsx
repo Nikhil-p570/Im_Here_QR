@@ -420,43 +420,20 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       </div>
 
       <header className="header reveal-on-scroll" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', marginTop: '-20px' }}>
-        {/* Logo with glow effect */}
+        {/* Logo */}
         <div style={{ position: 'relative', marginBottom: '8px' }}>
-          <div style={{
-            position: 'absolute',
-            top: '-20px',
-            left: '-20px',
-            right: '-20px',
-            bottom: '-20px',
-            background: 'radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 75%)',
-            borderRadius: '30px',
-            filter: 'blur(20px)',
-            zIndex: -1
-          }} />
-          <div style={{
-            background: 'linear-gradient(135deg, #090d16 0%, #111827 100%)',
-            padding: '12px 24px',
-            borderRadius: '20px',
-            boxShadow: '0 12px 40px rgba(99, 102, 241, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(99, 102, 241, 0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
-          }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04) rotate(1deg)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) rotate(0deg)'}
-          >
-            <img
-              src="/full logo.png"
-              alt="I'm here Logo"
-              style={{
-                width: '240px',
-                height: 'auto',
-                display: 'block'
-              }}
-            />
-          </div>
+          <img
+            src="/full logo.png"
+            alt="I'm here Logo"
+            style={{
+              width: '260px',
+              height: 'auto',
+              borderRadius: '16px',
+              transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}
+            onMouseEnter={(e) => e.target.style.transform = 'scale(1.06) rotate(1deg)'}
+            onMouseLeave={(e) => e.target.style.transform = 'scale(1) rotate(0deg)'}
+          />
         </div>
 
         <h1 style={{ fontSize: '3.6rem', fontWeight: 900, background: 'linear-gradient(135deg, #0f172a 20%, #4f46e5 60%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '4px', letterSpacing: '-0.03em', lineHeight: '1.25', paddingBottom: '0.1em' }}>
