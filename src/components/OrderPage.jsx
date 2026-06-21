@@ -1861,26 +1861,26 @@ const OrderPage = () => {
             left: 0,
             width: '100vw',
             height: '100vh',
-            background: 'rgba(0, 0, 0, 0.82)',
+            background: 'rgba(15, 23, 42, 0.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1001,
-            backdropFilter: 'blur(10px)',
+            backdropFilter: 'blur(6px)',
             animation: 'fadeIn 0.25s ease-out'
           }}
         >
           <div
             style={{
               position: 'relative',
-              background: '#0f172a',
-              border: '1px solid rgba(249, 115, 22, 0.3)',
+              background: '#ffffff',
+              border: '1px solid var(--border-light)',
               borderRadius: '24px',
               padding: '28px 24px',
               maxWidth: '420px',
               width: '90%',
               textAlign: 'center',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.7)',
+              boxShadow: '0 20px 48px rgba(15, 23, 42, 0.15)',
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
@@ -1894,16 +1894,16 @@ const OrderPage = () => {
               width: '56px',
               height: '56px',
               borderRadius: '50%',
-              background: 'rgba(249, 115, 22, 0.1)',
-              border: '1.5px solid rgba(249, 115, 22, 0.3)',
-              color: '#f97316',
+              background: 'rgba(99, 102, 241, 0.08)',
+              border: '1.5px solid rgba(99, 102, 241, 0.2)',
+              color: 'var(--accent-indigo)',
               fontSize: '1.8rem',
               margin: '0 auto 4px'
             }}>
               ℹ️
             </div>
 
-            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>
+            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Ordering Multiple Tags?
             </h3>
 
@@ -1911,7 +1911,7 @@ const OrderPage = () => {
               All tags added here will use the <strong>same QR code</strong> (linked to the same owner details) {step === 'personalised' ? 'and the same background photo' : 'and the same design'}.
             </p>
 
-            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--accent-cyan)', fontWeight: 600, lineHeight: '1.55', textAlign: 'left' }}>
+            <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--accent-indigo)', fontWeight: 600, lineHeight: '1.55', textAlign: 'left' }}>
               {step === 'personalised'
                 ? 'If you want different photos or separate QR codes for different keys or bags, please add this one to the cart first, then click "Add Another Tag" to customize a new one!'
                 : 'If you want separate QR codes for different keys or bags, please add this one to the cart first, then click "Add Another Tag" to customize a new one!'
