@@ -670,7 +670,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <img
               src="/customised.png"
               alt="Custom Aesthetic QR Code"
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              style={{ height: '100%', width: 'auto', aspectRatio: '1', objectFit: 'contain', borderRadius: '16px' }}
             />
           </div>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '4px', background: 'linear-gradient(135deg, #0f172a 40%, #0891b2 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Custom Aesthetic QRs</h3>
