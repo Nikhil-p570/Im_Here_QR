@@ -27,7 +27,7 @@ const CLASSIC_PRESETS = [
     name: 'Daylight',
     dotColor: '#111111',
     bgColor: '#ffffff',
-    cardStyle: { background: '#ffffff' },
+    cardStyle: { background: '#f1f5f9' },
     label: 'Black dots · White background'
   }
 ];
