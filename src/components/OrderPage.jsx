@@ -1081,7 +1081,7 @@ const OrderPage = () => {
                           setStep('personalised');
                           setShowAddMoreOptions(false);
                         }}
-                        style={{ border: '1px solid rgba(139, 92, 246, 0.4)', color: '#ffffff' }}
+                        style={{ border: '1px solid rgba(139, 92, 246, 0.4)', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)' }}
                       >
                         🎨 Add Personalised Tag
                       </button>
@@ -1091,7 +1091,7 @@ const OrderPage = () => {
                           setStep('classic');
                           setShowAddMoreOptions(false);
                         }}
-                        style={{ border: '1px solid rgba(6, 182, 212, 0.4)', color: '#ffffff' }}
+                        style={{ border: '1px solid rgba(6, 182, 212, 0.4)', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }}
                       >
                         ⬛ Add Classic Tag
                       </button>
