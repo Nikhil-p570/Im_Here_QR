@@ -98,10 +98,18 @@ function drawBrandedQr(uploadedImg, presetOptions) {
 
 /* ── Hanging Keychain Subcomponent ── */
 const HangingKeychain = ({ tagId, base64Image, label, index }) => {
-  const [flipped, setFlipped] = useState(false);
+  const [flipped, setFlipped] = useState(true);
   const canvasRef = useRef(null);
   const [imgLoaded, setImgLoaded] = useState(null);
   const [logoLoaded, setLogoLoaded] = useState(null);
+
+  // Auto-flip back to original side after 0.3 seconds on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFlipped(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load background image with robust fallbacks (Firestore, public folder cropped, and default logo)
   useEffect(() => {
