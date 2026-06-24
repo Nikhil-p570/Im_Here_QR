@@ -105,6 +105,7 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
 
   // Load background image with robust fallbacks (Firestore, public folder cropped, and default logo)
   useEffect(() => {
+    let active = true;
     const loadAttempts = [];
 
     // Prioritize pic1, pic2, pic3 directly so they load instantly
@@ -131,6 +132,7 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
     let attemptIndex = 0;
 
     const tryNext = () => {
+      if (!active) return;
       if (attemptIndex >= loadAttempts.length) {
         setImgLoaded(null);
         return;
@@ -141,7 +143,9 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
 
       const tempImg = new Image();
       tempImg.onload = () => {
-        setImgLoaded(tempImg);
+        if (active) {
+          setImgLoaded(tempImg);
+        }
       };
       tempImg.onerror = () => {
         console.warn(`HangingKeychain (${tagId}): Failed to load image from source: ${currentSrc}. Trying next fallback...`);
@@ -151,13 +155,22 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
     };
 
     tryNext();
+    return () => {
+      active = false;
+    };
   }, [base64Image, tagId]);
 
   // Load logo image
   useEffect(() => {
+    let active = true;
     const img = new Image();
-    img.onload = () => setLogoLoaded(img);
+    img.onload = () => {
+      if (active) setLogoLoaded(img);
+    };
     img.src = '/full logo.png';
+    return () => {
+      active = false;
+    };
   }, []);
 
   const draw = useCallback(() => {
@@ -202,9 +215,17 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
   }, [flipped, imgLoaded, logoLoaded]);
 
   useEffect(() => {
-    ensureQrLib().then(() => {
+    let active = true;
+    if (typeof window.qrcode !== 'undefined') {
       draw();
-    });
+    } else {
+      ensureQrLib().then(() => {
+        if (active) draw();
+      });
+    }
+    return () => {
+      active = false;
+    };
   }, [draw]);
 
   const handlePreviewClick = () => {
