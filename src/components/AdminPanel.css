@@ -690,3 +690,57 @@
   padding-top: 10px;
 }
 
+/* 🚚 NimbusPost Shipping Dashboard Additions */
+.shipping-order-card {
+  border-left-width: 4px;
+  transition: border-left-color 0.2s ease, transform 0.2s ease;
+}
+
+.shipping-status-badge {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Status colors */
+.badge-appended {
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #6366f1;
+}
+
+.badge-shipment_created {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  color: #0ea5e9;
+}
+
+.badge-label_printed {
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  color: #a855f7;
+}
+
+.badge-packed {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+}
+
+.badge-pickup_scheduled {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #f59e0b;
+}
+
+/* Bulk Actions Panel */
+.bulk-actions-bar button {
+  transition: all 0.25s ease;
+}
+.bulk-actions-bar button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+

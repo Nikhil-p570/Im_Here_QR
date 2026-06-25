@@ -1,8 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { CheckCircle, XCircle, ShoppingBag, ArrowRight, Truck } from 'lucide-react';
 import { initializeFirebase } from '../firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import './PaymentStatus.css';
+
+const uploadImageToCloudinary = async (base64Str, fsOrderId, itemIdx) => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    console.warn('Cloudinary config missing — skipping image upload');
+    return { url: '', publicId: '' };
+  }
+
+  try {
+    const formData = new FormData();
+    formData.append('file', base64Str);
+    formData.append('upload_preset', uploadPreset);
+    formData.append('folder', 'items');
+
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: 'POST', body: formData }
+    );
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error?.message || `Cloudinary HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    return { url: data.secure_url, publicId: data.public_id };
+  } catch (err) {
+    console.error('Cloudinary upload error:', err);
+    return { url: '', publicId: '' };
+  }
+};
 
 export default function PaymentStatus() {
   // Parse URL parameters
@@ -15,11 +48,14 @@ export default function PaymentStatus() {
   const fsOrderId = params.get('fsOrderId'); // Firestore order doc ID (for online payment)
 
   const [orderUpdated, setOrderUpdated] = useState(false);
+  const hasRun = useRef(false);
 
   // For online payment success: update Firestore order status to 'orderplaced'
   useEffect(() => {
-    if (status !== 'success' || mode === 'cod' || !fsOrderId) return;
+    if (status !== 'success' || !fsOrderId) return;
     if (orderUpdated) return;
+    if (hasRun.current) return;
+    hasRun.current = true;
 
     const updateOrderStatus = async () => {
       try {
@@ -43,10 +79,42 @@ export default function PaymentStatus() {
         }
         if (config && config.apiKey) {
           const db = initializeFirebase(config);
-          await updateDoc(doc(db, 'orders', fsOrderId), {
-            orderStatus: 'orderplaced',
-            zaakpayOrderId: orderId || ''
-          });
+          const docRef = doc(db, 'orders', fsOrderId);
+          const docSnap = await getDoc(docRef);
+
+          if (docSnap.exists()) {
+            const orderData = docSnap.data();
+            const updatedItems = [...(orderData.items || [])];
+            let needsUpdate = false;
+
+            // Loop items and upload tempBase64Image to Cloudinary
+            for (let idx = 0; idx < updatedItems.length; idx++) {
+              const item = updatedItems[idx];
+              if (item.typeofqr === 'personalised' && item.tempBase64Image) {
+                const uploadResult = await uploadImageToCloudinary(item.tempBase64Image, fsOrderId, idx);
+                if (uploadResult.url) {
+                  item.imageUrl = uploadResult.url;
+                  item.cloudinaryPublicId = uploadResult.publicId;
+                  // Only delete the temp base64 field to save space if upload was successful
+                  delete item.tempBase64Image;
+                }
+                needsUpdate = true;
+              }
+            }
+
+            const updatePayload = {
+              orderStatus: 'orderplaced'
+            };
+            if (mode !== 'cod') {
+              updatePayload.cashfreeOrderId = orderId || '';
+            }
+            if (needsUpdate) {
+              updatePayload.items = updatedItems;
+            }
+
+            await updateDoc(docRef, updatePayload);
+          }
+
           setOrderUpdated(true);
         }
       } catch (err) {
