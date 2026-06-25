@@ -57,6 +57,7 @@ function drawBrandedQr(uploadedImg, presetOptions) {
   const dotColor = presetOptions.dotColor || '#ffffff';
   const bgColor = presetOptions.bgColor || '#000000';
   const overlayDarkness = presetOptions.overlayDarkness !== undefined ? presetOptions.overlayDarkness : 40;
+  const yOffset = presetOptions.yOffset || 0;
 
   // Fill background
   ctx.fillStyle = bgColor;
@@ -64,7 +65,7 @@ function drawBrandedQr(uploadedImg, presetOptions) {
 
   if (uploadedImg) {
     try {
-      ctx.drawImage(uploadedImg, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(uploadedImg, 0, yOffset, canvas.width, canvas.height);
       if (overlayDarkness > 0) {
         ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -97,11 +98,12 @@ function drawBrandedQr(uploadedImg, presetOptions) {
 }
 
 /* ── Hanging Keychain Subcomponent ── */
-const HangingKeychain = ({ tagId, base64Image, label, index }) => {
+const HangingKeychain = ({ tagId, base64Image, label, index, version = 2 }) => {
   const [flipped, setFlipped] = useState(true);
   const canvasRef = useRef(null);
   const [imgLoaded, setImgLoaded] = useState(null);
   const [logoLoaded, setLogoLoaded] = useState(null);
+  const [logoIconLoaded, setLogoIconLoaded] = useState(null);
 
   // Auto-flip back to original side after 0.3 seconds on mount
   useEffect(() => {
@@ -181,6 +183,19 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
     };
   }, []);
 
+  // Load logo icon
+  useEffect(() => {
+    let active = true;
+    const img = new Image();
+    img.onload = () => {
+      if (active) setLogoIconLoaded(img);
+    };
+    img.src = '/logo icon.png';
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -191,36 +206,63 @@ const HangingKeychain = ({ tagId, base64Image, label, index }) => {
     canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    if (flipped) {
-      // Draw back side
-      if (imgLoaded) {
-        ctx.drawImage(imgLoaded, 0, 0, W, H);
-        ctx.fillStyle = "rgba(0,0,0,0.45)"; // overlay darkness
-        ctx.fillRect(0, 0, W, H);
-      } else {
-        ctx.fillStyle = '#0f172a'; // Slate background if no image
-        ctx.fillRect(0, 0, W, H);
-      }
+    if (version === 1) {
+      if (flipped) {
+        // Draw back side
+        if (imgLoaded) {
+          ctx.drawImage(imgLoaded, 0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.45)"; // overlay darkness
+          ctx.fillRect(0, 0, W, H);
+        } else {
+          ctx.fillStyle = '#0f172a'; // Slate background if no image
+          ctx.fillRect(0, 0, W, H);
+        }
 
-      // Draw brand logo
-      if (logoLoaded) {
-        ctx.drawImage(logoLoaded, 0, 0, W, H);
+        // Draw brand logo
+        if (logoLoaded) {
+          ctx.drawImage(logoLoaded, 0, 0, W, H);
+        }
+      } else {
+        // Draw front side (Branded QR)
+        const qrCanvas = drawBrandedQr(imgLoaded, {
+          dotColor: '#ffffff',
+          bgColor: '#000000',
+          overlayDarkness: 40
+        });
+        if (qrCanvas) {
+          ctx.drawImage(qrCanvas, 0, 0);
+        } else {
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, W, H);
+        }
       }
     } else {
-      // Draw front side (Branded QR)
-      const qrCanvas = drawBrandedQr(imgLoaded, {
-        dotColor: '#ffffff',
-        bgColor: '#000000',
-        overlayDarkness: 40
-      });
-      if (qrCanvas) {
-        ctx.drawImage(qrCanvas, 0, 0);
+      // Version 2
+      if (flipped) {
+        // Draw back side (custom image)
+        if (imgLoaded) {
+          ctx.drawImage(imgLoaded, 0, 0, W, H);
+        } else {
+          ctx.fillStyle = '#0f172a'; // Slate background if no image
+          ctx.fillRect(0, 0, W, H);
+        }
       } else {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, W, H);
+        // Draw front side (Branded QR with logo icon background)
+        const qrCanvas = drawBrandedQr(logoIconLoaded, {
+          dotColor: '#ffffff',
+          bgColor: '#000000',
+          overlayDarkness: 40,
+          yOffset: 35
+        });
+        if (qrCanvas) {
+          ctx.drawImage(qrCanvas, 0, 0);
+        } else {
+          ctx.fillStyle = '#0f172a';
+          ctx.fillRect(0, 0, W, H);
+        }
       }
     }
-  }, [flipped, imgLoaded, logoLoaded]);
+  }, [flipped, imgLoaded, logoLoaded, logoIconLoaded, version]);
 
   useEffect(() => {
     let active = true;
@@ -475,36 +517,76 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       </header>
 
       {/* Hanging Keychains Section (Interactive Product Showcase) */}
-      <div className="reveal-on-scroll" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        gap: '40px',
-        flexWrap: 'wrap',
-        margin: '-30px auto 16px auto',
-        width: '100%',
-        padding: '20px',
-        borderBottom: '1px solid var(--border-light)',
-        paddingBottom: '24px',
-        minHeight: '342px'
-      }}>
-        {fetchingLandingQrs ? (
-          <div style={{ display: 'flex', gap: '40px', justifyContent: 'center', alignItems: 'center', width: '100%', height: '300px' }}>
-            <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px', borderTopColor: 'var(--accent-indigo)' }} />
-          </div>
-        ) : (
-          <>
-            {landingQrs.tag1?.visible !== false && (
-              <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} />
-            )}
-            {landingQrs.tag2?.visible !== false && (
-              <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} />
-            )}
-            {landingQrs.tag3?.visible !== false && (
-              <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} />
-            )}
-          </>
-        )}
+      <div className="reveal-on-scroll" style={{ width: '100%' }}>
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px' }}>
+          Version 1: QR on Custom Images
+        </h3>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          gap: '40px',
+          flexWrap: 'wrap',
+          margin: '0 auto 40px auto',
+          width: '100%',
+          padding: '20px',
+          borderBottom: '1px dashed var(--border-light)',
+          paddingBottom: '40px',
+          minHeight: '342px'
+        }}>
+          {fetchingLandingQrs ? (
+            <div style={{ display: 'flex', gap: '40px', justifyContent: 'center', alignItems: 'center', width: '100%', height: '300px' }}>
+              <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px', borderTopColor: 'var(--accent-indigo)' }} />
+            </div>
+          ) : (
+            <>
+              {landingQrs.tag1?.visible !== false && (
+                <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} version={1} />
+              )}
+              {landingQrs.tag2?.visible !== false && (
+                <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} version={1} />
+              )}
+              {landingQrs.tag3?.visible !== false && (
+                <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} version={1} />
+              )}
+            </>
+          )}
+        </div>
+
+        <h3 style={{ fontSize: '1.4rem', fontWeight: 800, textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px', marginTop: '20px' }}>
+          Version 2: QR on Logo & Custom Images on Back
+        </h3>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          gap: '40px',
+          flexWrap: 'wrap',
+          margin: '0 auto 16px auto',
+          width: '100%',
+          padding: '20px',
+          borderBottom: '1px solid var(--border-light)',
+          paddingBottom: '24px',
+          minHeight: '342px'
+        }}>
+          {fetchingLandingQrs ? (
+            <div style={{ display: 'flex', gap: '40px', justifyContent: 'center', alignItems: 'center', width: '100%', height: '300px' }}>
+              <div className="spinner" style={{ width: '40px', height: '40px', borderWidth: '3px', borderTopColor: 'var(--accent-indigo)' }} />
+            </div>
+          ) : (
+            <>
+              {landingQrs.tag1?.visible !== false && (
+                <HangingKeychain tagId="tag1" base64Image={landingQrs.tag1?.base64Image} label={landingQrs.tag1?.label} index={1} version={2} />
+              )}
+              {landingQrs.tag2?.visible !== false && (
+                <HangingKeychain tagId="tag2" base64Image={landingQrs.tag2?.base64Image} label={landingQrs.tag2?.label} index={2} version={2} />
+              )}
+              {landingQrs.tag3?.visible !== false && (
+                <HangingKeychain tagId="tag3" base64Image={landingQrs.tag3?.base64Image} label={landingQrs.tag3?.label} index={3} version={2} />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       <h2 className="reveal-on-scroll" style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0px', marginBottom: '-8px', background: 'linear-gradient(135deg, #0f172a 40%, #f43f5e 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
