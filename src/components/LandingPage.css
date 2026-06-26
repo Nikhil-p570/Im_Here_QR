@@ -5,11 +5,13 @@ html {
 
 /* ── Subtle Background Grid ── */
 .lp-grid-bg {
-  position: absolute; /* Scrolls away with the hero section */
+  position: absolute;
+  /* Scrolls away with the hero section */
   top: 0;
   left: 0;
   right: 0;
-  height: 100vh; /* Limits grid to the top of the page */
+  height: 100vh;
+  /* Limits grid to the top of the page */
   pointer-events: none;
   z-index: 0;
   /* Lighter slate lines for subtle contrast */
@@ -52,13 +54,15 @@ html {
 }
 
 .lp-nav-logo img {
-  height: 44px; /* Increased from 34px to make the icon larger and more prominent */
+  height: 44px;
+  /* Increased from 34px to make the icon larger and more prominent */
   width: auto;
   border-radius: 8px;
 }
 
 .lp-nav-logo-text {
-  font-size: 1.35rem; /* Increased from 1.1rem */
+  font-size: 1.6rem;
+  /* Increased from 1.1rem */
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
@@ -225,8 +229,17 @@ html {
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.7); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
 }
 
 .lp-hero-h1 {
@@ -608,14 +621,16 @@ html {
 
 .lp-carousel-header {
   text-align: center;
-  margin-bottom: 32px; /* reduced slightly to make room for toggle */
+  margin-bottom: 32px;
+  /* reduced slightly to make room for toggle */
 }
 
 /* ── Version Toggle ── */
 .lp-version-toggle-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 72px; /* Increased from 48px to give keyrings more top clearance */
+  margin-bottom: 72px;
+  /* Increased from 48px to give keyrings more top clearance */
 }
 
 .lp-version-toggle {
@@ -667,7 +682,8 @@ html {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 410px; /* Reduced from 500px to remove massive bottom gap */
+  height: 410px;
+  /* Reduced from 500px to remove massive bottom gap */
   max-width: 960px;
   margin: 0 auto;
 }
@@ -676,7 +692,8 @@ html {
 .lp-carousel-track-3d {
   position: relative;
   width: 280px;
-  height: 410px; /* Reduced to match stage */
+  height: 410px;
+  /* Reduced to match stage */
   perspective: 1200px;
   transform-style: preserve-3d;
   /* Shift to the right to center the cards (which are anchored to the top-left of this track) */
@@ -696,7 +713,8 @@ html {
 /* Nav arrows — placed OUTSIDE the track */
 .lp-carousel-nav {
   position: absolute;
-  top: 37%; /* Shifted up to align with the center of the card image */
+  top: 37%;
+  /* Shifted up to align with the center of the card image */
   transform: translateY(-50%);
   width: 48px;
   height: 48px;
@@ -801,7 +819,7 @@ html {
   -webkit-backface-visibility: hidden;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255,255,255,0.05) inset;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
 }
 
 .lp-keychain-face.back {
@@ -892,7 +910,8 @@ html {
 /* Track: active card centered, peek slivers on each side */
 .lp-peek-track {
   display: flex;
-  align-items: flex-start; /* align to top so keyring is consistent */
+  align-items: flex-start;
+  /* align to top so keyring is consistent */
   justify-content: center;
   width: 100%;
   touch-action: pan-y;
@@ -954,7 +973,9 @@ html {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ══════════════════════════════════════
@@ -1234,7 +1255,8 @@ html {
    ══════════════════════════════════════ */
 @media (max-width: 1024px) {
   .lp-version-toggle-container {
-    margin-bottom: 100px; /* Push carousel further down on mobile/tablet viewports */
+    margin-bottom: 100px;
+    /* Push carousel further down on mobile/tablet viewports */
   }
 
   .lp-hero-inner {
@@ -1287,7 +1309,8 @@ html {
 
   .lp-problem-grid {
     grid-template-columns: 1fr;
-    max-width: 300px; /* Reduced from 520px to make the story cards smaller */
+    max-width: 300px;
+    /* Reduced from 520px to make the story cards smaller */
   }
 
   .lp-footer-top {
@@ -1308,9 +1331,9 @@ html {
   .lp-nav {
     padding: 0 16px;
   }
-  
+
   .lp-nav-logo-text {
-    font-size: 0.95rem;
+    font-size: 1.3rem;
   }
 
   .lp-btn-primary {
@@ -1325,7 +1348,7 @@ html {
     min-height: auto;
     padding: 60px 0;
   }
-  
+
   .lp-section-title {
     font-size: clamp(1.6rem, 6vw, 2rem);
   }
@@ -1345,7 +1368,7 @@ html {
     z-index: 10;
     display: flex;
   }
-  
+
   .lp-vs-badge-inner {
     border: 3px solid #fafbfc;
   }
@@ -1397,7 +1420,8 @@ html {
   .lp-hiw-step-number {
     margin-bottom: 0;
     flex-shrink: 0;
-    background: #fafbfc; /* match bg */
+    background: #fafbfc;
+    /* match bg */
   }
 
   .lp-carousel-track-3d {
@@ -1412,30 +1436,31 @@ html {
   .lp-carousel-stage {
     height: 260px;
   }
-  
+
   .lp-carousel-nav {
     display: flex;
     width: 38px;
     height: 38px;
   }
-  
+
   .lp-carousel-nav.prev {
     left: -10px;
   }
-  
+
   .lp-carousel-nav.next {
     right: -10px;
   }
-  
+
   .lp-carousel-dots {
     margin-top: 40px;
   }
+
   .lp-hero-visual {
     transform: scale(0.7);
     margin-top: -20px;
     height: 300px;
   }
-  
+
   /* Make floating badges wrap better or scale down */
   .lp-hero-floating-badge {
     transform: scale(0.9);
@@ -1456,31 +1481,31 @@ html {
   .lp-divider-dot {
     display: none;
   }
-  
+
   .lp-hero-visual {
     transform: scale(0.55);
     margin-top: -60px;
     height: 220px;
   }
-  
+
   .lp-hero-h1 {
     font-size: 2.1rem;
   }
-  
+
   .lp-hero-desc {
     font-size: 0.9rem;
     padding: 0 10px;
   }
-  
+
   .lp-carousel-nav {
     width: 38px;
     height: 38px;
   }
-  
+
   .lp-carousel-nav.prev {
     left: -10px;
   }
-  
+
   .lp-carousel-nav.next {
     right: -10px;
   }
@@ -1491,7 +1516,7 @@ html {
   opacity: 0;
   transform: translateY(32px);
   transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .lp-reveal.is-visible {
@@ -1499,7 +1524,18 @@ html {
   transform: translateY(0);
 }
 
-.lp-reveal-delay-1 { transition-delay: 0.1s; }
-.lp-reveal-delay-2 { transition-delay: 0.2s; }
-.lp-reveal-delay-3 { transition-delay: 0.3s; }
-.lp-reveal-delay-4 { transition-delay: 0.4s; }
+.lp-reveal-delay-1 {
+  transition-delay: 0.1s;
+}
+
+.lp-reveal-delay-2 {
+  transition-delay: 0.2s;
+}
+
+.lp-reveal-delay-3 {
+  transition-delay: 0.3s;
+}
+
+.lp-reveal-delay-4 {
+  transition-delay: 0.4s;
+}
