@@ -58,7 +58,7 @@ html {
 }
 
 .lp-nav-logo-text {
-  font-size: 1.1rem;
+  font-size: 1.35rem; /* Increased from 1.1rem */
   font-weight: 800;
   color: #0f172a;
   letter-spacing: -0.02em;
