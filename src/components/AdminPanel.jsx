@@ -131,6 +131,10 @@ const AdminPanel = ({
   const [ordersSubTab, setOrdersSubTab] = useState('pending_qr'); // 'pending_qr' | 'to_ship'
   const [selectedToShipOrders, setSelectedToShipOrders] = useState({}); // { [orderId]: boolean }
   const [shipmentActionProgress, setShipmentActionProgress] = useState({ active: false, message: '' });
+  const [nimbusWallet, setNimbusWallet] = useState(null);
+  const [shippingRates, setShippingRates] = useState({});
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [fetchingWallet, setFetchingWallet] = useState(false);
 
   // Orders state
   const [orders, setOrders] = useState([]);
@@ -728,6 +732,63 @@ const AdminPanel = ({
     return () => unsubscribe();
   }, [firestoreDb, activeAdminTab]);
 
+  const fetchWalletBalance = async () => {
+    setFetchingWallet(true);
+    try {
+      const res = await handleCallNimbusApi('wallet_balance', {});
+      if (res.success) {
+        setNimbusWallet(res.walletBalance);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch Nimbus wallet:", err);
+    } finally {
+      setFetchingWallet(false);
+    }
+  };
+
+  const calculatePendingRates = async (pendingOrdersList) => {
+    setRatesLoading(true);
+    const newRates = { ...shippingRates };
+    let hasChanges = false;
+    for (const order of pendingOrdersList) {
+      if (!newRates[order.id] && order.shippingAddress?.pincode) {
+        try {
+          const totalQty = (order.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
+          const res = await handleCallNimbusApi('calculate_rates', {
+            destinationPincode: order.shippingAddress.pincode,
+            totalAmount: order.totalAmount,
+            totalQty: totalQty,
+            paymentMode: order.paymentMode
+          });
+          if (res.success && res.cheapest) {
+            newRates[order.id] = {
+              courierId: res.cheapest.courierId,
+              name: res.cheapest.name,
+              charges: res.cheapest.charges
+            };
+            hasChanges = true;
+          }
+        } catch (err) {
+          console.warn(`Failed to calculate rate for order ${order.id}:`, err);
+        }
+      }
+    }
+    if (hasChanges) {
+      setShippingRates(newRates);
+    }
+    setRatesLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeAdminTab === 'orders' && ordersSubTab === 'to_ship') {
+      fetchWalletBalance();
+      const pendingShipmentOrders = orders.filter(o => o.orderStatus === 'appended');
+      if (pendingShipmentOrders.length > 0) {
+        calculatePendingRates(pendingShipmentOrders);
+      }
+    }
+  }, [activeAdminTab, ordersSubTab, orders.length]);
+
   // Helper: generates an 8 character random alphanumeric ID
   const generateRandomCode = () => {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -985,6 +1046,7 @@ const AdminPanel = ({
     setShipmentActionProgress({ active: true, message: `Booking shipment for order ${order.id}...` });
     setOrdersError("");
     try {
+      const rate = shippingRates[order.id];
       const res = await handleCallNimbusApi('create_shipment', {
         orderNumber: order.id,
         customerName: order.customerName,
@@ -993,7 +1055,8 @@ const AdminPanel = ({
         totalAmount: order.totalAmount,
         paymentMode: order.paymentMode,
         shippingAddress: order.shippingAddress,
-        items: order.items
+        items: order.items,
+        courierId: rate ? rate.courierId : '244'
       });
 
       await updateDoc(doc(firestoreDb, 'orders', order.id), {
@@ -1029,6 +1092,7 @@ const AdminPanel = ({
       for (const order of toShipOrdersList) {
         setShipmentActionProgress({ active: true, message: `Booking ${completed + 1} of ${toShipOrdersList.length}: ${order.customerName}...` });
         
+        const rate = shippingRates[order.id];
         const res = await handleCallNimbusApi('create_shipment', {
           orderNumber: order.id,
           customerName: order.customerName,
@@ -1037,7 +1101,8 @@ const AdminPanel = ({
           totalAmount: order.totalAmount,
           paymentMode: order.paymentMode,
           shippingAddress: order.shippingAddress,
-          items: order.items
+          items: order.items,
+          courierId: rate ? rate.courierId : '244'
         });
 
         await updateDoc(doc(firestoreDb, 'orders', order.id), {
@@ -2767,6 +2832,87 @@ const AdminPanel = ({
                   </div>
                 )}
 
+                {/* NimbusPost Rates and Wallet Dashboard */}
+                <div className="nimbus-rates-dashboard glass-panel" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', marginBottom: '20px' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Truck size={18} /> NimbusPost B2B Shipping Rates & Wallet
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Live Wallet Balance</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: nimbusWallet !== null && nimbusWallet < 0 ? '#ef4444' : '#10b981', marginTop: '4px' }}>
+                        {fetchingWallet ? (
+                          <span style={{ fontSize: '1.0rem', color: 'var(--text-secondary)' }}>Loading...</span>
+                        ) : nimbusWallet !== null ? (
+                          `₹${nimbusWallet.toFixed(2)}`
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Pending Shipping Cost (Cheapest Courier)</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
+                        ₹{Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Refill</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
+                        ₹{Math.max(0, Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0) - (nimbusWallet || 0)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Order ID</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Recipient</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Destination</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Cheapest Partner</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', textAlign: 'right' }}>Charges</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.filter(o => o.orderStatus === 'appended').map(order => {
+                          const rate = shippingRates[order.id];
+                          return (
+                            <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: 700 }}>{order.id}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.customerName}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.shippingAddress?.city} ({order.shippingAddress?.pincode})</td>
+                              <td style={{ padding: '8px 12px', color: '#a5b4fc', fontWeight: 600 }}>
+                                {ratesLoading && !rate ? (
+                                  <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Calculating...</span>
+                                ) : rate ? (
+                                  `${rate.name}`
+                                ) : (
+                                  'Not Calculated / Pincode Error'
+                                )}
+                              </td>
+                              <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#f59e0b' }}>
+                                {rate ? `₹${rate.charges.toFixed(2)}` : '₹0.00'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {orders.filter(o => o.orderStatus === 'appended').length === 0 && (
+                          <tr>
+                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                              No pending orders ready for shipment.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
                 {ordersError && (
                   <div className="status-msg status-msg-error" style={{ margin: '12px 0' }}>
                     <AlertTriangle size={16} style={{ flexShrink: 0 }} />
@@ -2850,6 +2996,13 @@ const AdminPanel = ({
                               <div><strong>AWB:</strong> {order.awbNumber}</div>
                               <div><strong>Courier:</strong> {order.courierPartner || 'NimbusPost'}</div>
                               {order.nimbuspostOrderId && <div><strong>Nimbus ID:</strong> {order.nimbuspostOrderId}</div>}
+                            </div>
+                          )}
+
+                          {order.orderStatus === 'appended' && shippingRates[order.id] && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(245,158,11,0.04)', display: 'flex', justifyContent: 'space-between', gap: '8px', borderTop: '1px dashed rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                              <div><strong>Calculated Courier:</strong> {shippingRates[order.id].name}</div>
+                              <div><strong>Rate:</strong> ₹{shippingRates[order.id].charges.toFixed(2)}</div>
                             </div>
                           )}
 
