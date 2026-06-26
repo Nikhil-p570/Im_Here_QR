@@ -820,6 +820,8 @@ html {
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .lp-keychain-face.back {
