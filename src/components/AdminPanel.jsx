@@ -37,7 +37,8 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  EyeOff
+  EyeOff,
+  Truck
 } from 'lucide-react';
 import {
   ensureQrLib,
