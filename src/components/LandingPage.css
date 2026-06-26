@@ -700,14 +700,14 @@ html {
   height: 48px;
   border-radius: 50%;
   background: #fff;
-  border: 2px solid #4F46E5;
+  border: 1.5px solid rgba(0, 0, 0, 0.08);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.25s ease;
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.16);
-  color: #4F46E5;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  color: #0f172a;
   z-index: 20;
 }
 
