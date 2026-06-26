@@ -653,7 +653,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       {/* ── Navbar ── */}
       <nav className={`lp-nav ${scrolled ? 'scrolled' : ''}`}>
         <a href="/" className="lp-nav-logo">
-          <img src="/full logo.png" alt="I'm Here Logo" />
+          <img src="/logo icon.png" alt="I'm Here Logo" />
           <span className="lp-nav-logo-text">I'M HERE</span>
         </a>
         <ul className="lp-nav-links">

@@ -52,7 +52,7 @@ html {
 }
 
 .lp-nav-logo img {
-  height: 34px;
+  height: 44px; /* Increased from 34px to make the icon larger and more prominent */
   width: auto;
   border-radius: 8px;
 }
@@ -654,6 +654,8 @@ html {
   cursor: pointer;
   transition: color 0.3s ease;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .lp-version-toggle-btn.active {
@@ -709,6 +711,8 @@ html {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   color: #0f172a;
   z-index: 20;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 @media (hover: hover) {
@@ -845,6 +849,8 @@ html {
   transition: all 0.25s ease;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 .lp-flip-btn:hover {
