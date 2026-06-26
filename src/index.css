@@ -25,6 +25,13 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+button, a, [role="button"], input[type="button"], input[type="submit"] {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 body {
@@ -352,7 +359,22 @@ body {
 .crop-box-overlay {
   position: absolute;
   inset: 0;
-  pointer-events: none; /* Let pointer events pass to parent for dragging */
+  pointer-events: none;
+}
+
+/* Dark mode: all overlay children flip to black */
+.crop-box-overlay.dark .crop-grid-line-v,
+.crop-box-overlay.dark .crop-grid-line-h {
+  background: rgba(0, 0, 0, 0.4);
+  transition: background 0.25s ease;
+}
+.crop-box-overlay.dark .crop-corner-bracket {
+  border-color: #000000;
+  transition: border-color 0.25s ease;
+}
+.crop-box-overlay.dark .crop-edge-bar {
+  background: #000000;
+  transition: background 0.25s ease;
 }
 
 /* 3x3 Grid Lines */

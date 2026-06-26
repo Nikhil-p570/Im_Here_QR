@@ -187,6 +187,9 @@ const OrderPage = () => {
   const [cropState, setCropState] = useState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
   const [cropLocked, setCropLocked] = useState(false);
   const [qty, setQty] = useState(1);
+  const [showCropHint, setShowCropHint] = useState(false);
+  const [cropBoxDark, setCropBoxDark] = useState(false); // toggle white/black border on long press
+  const longPressTimer = useRef(null);
 
   /* ── Drag (move) crop box ── */
   const [dragging, setDragging] = useState(false);
@@ -713,6 +716,7 @@ const OrderPage = () => {
           scale: img.width / dispW
         });
         setCropLocked(false);
+        setShowCropHint(true);
       };
       img.src = ev.target.result;
     };
@@ -1291,95 +1295,51 @@ const OrderPage = () => {
 
                 <div className="cart-actions">
                   {showAddMoreOptions ? (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <button
-                        className="btn-add-more"
-                        onClick={() => {
-                          setStep('personalised');
-                          setShowAddMoreOptions(false);
-                        }}
-                        style={{ border: '1px solid rgba(139, 92, 246, 0.4)', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)' }}
-                      >
-                        <Palette size={16} /> Add Personalised Tag
-                      </button>
-                      <button
-                        className="btn-add-more"
-                        onClick={() => {
-                          setStep('classic');
-                          setShowAddMoreOptions(false);
-                        }}
-                        style={{ border: '1px solid rgba(6, 182, 212, 0.4)', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }}
-                      >
-                        <Layers size={16} /> Add Classic Tag
-                      </button>
-                      <button
-                        onClick={() => setShowAddMoreOptions(false)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          padding: '8px 12px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '0.85rem',
-                          fontWeight: 600
-                        }}
-                      >
-                        Cancel
-                      </button>
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                      <button className="btn-add-more" onClick={() => { setStep("personalised"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(139, 92, 246, 0.4)", color: "#8b5cf6", background: "rgba(139, 92, 246, 0.05)" }}><Palette size={16} /> Add Personalised Tag</button>
+                      <button className="btn-add-more" onClick={() => { setStep("classic"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(6, 182, 212, 0.4)", color: "#06b6d4", background: "rgba(6, 182, 212, 0.05)" }}><Layers size={16} /> Add Classic Tag</button>
+                      <button onClick={() => setShowAddMoreOptions(false)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "8px 12px", fontSize: "0.85rem", fontWeight: 600 }}>Cancel</button>
                     </div>
                   ) : (
-                    <button
-                      className="btn-add-more"
-                      id="btn-add-another-tag"
-                      onClick={() => setShowAddMoreOptions(true)}
-                    >
-                      <Plus size={16} /> Add Another Tag
-                    </button>
+                    <button className="btn-add-more" id="btn-add-another-tag" onClick={() => setShowAddMoreOptions(true)}><Plus size={16} /> Add Another Tag</button>
                   )}
-                  <button
-                    className="btn-checkout"
-                    id="btn-checkout"
-                    onClick={() => setStep('checkout')}
-                  >
-                    Proceed to Payment →
-                  </button>
+                  <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")}>Proceed to Payment →</button>
                 </div>
               </div>
             )}
           </>
         )}
 
-        {/* ════════════════════════════════════════════
-            STEP: PERSONALISED
-        ════════════════════════════════════════════ */}
-        {step === 'personalised' && (
+        {step === "personalised" && (
           <div className="configurator-layout">
-
-            {/* ── Left Column: Controls ── */}
             <div className="configurator-controls-column">
-              <button className="back-btn" onClick={() => { setStep('home'); setUploadedImg(null); }}>
-                <ArrowLeft size={16} /> Back
-              </button>
-
+              <button className="back-btn" onClick={() => { setStep("home"); setUploadedImg(null); }}><ArrowLeft size={16} /> Back</button>
               <div className="configurator-header">
                 <h2 className="order-section-title">Personalise Your Tag</h2>
-                <p className="order-section-subtitle">
-                  Upload a photo — your pet, a memory, artwork — and preview it on your keychain tag.
-                  Drag the crop square to choose which part of the image appears.
-                </p>
+                <p className="order-section-subtitle">Upload a photo and preview it on your keychain tag. Drag the crop square to choose which part of the image appears.</p>
               </div>
-
               {!uploadedImg ? (
-                <div className="upload-zone" onClick={() => fileInputRef.current?.click()} id="upload-zone">
-                  <Upload size={42} className="upload-icon" />
-                  <p>Tap to upload your photo</p>
-                  <span>JPG, PNG, HEIC, WEBP supported</span>
-                </div>
+                <div className="upload-zone" onClick={() => fileInputRef.current?.click()} id="upload-zone"><Upload size={42} className="upload-icon" /><p>Tap to upload your photo</p><span>JPG, PNG, HEIC, WEBP supported</span></div>
               ) : (
                 <div className="configurator-editor-panel">
+                  {showCropHint && (
+                    <div style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+                      <div style={{ background: "#fff", borderRadius: "24px", padding: "28px 24px 22px", maxWidth: "360px", width: "100%", boxShadow: "0 32px 64px rgba(15,23,42,0.2)", animation: "fadeIn 0.3s ease" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
+                          <span style={{ fontSize: "1.6rem" }}>✨</span>
+                          <strong style={{ fontSize: "1rem", color: "#0f172a", lineHeight: 1.3 }}>Frame your photo perfectly</strong>
+                        </div>
+                        <ul style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "9px", marginBottom: "22px" }}>
+                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Drag</strong> the square to choose the best part of your photo.</li>
+                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Pull the corners</strong> to resize the crop area.</li>
+                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}>The <strong style={{ color: "#0f172a" }}>live preview</strong> is {window.innerWidth <= 900 ? "available below — scroll down to check it." : "on the right — adjust until it looks perfect."}</li>
+                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Long-press</strong> the image to switch the square colour (white ↔ black) for better visibility.</li>
+                        </ul>
+                        <button onClick={() => setShowCropHint(false)} style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}>Got it — let me adjust!</button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="section-label">
                     {cropLocked
                       ? <><Lock size={12} /> Position locked</>
@@ -1389,6 +1349,14 @@ const OrderPage = () => {
                   <div
                     className="crop-editor-wrap"
                     style={{ width: cropState.dispW, height: cropState.dispH }}
+                    onPointerDown={() => {
+                      longPressTimer.current = setTimeout(() => {
+                        setCropBoxDark(d => !d);
+                      }, 600);
+                    }}
+                    onPointerUp={() => clearTimeout(longPressTimer.current)}
+                    onPointerCancel={() => clearTimeout(longPressTimer.current)}
+                    onPointerMove={() => clearTimeout(longPressTimer.current)}
                   >
                     <canvas ref={cropCanvasRef} style={{ display: 'block', borderRadius: 8 }} />
 
@@ -1400,12 +1368,12 @@ const OrderPage = () => {
                         top: cropState.y,
                         width: cropState.size,
                         height: cropState.size,
-                        borderColor: cropLocked ? '#6366f1' : 'rgba(255, 255, 255, 0.45)',
+                        borderColor: cropLocked ? '#6366f1' : cropBoxDark ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.85)',
                         cursor: cropLocked ? 'default' : dragging ? 'grabbing' : 'grab',
                         touchAction: 'none',
                         boxShadow: cropLocked
                           ? '0 0 0 2px rgba(99,102,241,0.2)'
-                          : '0 0 0 2px rgba(255,255,255,0.1)'
+                          : cropBoxDark ? '0 0 0 2px rgba(0,0,0,0.15)' : '0 0 0 2px rgba(255,255,255,0.2)'
                       }}
                       onPointerDown={handleCropBoxDown}
                       onPointerMove={handlePointerMove}
@@ -1413,7 +1381,7 @@ const OrderPage = () => {
                       onPointerCancel={handlePointerUp}
                     >
                       {/* Custom visual overlay */}
-                      <div className="crop-box-overlay">
+                      <div className={`crop-box-overlay${cropBoxDark ? ' dark' : ''}`}>
                         {/* Grid Lines (Rule of Thirds) */}
                         <div className="crop-grid-line-v v1" />
                         <div className="crop-grid-line-v v2" />
@@ -1483,27 +1451,7 @@ const OrderPage = () => {
                     </button>
                   </div>
 
-                  {/* Qty is kept for logic, but Add to Cart moved to Sticky Summary */}
-                  <div className="qty-control" style={{ marginTop: '32px' }}>
-                    <label>How many tags with this photo?</label>
-                    <div className="qty-stepper">
-                      <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
-                        <Minus size={16} />
-                      </button>
-                      <span className="qty-value">{qty}</span>
-                      <button
-                        className="qty-btn"
-                        onClick={() => {
-                          if (qty === 1) {
-                            setShowQtyAlert(true);
-                          }
-                          setQty(q => q + 1);
-                        }}
-                      >
-                        <Plus size={16} />
-                      </button>
-                    </div>
-                  </div>
+                  {/* Qty moved to right column below version selector */}
                 </div>
               )}
 
@@ -1555,6 +1503,7 @@ const OrderPage = () => {
                       >
                         <RotateCw size={14} /> Flip Tag
                       </button>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
                     </div>
                   </div>
 
@@ -1580,7 +1529,10 @@ const OrderPage = () => {
                         }}
                       >
                         <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Custom Image</div>
-                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.3 }}>Front: QR on custom photo · Back: Full logo cover</div>
+                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
+                          <div>Front: QR on custom photo</div>
+                          <div>Back: Full logo cover</div>
+                        </div>
                       </button>
                       <button
                         type="button"
@@ -1601,7 +1553,31 @@ const OrderPage = () => {
                         }}
                       >
                         <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Logo Edition</div>
-                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.3 }}>Front: QR on logo icon · Back: Custom photo cover</div>
+                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
+                          <div>Front: QR on logo icon</div>
+                          <div>Back: Custom photo cover</div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="qty-control" style={{ marginTop: '16px', marginBottom: '4px' }}>
+                    <label>How many tags?</label>
+                    <div className="qty-stepper">
+                      <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
+                        <Minus size={16} />
+                      </button>
+                      <span className="qty-value">{qty}</span>
+                      <button
+                        className="qty-btn"
+                        onClick={() => {
+                          if (qty === 1) {
+                            setShowQtyAlert(true);
+                          }
+                          setQty(q => q + 1);
+                        }}
+                      >
+                        <Plus size={16} />
                       </button>
                     </div>
                   </div>
@@ -1725,6 +1701,7 @@ const OrderPage = () => {
                     >
                       <RotateCw size={12} /> Flip Tag
                     </button>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
 
                     <div className="classic-preset-name" style={{ color: preset.dotColor }}>
                       {preset.name}
@@ -2076,7 +2053,8 @@ const OrderPage = () => {
                     src={isModalFlipped ? (activeCartItem.backPreviewUrl || activeCartItem.previewUrl) : activeCartItem.previewUrl}
                     alt="Design Preview"
                     style={{
-                      width: '300px',
+                      width: '100%',
+                      maxWidth: '260px',
                       height: 'auto',
                       borderRadius: '18px',
                       border: '1px solid rgba(15, 23, 42, 0.1)',
@@ -2100,40 +2078,43 @@ const OrderPage = () => {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-              <button
-                onClick={() => setIsModalFlipped(f => !f)}
-                style={{
-                  padding: '10px 24px',
-                  background: 'rgba(99, 102, 241, 0.1)',
-                  border: '1px solid var(--accent-indigo)',
-                  color: 'var(--accent-indigo)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <RotateCw size={14} /> Flip Tag
-              </button>
-              <button
-                onClick={() => setActiveCartItem(null)}
-                style={{
-                  padding: '10px 24px',
-                  background: 'rgba(15, 23, 42, 0.05)',
-                  border: '1px solid rgba(15, 23, 42, 0.15)',
-                  color: 'var(--text-primary)',
-                  borderRadius: '10px',
-                  cursor: 'pointer',
-                  fontWeight: 600,
-                  fontSize: '0.85rem'
-                }}
-              >
-                Close Preview
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', alignItems: 'center', width: '100%' }}>
+              <p style={{ margin: '0', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%' }}>
+                <button
+                  onClick={() => setIsModalFlipped(f => !f)}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    border: '1px solid var(--accent-indigo)',
+                    color: 'var(--accent-indigo)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.85rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <RotateCw size={14} /> Flip Tag
+                </button>
+                <button
+                  onClick={() => setActiveCartItem(null)}
+                  style={{
+                    padding: '10px 20px',
+                    background: 'rgba(15, 23, 42, 0.05)',
+                    border: '1px solid rgba(15, 23, 42, 0.15)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: '0.85rem'
+                  }}
+                >
+                  Close Preview
+                </button>
+              </div>
             </div>
           </div>
         </div>
