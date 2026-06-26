@@ -97,12 +97,43 @@ export default async function handler(req, res) {
       }
 
       const orderData = orderDocSnap.data();
+
+      // Fetch official prices from database or use defaults
+      let officialPersonalised = 199;
+      let officialClassic = 129;
+      try {
+        const pricesDocRef = doc(db, 'settings', 'prices');
+        const pricesSnap = await getDoc(pricesDocRef);
+        if (pricesSnap.exists()) {
+          const pricesData = pricesSnap.data();
+          if (pricesData.personalisedDiscounted !== undefined) {
+            officialPersonalised = parseFloat(pricesData.personalisedDiscounted);
+          }
+          if (pricesData.classicDiscounted !== undefined) {
+            officialClassic = parseFloat(pricesData.classicDiscounted);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch official prices, using fallback constants:", err);
+      }
+
+      // Re-calculate the expected total amount securely
+      let expectedTotal = 0;
+      if (Array.isArray(orderData.items)) {
+        for (const item of orderData.items) {
+          const qty = parseInt(item.quantity) || 0;
+          const isPersonalised = item.typeofqr === 'personalised';
+          const officialUnitPrice = isPersonalised ? officialPersonalised : officialClassic;
+          expectedTotal += qty * officialUnitPrice;
+        }
+      }
+
       const dbAmount = parseFloat(orderData.totalAmount);
       const paidAmount = parseFloat(data.order_amount);
 
-      // Check for price tampering
-      if (Math.abs(dbAmount - paidAmount) > 0.01) {
-        throw new Error('Security Alert: Paid amount does not match the database order amount.');
+      // Check for price or quantity tampering at any step
+      if (Math.abs(expectedTotal - paidAmount) > 0.01 || Math.abs(dbAmount - expectedTotal) > 0.01) {
+        throw new Error('Security Alert: Paid amount or quantity does not match the computed order total.');
       }
 
       // 2. Secure Update: Mark order as placed directly on the server

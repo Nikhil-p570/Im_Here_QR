@@ -418,7 +418,6 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
     );
   }
 
-  // ── Mobile: peek carousel with partial side cards ──
   const toggleUI = (
     <div className="lp-version-toggle-container">
       <div className="lp-version-toggle">
@@ -442,82 +441,6 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
     </div>
   );
 
-  if (isMobile) {
-    const prevIdx = (activeIdx - 1 + items.length) % items.length;
-    const nextIdx = (activeIdx + 1) % items.length;
-
-    const activeItem = items[activeIdx];
-    const activeTagId = activeItem.id.replace('v2', '');
-
-    return (
-      <>
-        {toggleUI}
-        <div className="lp-mobile-carousel">
-          {/* Peek track */}
-        <div
-          className="lp-peek-track"
-          onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
-          onTouchEnd={e => {
-            if (touchStartX.current === null) return;
-            const delta = touchStartX.current - e.changedTouches[0].clientX;
-            if (Math.abs(delta) > 40) delta > 0 ? next() : prev();
-            touchStartX.current = null;
-          }}
-        >
-          {/* Prev peek — only 44px wide, shows right edge of card */}
-          <div className="lp-peek-card lp-peek-prev" onClick={prev}>
-            <KeychainCard
-              tagId={items[prevIdx].id}
-              base64Image={items[prevIdx].base64Image}
-              version={activeVersion}
-              isActive={false}
-              hideUI={true}
-            />
-          </div>
-
-          {/* Active card */}
-          <div className="lp-peek-active">
-            <KeychainCard
-              tagId={activeTagId}
-              base64Image={activeItem.base64Image}
-              version={activeVersion}
-              isActive={true}
-            />
-          </div>
-
-          {/* Next peek — only 44px wide, shows left edge of card */}
-          <div className="lp-peek-card lp-peek-next" onClick={next}>
-            <KeychainCard
-              tagId={items[nextIdx].id}
-              base64Image={items[nextIdx].base64Image}
-              version={activeVersion}
-              isActive={false}
-              hideUI={true}
-            />
-          </div>
-        </div>
-
-        {/* Dots */}
-        <div className="lp-carousel-dots" style={{ marginTop: '16px' }}>
-          {items.map((_, i) => (
-            <button
-              key={i}
-              className={`lp-carousel-dot ${i === activeIdx ? 'active' : ''}`}
-              onClick={() => setActiveIdx(i)}
-              aria-label={`Go to tag ${i + 1}`}
-            />
-          ))}
-        </div>
-
-        <p className="lp-carousel-preview-hint" style={{ marginTop: '6px' }}>
-          Swipe to browse · Tap card to preview scan
-        </p>
-      </div>
-      </>
-    );
-  }
-
-  // ── Desktop: 5-card 3D carousel ──
   const getItemStyle = (i) => {
     const total = items.length;
     let diff = i - activeIdx;
@@ -531,11 +454,11 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
       return { display: 'none' };
     }
 
-    // Position/style per distance from center
-    const xOffsets    = [0, 155, 278];
-    const zOffsets    = [0, -90, -160];
-    const scales      = [1, 0.80, 0.62];
-    const opacities   = [1, 0.60, 0.32];
+    // Position/style per distance from center (adapted for mobile screen sizes)
+    const xOffsets    = isMobile ? [0, 80, 150] : [0, 155, 278];
+    const zOffsets    = isMobile ? [0, -60, -110] : [0, -90, -160];
+    const scales      = isMobile ? [1, 0.72, 0.54] : [1, 0.80, 0.62];
+    const opacities   = [1, 0.55, 0.28];
     const rotateYs    = [0, -12, -20];
 
     const sign = diff >= 0 ? 1 : -1;
@@ -558,54 +481,62 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
   return (
     <>
       {toggleUI}
-      <div>
-        {/* Dots moved UP — right after the stage for visibility */}
-      <div className="lp-carousel-stage">
-        <button className="lp-carousel-nav prev" onClick={prev} aria-label="Previous tag">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
-        </button>
+      <div 
+        onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={e => {
+          if (touchStartX.current === null) return;
+          const delta = touchStartX.current - e.changedTouches[0].clientX;
+          if (Math.abs(delta) > 40) delta > 0 ? next() : prev();
+          touchStartX.current = null;
+        }}
+      >
+        {/* Stage for the 3D track */}
+        <div className="lp-carousel-stage">
+          <button className="lp-carousel-nav prev" onClick={prev} aria-label="Previous tag">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+          </button>
 
-        <div className="lp-carousel-track-3d">
-          {items.map((item, i) => {
-            const style = getItemStyle(i);
-            if (style.display === 'none') return null;
-            return (
-              <div key={item.id} style={style}>
-                <KeychainCard
-                  tagId={item.id}
-                  base64Image={item.base64Image}
-                  version={activeVersion}
-                  isActive={i === activeIdx}
-                />
-              </div>
-            );
-          })}
+          <div className="lp-carousel-track-3d">
+            {items.map((item, i) => {
+              const style = getItemStyle(i);
+              if (style.display === 'none') return null;
+              return (
+                <div key={item.id} style={style}>
+                  <KeychainCard
+                    tagId={item.id}
+                    base64Image={item.base64Image}
+                    version={activeVersion}
+                    isActive={i === activeIdx}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          <button className="lp-carousel-nav next" onClick={next} aria-label="Next tag">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+          </button>
         </div>
 
-        <button className="lp-carousel-nav next" onClick={next} aria-label="Next tag">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
+        {/* Dots below stage, above reflection */}
+        <div className="lp-carousel-dots" style={{ marginTop: '16px' }}>
+          {items.map((_, i) => (
+            <button
+              key={i}
+              className={`lp-carousel-dot ${i === activeIdx ? 'active' : ''}`}
+              onClick={() => setActiveIdx(i)}
+              aria-label={`Go to tag ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Reflection */}
+        <div className="lp-carousel-reflection" />
+
+        <p className="lp-carousel-preview-hint">
+          {isMobile ? "Swipe to browse · Tap card to flip" : "Click the active tag to preview a recovery scan"}
+        </p>
       </div>
-
-      {/* Dots right below stage, above reflection */}
-      <div className="lp-carousel-dots" style={{ marginTop: '16px' }}>
-        {items.map((_, i) => (
-          <button
-            key={i}
-            className={`lp-carousel-dot ${i === activeIdx ? 'active' : ''}`}
-            onClick={() => setActiveIdx(i)}
-            aria-label={`Go to tag ${i + 1}`}
-          />
-        ))}
-      </div>
-
-      {/* Reflection */}
-      <div className="lp-carousel-reflection" />
-
-      <p className="lp-carousel-preview-hint">
-        Click the active tag to preview a recovery scan
-      </p>
-    </div>
     </>
   );
 };

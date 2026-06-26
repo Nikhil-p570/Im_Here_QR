@@ -80,13 +80,41 @@ export default async function handler(req, res) {
 
     const orderData = orderDocSnap.data();
     
-    // Check if price or quantity totals were tampered with
-    const dbTotal = parseFloat(orderData.totalAmount);
+    // Fetch official prices from database or use defaults
+    let officialPersonalised = 199;
+    let officialClassic = 129;
+    try {
+      const pricesDocRef = doc(db, 'settings', 'prices');
+      const pricesSnap = await getDoc(pricesDocRef);
+      if (pricesSnap.exists()) {
+        const pricesData = pricesSnap.data();
+        if (pricesData.personalisedDiscounted !== undefined) {
+          officialPersonalised = parseFloat(pricesData.personalisedDiscounted);
+        }
+        if (pricesData.classicDiscounted !== undefined) {
+          officialClassic = parseFloat(pricesData.classicDiscounted);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch official prices, using fallback constants:", err);
+    }
+
+    // Re-calculate the expected total amount securely
+    let expectedTotal = 0;
+    if (Array.isArray(orderData.items)) {
+      for (const item of orderData.items) {
+        const qty = parseInt(item.quantity) || 0;
+        const isPersonalised = item.typeofqr === 'personalised';
+        const officialUnitPrice = isPersonalised ? officialPersonalised : officialClassic;
+        expectedTotal += qty * officialUnitPrice;
+      }
+    }
+
     const clientTotal = parseFloat(amount);
     
-    // Check with tolerance for float precision
-    if (Math.abs(dbTotal - clientTotal) > 0.01) {
-      return res.status(400).json({ error: 'Security alert: Order amount mismatch detected.' });
+    // Check if price or quantity totals were tampered with
+    if (Math.abs(expectedTotal - clientTotal) > 0.01 || Math.abs(parseFloat(orderData.totalAmount) - expectedTotal) > 0.01) {
+      return res.status(400).json({ error: 'Security alert: Order amount or quantity tampering detected.' });
     }
 
     // Cashfree Credentials

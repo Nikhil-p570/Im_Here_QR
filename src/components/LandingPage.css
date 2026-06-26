@@ -696,18 +696,18 @@ html {
   position: absolute;
   top: 37%; /* Shifted up to align with the center of the card image */
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: #fff;
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
+  border: 2px solid #4F46E5;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
-  color: #475569;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.16);
+  color: #4F46E5;
   z-index: 20;
 }
 
