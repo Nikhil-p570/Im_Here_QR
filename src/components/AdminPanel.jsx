@@ -1062,11 +1062,11 @@ const AdminPanel = ({
 
       await updateDoc(doc(firestoreDb, 'orders', order.id), {
         orderStatus: 'shipment_created',
-        nimbuspostOrderId: res.data.orderId,
-        shipmentId: res.data.shipmentId,
-        awbNumber: res.data.awbNumber,
-        courierPartner: res.data.courierName,
-        shippingLabelUrl: res.data.labelUrl,
+        nimbuspostOrderId: res.data.orderId || null,
+        shipmentId: res.data.shipmentId || null,
+        awbNumber: res.data.awbNumber || null,
+        courierPartner: res.data.courierName || null,
+        shippingLabelUrl: res.data.labelUrl || null,
         shipmentCreatedAt: new Date()
       });
 
@@ -1108,11 +1108,11 @@ const AdminPanel = ({
 
         await updateDoc(doc(firestoreDb, 'orders', order.id), {
           orderStatus: 'shipment_created',
-          nimbuspostOrderId: res.data.orderId,
-          shipmentId: res.data.shipmentId,
-          awbNumber: res.data.awbNumber,
-          courierPartner: res.data.courierName,
-          shippingLabelUrl: res.data.labelUrl,
+          nimbuspostOrderId: res.data.orderId || null,
+          shipmentId: res.data.shipmentId || null,
+          awbNumber: res.data.awbNumber || null,
+          courierPartner: res.data.courierName || null,
+          shippingLabelUrl: res.data.labelUrl || null,
           shipmentCreatedAt: new Date()
         });
 
@@ -2857,6 +2857,31 @@ const AdminPanel = ({
 
                   {/* Bulk Actions Bar */}
                   <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-to-ship"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => o.orderStatus === 'appended').length > 0 &&
+                          orders.filter(o => o.orderStatus === 'appended').every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const toShipList = orders.filter(o => o.orderStatus === 'appended');
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            toShipList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-to-ship" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => o.orderStatus === 'appended').length})
+                      </label>
+                    </div>
                     <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
                       Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
                     </span>
@@ -3195,6 +3220,31 @@ const AdminPanel = ({
 
                   {/* Bulk Actions Bar */}
                   <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-shipments"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length > 0 &&
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const shipmentsList = orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus));
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            shipmentsList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-shipments" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
+                      </label>
+                    </div>
                     <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
                       Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
                     </span>

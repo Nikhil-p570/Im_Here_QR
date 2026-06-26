@@ -32,7 +32,7 @@ let tokenCache = {
   expiry: 0
 };
 
-// Helper: login and return bearer token (Using B2B Login Endpoint)
+// Helper: login and return bearer token (Using B2C Login Endpoint)
 async function getNimbusToken() {
   const now = Date.now();
   if (tokenCache.token && tokenCache.expiry > now) {
@@ -69,12 +69,10 @@ export default async function handler(req, res) {
   const { action, payload } = req.body;
 
   try {
-    // 1. Authenticate with NimbusPost
-    const token = await getNimbusToken();
-
     // 2. Route based on action
     if (action === 'wallet_balance') {
-      // B2B Wallet Balance API
+      const token = await getNimbusToken();
+      // Wallet Balance API (Shared wallet can be queried via shipmentcargo endpoint using Bearer token)
       const nimbusRes = await fetch('https://ship.nimbuspost.com/api/shipmentcargo/wallet_balance', {
         method: 'GET',
         headers: {
@@ -88,38 +86,42 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: nimbusData.message });
       }
 
+      // B2C/B2B returns wallet_balance or available_limit
+      let balance = 0;
+      if (typeof nimbusData.data === 'object' && nimbusData.data !== null) {
+        balance = parseFloat(nimbusData.data.available_limit || nimbusData.data.wallet_balance || 0);
+      } else {
+        balance = parseFloat(nimbusData.data || 0);
+      }
+
       return res.status(200).json({
         success: true,
-        walletBalance: parseFloat(nimbusData.data.available_limit || nimbusData.data.wallet_balance || 0)
+        walletBalance: balance
       });
 
     } else if (action === 'calculate_rates') {
-      // B2B Serviceability / Rate Calculator API
+      const token = await getNimbusToken();
+      // B2C Serviceability / Rate Calculator API using Bearer token
       const pickupPincode = getEnv('NIMBUSPOST_PICKUP_PINCODE') || '122001';
       const destinationPincode = payload.destinationPincode;
       const orderValue = payload.totalAmount || 100;
       const totalQty = payload.totalQty || 1;
 
-      // Assume 100g (0.1 Kg) per keychain, package dimensions 10cm x 10cm x 10cm
-      const weight = Math.max(1, Math.round(totalQty * 0.1 * 100) / 100); // weight in kg/gram depending on API. The B2B api weight is typically in Kg. Let's make it 1kg minimum for B2B cargo.
-      
+      // 30g per keychain, weight in grams as integer
+      const weight = Math.max(30, Math.round(totalQty * 30));
+
       const requestBody = {
         origin: pickupPincode,
         destination: destinationPincode,
         payment_type: payload.paymentMode === 'cod' ? 'cod' : 'prepaid',
-        details: [
-          {
-            qty: totalQty,
-            weight: weight,
-            length: 10,
-            breadth: 10,
-            height: 10
-          }
-        ],
+        weight: weight,
+        length: 10,
+        breadth: 10,
+        height: 10,
         order_value: String(orderValue)
       };
 
-      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/courier/b2b_serviceability', {
+      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/courier/serviceability', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,9 +140,9 @@ export default async function handler(req, res) {
 
       // Sort couriers by charges to find the cheapest
       const couriers = nimbusData.data.map(c => ({
-        courierId: c.courier_id,
-        name: c.name,
-        charges: parseFloat(c.courier_charges || 0)
+        courierId: c.courier_id || c.id,
+        name: c.name || c.courier_name,
+        charges: parseFloat(c.rate || c.total_charges || c.freight_charges || c.courier_charges || 0)
       })).sort((a, b) => a.charges - b.charges);
 
       return res.status(200).json({
@@ -150,93 +152,95 @@ export default async function handler(req, res) {
       });
 
     } else if (action === 'create_shipment') {
-      // B2B Create Shipment API
-      const pickupDetails = {
-        warehouse_name: getEnv('NIMBUSPOST_WAREHOUSE_NAME') || 'Main Warehouse',
-        name: getEnv('NIMBUSPOST_PICKUP_NAME') || 'Nikhil',
-        address: getEnv('NIMBUSPOST_PICKUP_ADDRESS') || '140, MG Road',
-        address_2: getEnv('NIMBUSPOST_PICKUP_ADDRESS_2') || '',
-        city: getEnv('NIMBUSPOST_PICKUP_CITY') || 'Gurgaon',
-        state: getEnv('NIMBUSPOST_PICKUP_STATE') || 'Haryana',
-        pincode: getEnv('NIMBUSPOST_PICKUP_PINCODE') || '122001',
-        phone: getEnv('NIMBUSPOST_PICKUP_PHONE') || '9999999999'
-      };
+      // B2C Shipment booking requires API Key in headers
+      const apiKey = getEnv('NIMBUSPOST_API_KEY');
+      if (!apiKey) {
+        return res.status(400).json({ success: false, error: 'NIMBUSPOST_API_KEY is not configured in .env file.' });
+      }
 
+      const warehouseId = getEnv('NIMBUSPOST_WAREHOUSE_ID') || '3';
       const totalQty = (payload.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
-      const calculatedWeight = Math.max(1, Math.round(totalQty * 0.1));
+      const calculatedWeight = Math.max(0.03, Math.round(totalQty * 0.03 * 100) / 100);
+      const weightInGrams = Math.round(calculatedWeight * 1000);
 
       const requestBody = {
-        order_id: payload.orderNumber,
-        payment_method: payload.paymentMode === 'cod' ? 'cod' : 'prepaid',
-        consignee_name: payload.customerName,
-        consignee_company_name: payload.customerName, // Use customer name as company for B2B API constraint
-        consignee_phone: String(payload.orderedPhoneNumber || '9999999999'),
-        consignee_email: payload.orderedEmail || 'test@gmail.com',
-        consignee_gst_number: '',
-        consignee_address: payload.shippingAddress.address,
-        consignee_pincode: parseInt(payload.shippingAddress.pincode || '110001'),
-        consignee_city: payload.shippingAddress.city || 'Delhi',
-        consignee_state: payload.shippingAddress.state || 'Delhi',
-        no_of_invoices: 1,
-        no_of_boxes: 1,
-        courier_id: String(payload.courierId || '244'), // Delhivery B2B default or cheapest ID passed from front
-        request_auto_pickup: 'no',
-        invoice: [
-          {
-            invoice_number: `INV-${payload.orderNumber}`,
-            invoice_date: new Date().toISOString().split('T')[0],
-            invoice_value: String(payload.totalAmount)
-          }
-        ],
-        pickup: pickupDetails,
-        products: (payload.items || []).map(item => ({
-          product_name: item.typeofqr === 'personalised' ? 'Personalised QR Keychain' : 'Classic QR Keychain',
-          product_hsn_code: '4901', // General code
-          product_lbh_unit: 'cm',
-          no_of_box: '1',
-          product_tax_per: '0.0000',
-          product_price: String(item.unitPrice || 299),
-          product_weight_unit: 'kg',
-          product_length: 10,
-          product_breadth: 10,
-          product_height: 10,
-          product_weight: Math.round((item.quantity || 1) * 0.1) || 1
-        }))
+        consignee: {
+          name: payload.customerName,
+          address: payload.shippingAddress.address,
+          address_2: "",
+          city: payload.shippingAddress.city || 'Delhi',
+          state: payload.shippingAddress.state || 'Delhi',
+          pincode: String(payload.shippingAddress.pincode || '110001'),
+          phone: String(payload.orderedPhoneNumber || '9999999999')
+        },
+        order: {
+          order_number: payload.orderNumber,
+          shipping_charges: 0,
+          discount: 0,
+          cod_charges: 0,
+          payment_type: payload.paymentMode === 'cod' ? 'cod' : 'prepaid',
+          total: parseFloat(payload.totalAmount),
+          package_weight: weightInGrams,
+          package_length: 10,
+          package_height: 10,
+          package_breadth: 10
+        },
+        order_items: (payload.items || []).map(item => ({
+          name: item.typeofqr === 'personalised' ? 'Personalised QR Keychain' : 'Classic QR Keychain',
+          qty: String(item.quantity || 1),
+          price: String(item.unitPrice || 299),
+          sku: item.typeofqr === 'personalised' ? 'PERSONALQR' : 'CLASSICQR'
+        })),
+        pickup_warehouse_id: String(warehouseId),
+        rto_warehouse_id: String(warehouseId)
       };
 
-      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/shipmentcargo/create', {
+      if (payload.courierId) {
+        requestBody.courier_id = String(payload.courierId);
+        requestBody.order.courier_id = String(payload.courierId);
+      }
+
+      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/shipments/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'NP-API-KEY': apiKey.trim()
         },
         body: JSON.stringify(requestBody)
       });
 
       const nimbusData = await nimbusRes.json();
       if (!nimbusData.status) {
-        return res.status(400).json({ success: false, error: nimbusData.message });
+        return res.status(400).json({ success: false, error: nimbusData.message || nimbusData.error });
       }
 
       return res.status(200).json({
         success: true,
         data: {
-          orderId: nimbusData.data.order_id,
-          shipmentId: nimbusData.data.shipment_id,
-          awbNumber: nimbusData.data.awb_number,
-          courierName: nimbusData.data.courier_name || ' Delhivery B2B',
-          labelUrl: nimbusData.data.label
+          orderId: nimbusData.data.order_id || nimbusData.data.id || '',
+          shipmentId: nimbusData.data.shipment_id || '',
+          awbNumber: nimbusData.data.awb_number || '',
+          courierName: nimbusData.data.courier_name || 'Delhivery B2C',
+          labelUrl: nimbusData.data.label || ''
         }
       });
 
     } else if (action === 'cancel_shipment') {
-      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/shipmentcargo/Cancel', {
+      const apiKey = getEnv('NIMBUSPOST_API_KEY');
+      if (!apiKey) {
+        return res.status(400).json({ success: false, error: 'NIMBUSPOST_API_KEY is not configured in .env file.' });
+      }
+
+      const nimbusRes = await fetch('https://ship.nimbuspost.com/api/shipments/cancel', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'NP-API-KEY': apiKey.trim()
         },
-        body: JSON.stringify({ awb: payload.awbNumber })
+        body: JSON.stringify({
+          awb: payload.awbNumber,
+          awb_number: payload.awbNumber
+        })
       });
 
       const nimbusData = await nimbusRes.json();
