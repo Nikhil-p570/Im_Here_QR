@@ -751,11 +751,11 @@ html {
 }
 
 .lp-carousel-nav.prev {
-  left: 0;
+  left: calc(50% - 360px);
 }
 
 .lp-carousel-nav.next {
-  right: 0;
+  right: calc(50% - 360px);
 }
 
 /* Dots */
@@ -1194,16 +1194,16 @@ html {
 }
 
 .lp-footer-brand img {
-  height: 32px;
-  margin-bottom: 14px;
-  border-radius: 8px;
+  height: 56px;
+  margin-bottom: 16px;
+  border-radius: 12px;
 }
 
 .lp-footer-brand p {
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   color: #64748b;
   line-height: 1.7;
-  max-width: 260px;
+  max-width: 280px;
 }
 
 .lp-footer-col-title {

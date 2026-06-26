@@ -570,6 +570,13 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
   const [db, setDb] = useState(firestoreDb);
   const [fetchingLandingQrs, setFetchingLandingQrs] = useState(true);
   const [scrolled, setScrolled] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 900);
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 900);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [landingQrs, setLandingQrs] = useState({
     tag1: { label: 'Your Pet', base64Image: '/pic1.png', visible: true },
     tag2: { label: 'Your Memory', base64Image: '/pic2.png', visible: true },
@@ -923,7 +930,15 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
               <ul className="lp-footer-col-links">
                 <li><a href="/shipping_policy">Shipping Policy</a></li>
                 <li><a href="/refund_policy">Refund Policy</a></li>
-                <li><a href="/orders">Track Order</a></li>
+                <li>
+                  <a 
+                    href={isDesktop ? "https://mail.google.com/mail/u/0/?to=nikhil.pabbisetti2006@gmail.com&fs=1&tf=cm" : "mailto:nikhil.pabbisetti2006@gmail.com"}
+                    target={isDesktop ? "_blank" : undefined}
+                    rel={isDesktop ? "noopener noreferrer" : undefined}
+                  >
+                    Contact Support
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
