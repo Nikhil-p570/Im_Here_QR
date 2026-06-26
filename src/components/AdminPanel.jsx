@@ -37,7 +37,8 @@ import {
   ChevronDown,
   ChevronUp,
   Eye,
-  EyeOff
+  EyeOff,
+  Truck
 } from 'lucide-react';
 import {
   ensureQrLib,
@@ -128,6 +129,13 @@ const AdminPanel = ({
 
   // Admin tab state
   const [activeAdminTab, setActiveAdminTab] = useState('generator'); // 'generator' | 'orders'
+  const [ordersSubTab, setOrdersSubTab] = useState('pending_qr'); // 'pending_qr' | 'to_ship'
+  const [selectedToShipOrders, setSelectedToShipOrders] = useState({}); // { [orderId]: boolean }
+  const [shipmentActionProgress, setShipmentActionProgress] = useState({ active: false, message: '' });
+  const [nimbusWallet, setNimbusWallet] = useState(null);
+  const [shippingRates, setShippingRates] = useState({});
+  const [ratesLoading, setRatesLoading] = useState(false);
+  const [fetchingWallet, setFetchingWallet] = useState(false);
 
   // Orders state
   const [orders, setOrders] = useState([]);
@@ -144,7 +152,8 @@ const AdminPanel = ({
   const [savingPrices, setSavingPrices] = useState(false);
   const [pricingSuccess, setPricingSuccess] = useState("");
   const [pricingError, setPricingError] = useState("");
-  const [showLogoDownloadPrompt, setShowLogoDownloadPrompt] = useState(false);
+  const [frontPreviewOpen, setFrontPreviewOpen] = useState(true);
+  const [backPreviewOpen, setBackPreviewOpen] = useState(true);
   const [logoImage, setLogoImage] = useState(null);
 
   // Landing QRs Tab States
@@ -160,11 +169,18 @@ const AdminPanel = ({
   const [croppingLandingTag, setCroppingLandingTag] = useState(null); // 'tag1' | 'tag2' | 'tag3' | null
   const [landingCropImage, setLandingCropImage] = useState(null); // Image object being cropped
   const landingPreviewCanvasRef = useRef(null);
+  const [logoIconImage, setLogoIconImage] = useState(null);
 
   useEffect(() => {
     const img = new Image();
     img.src = '/full logo.png';
     img.onload = () => setLogoImage(img);
+  }, []);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/logo icon.png';
+    img.onload = () => setLogoIconImage(img);
   }, []);
 
   // Fetch Landing QRs from Firestore on mount
@@ -672,27 +688,107 @@ const AdminPanel = ({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [appendedQrs]);
 
-  // Real-time listener for orders with orderStatus === 'orderplaced'
+  // Real-time listener for active orders
   useEffect(() => {
     if (!firestoreDb || activeAdminTab !== 'orders') return;
     setOrdersLoading(true);
     setOrdersError('');
+    
+    // Fetch all active orders (filtering out delivered status)
     const q = query(
       collection(firestoreDb, 'orders'),
-      where('orderStatus', '==', 'orderplaced'),
-      orderBy('createdAt', 'desc')
+      where('orderStatus', '!=', 'delivered')
     );
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort by createdAt descending in memory (avoids requiring a complex composite index)
+      docs.sort((a, b) => {
+        const timeA = a.createdAt?.seconds || 0;
+        const timeB = b.createdAt?.seconds || 0;
+        return timeB - timeA;
+      });
       setOrders(docs);
       setOrdersLoading(false);
     }, (err) => {
       console.error('Orders listener error:', err);
-      setOrdersError('Failed to load orders: ' + err.message);
-      setOrdersLoading(false);
+      // Fallback: fetch without where clause if security rules or indexing has issues
+      const fallbackQuery = query(collection(firestoreDb, 'orders'));
+      const fallbackUnsubscribe = onSnapshot(fallbackQuery, (snapshot) => {
+        const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Filter in memory
+        const activeDocs = docs.filter(doc => doc.orderStatus !== 'delivered');
+        activeDocs.sort((a, b) => {
+          const timeA = a.createdAt?.seconds || 0;
+          const timeB = b.createdAt?.seconds || 0;
+          return timeB - timeA;
+        });
+        setOrders(activeDocs);
+        setOrdersLoading(false);
+      }, (fallbackErr) => {
+        setOrdersError('Failed to load orders: ' + fallbackErr.message);
+        setOrdersLoading(false);
+      });
     });
     return () => unsubscribe();
   }, [firestoreDb, activeAdminTab]);
+
+  const fetchWalletBalance = async () => {
+    setFetchingWallet(true);
+    try {
+      const res = await handleCallNimbusApi('wallet_balance', {});
+      if (res.success) {
+        setNimbusWallet(res.walletBalance);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch Nimbus wallet:", err);
+    } finally {
+      setFetchingWallet(false);
+    }
+  };
+
+  const calculatePendingRates = async (pendingOrdersList) => {
+    setRatesLoading(true);
+    const newRates = { ...shippingRates };
+    let hasChanges = false;
+    for (const order of pendingOrdersList) {
+      if (!newRates[order.id] && order.shippingAddress?.pincode) {
+        try {
+          const totalQty = (order.items || []).reduce((s, i) => s + (i.quantity || 1), 0);
+          const res = await handleCallNimbusApi('calculate_rates', {
+            destinationPincode: order.shippingAddress.pincode,
+            totalAmount: order.totalAmount,
+            totalQty: totalQty,
+            paymentMode: order.paymentMode
+          });
+          if (res.success && res.cheapest) {
+            newRates[order.id] = {
+              courierId: res.cheapest.courierId,
+              name: res.cheapest.name,
+              charges: res.cheapest.charges
+            };
+            hasChanges = true;
+          }
+        } catch (err) {
+          console.warn(`Failed to calculate rate for order ${order.id}:`, err);
+        }
+      }
+    }
+    if (hasChanges) {
+      setShippingRates(newRates);
+    }
+    setRatesLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeAdminTab === 'orders' && ordersSubTab === 'to_ship') {
+      fetchWalletBalance();
+      const pendingShipmentOrders = orders.filter(o => o.orderStatus === 'appended');
+      if (pendingShipmentOrders.length > 0) {
+        calculatePendingRates(pendingShipmentOrders);
+      }
+    }
+  }, [activeAdminTab, ordersSubTab, orders.length]);
 
   // Helper: generates an 8 character random alphanumeric ID
   const generateRandomCode = () => {
@@ -728,7 +824,7 @@ const AdminPanel = ({
   };
 
   // Helper: load customer's image from Storage and create a cropped logoCanvas
-  const loadLogoCanvas = (imageUrl, srcX, srcY, srcSize) => {
+  const loadLogoCanvas = (imageUrl) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
@@ -737,7 +833,7 @@ const AdminPanel = ({
         out.width = 320;
         out.height = 320;
         try {
-          out.getContext('2d').drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
+          out.getContext('2d').drawImage(img, 0, 0, 320, 320);
         } catch (e) {
           console.warn('loadLogoCanvas drawImage failed:', e);
         }
@@ -749,7 +845,7 @@ const AdminPanel = ({
   };
 
   // Helper: generate a QR code dataUrl for a given URL + order item type
-  const generateQrDataUrlForOrder = async (url, typeofqr, logoCanvas) => {
+  const generateQrDataUrlForOrder = async (url, typeofqr, logoCanvas, version = 1) => {
     const ok = await ensureQrLib();
     if (!ok) throw new Error('QR library unavailable');
 
@@ -797,10 +893,16 @@ const AdminPanel = ({
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw image background for personalised
-    if (bgMode === 'image' && logoCanvas) {
-      ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (bgMode === 'image') {
+      if (version === 2 && logoIconImage) {
+        ctx.drawImage(logoIconImage, 0, 35, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else if (logoCanvas) {
+        ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
       ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.shadowBlur = 6;
       ctx.shadowOffsetX = 1;
@@ -837,9 +939,10 @@ const AdminPanel = ({
 
   // Action: Append All orders to PDF
   const handleAppendAllToPdf = async () => {
-    if (orders.length === 0 || appendProgress.active) return;
+    const pendingOrders = orders.filter(o => o.orderStatus === 'orderplaced');
+    if (pendingOrders.length === 0 || appendProgress.active) return;
 
-    const totalQrs = orders.reduce((sum, order) =>
+    const totalQrs = pendingOrders.reduce((sum, order) =>
       sum + (order.items || []).reduce((s, item) => s + (item.quantity || 1), 0), 0
     );
 
@@ -851,18 +954,15 @@ const AdminPanel = ({
     let done = 0;
 
     try {
-      for (const order of orders) {
+      for (const order of pendingOrders) {
         for (const item of (order.items || [])) {
           let logoCanvas = null;
 
-          // Load customer image for personalised QR
-          if (item.typeofqr === 'personalised' && item.imageUrl) {
+          // Load customer image for personalised QR (fallback to tempBase64Image if not yet uploaded to Cloudinary)
+          if (item.typeofqr === 'personalised' && (item.imageUrl || item.tempBase64Image)) {
             setAppendProgress(prev => ({ ...prev, message: `Loading personalised image...` }));
             logoCanvas = await loadLogoCanvas(
-              item.imageUrl,
-              item.srcCropX || 0,
-              item.srcCropY || 0,
-              item.srcCropSize || 320
+              item.imageUrl || item.tempBase64Image
             );
           }
 
@@ -877,7 +977,7 @@ const AdminPanel = ({
             const url = `${predefinedDomain}/id?=${newId}`;
 
             // Generate QR image
-            const qrDataUrl = await generateQrDataUrlForOrder(url, item.typeofqr, logoCanvas);
+            const qrDataUrl = await generateQrDataUrlForOrder(url, item.typeofqr, logoCanvas, item.version || 1);
 
             // Save ID to Firestore links with order metadata
             await setDoc(doc(firestoreDb, 'links', newId), {
@@ -891,7 +991,17 @@ const AdminPanel = ({
               firestoreOrderId: order.id
             });
 
-            newEntries.push({ qrUrl: qrDataUrl, id: newId, orderedPhoneNumber: order.orderedPhoneNumber });
+            newEntries.push({
+              qrUrl: qrDataUrl,
+              id: newId,
+              orderedPhoneNumber: order.orderedPhoneNumber,
+              version: item.version || 1,
+              imageUrl: item.imageUrl || item.tempBase64Image || '',
+              srcCropX: item.srcCropX || 0,
+              srcCropY: item.srcCropY || 0,
+              srcCropSize: item.srcCropSize || 320,
+              typeofqr: item.typeofqr || 'classic_black'
+            });
             done++;
             setAppendProgress(prev => ({ ...prev, done, message: `Generated ${done} of ${totalQrs} QR codes...` }));
           }
@@ -915,6 +1025,261 @@ const AdminPanel = ({
       console.error('Append all failed:', err);
       setAppendProgress({ active: false, total: 0, done: 0, message: '' });
       setOrdersError(`Append failed: ${err.message}`);
+    }
+  };
+
+  // ── NimbusPost Helper Function ──
+  const handleCallNimbusApi = async (action, payload) => {
+    const res = await fetch('/api/nimbuspost', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, payload })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || `Failed to call Nimbus API (${action})`);
+    }
+    return data;
+  };
+
+  // ── Individual Booking Handler ──
+  const handleBookShipment = async (order) => {
+    setShipmentActionProgress({ active: true, message: `Booking shipment for order ${order.id}...` });
+    setOrdersError("");
+    try {
+      const rate = shippingRates[order.id];
+      const res = await handleCallNimbusApi('create_shipment', {
+        orderNumber: order.id,
+        customerName: order.customerName,
+        orderedPhoneNumber: order.orderedPhoneNumber,
+        orderedEmail: order.orderedEmail,
+        totalAmount: order.totalAmount,
+        paymentMode: order.paymentMode,
+        shippingAddress: order.shippingAddress,
+        items: order.items,
+        courierId: rate ? rate.courierId : '244'
+      });
+
+      await updateDoc(doc(firestoreDb, 'orders', order.id), {
+        orderStatus: 'shipment_created',
+        nimbuspostOrderId: res.data.orderId || null,
+        shipmentId: res.data.shipmentId || null,
+        awbNumber: res.data.awbNumber || null,
+        courierPartner: res.data.courierName || null,
+        shippingLabelUrl: res.data.labelUrl || null,
+        shipmentCreatedAt: new Date()
+      });
+
+      setShipmentActionProgress({ active: false, message: `Successfully created shipment! AWB: ${res.data.awbNumber}` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Booking failed: ${err.message}`);
+    }
+  };
+
+  // ── Bulk Booking Handler ──
+  const handleBulkBookShipments = async () => {
+    const selectedIds = Object.keys(selectedToShipOrders).filter(id => selectedToShipOrders[id]);
+    if (selectedIds.length === 0) return;
+
+    setShipmentActionProgress({ active: true, message: `Booking ${selectedIds.length} shipments...` });
+    setOrdersError("");
+    let completed = 0;
+
+    try {
+      const toShipOrdersList = orders.filter(o => ['appended', 'QR_READY'].includes(o.orderStatus) && selectedIds.includes(o.id));
+      for (const order of toShipOrdersList) {
+        setShipmentActionProgress({ active: true, message: `Booking ${completed + 1} of ${toShipOrdersList.length}: ${order.customerName}...` });
+        
+        const rate = shippingRates[order.id];
+        const res = await handleCallNimbusApi('create_shipment', {
+          orderNumber: order.id,
+          customerName: order.customerName,
+          orderedPhoneNumber: order.orderedPhoneNumber,
+          orderedEmail: order.orderedEmail,
+          totalAmount: order.totalAmount,
+          paymentMode: order.paymentMode,
+          shippingAddress: order.shippingAddress,
+          items: order.items,
+          courierId: rate ? rate.courierId : '244'
+        });
+
+        await updateDoc(doc(firestoreDb, 'orders', order.id), {
+          orderStatus: 'shipment_created',
+          nimbuspostOrderId: res.data.orderId || null,
+          shipmentId: res.data.shipmentId || null,
+          awbNumber: res.data.awbNumber || null,
+          courierPartner: res.data.courierName || null,
+          shippingLabelUrl: res.data.labelUrl || null,
+          shipmentCreatedAt: new Date()
+        });
+
+        completed++;
+      }
+      setSelectedToShipOrders({});
+      setShipmentActionProgress({ active: false, message: `Successfully booked ${completed} shipments!` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Bulk booking failed: ${err.message}`);
+    }
+  };
+
+  // ── Bulk Mark as Shipped ──
+  const handleMarkAllShipped = async () => {
+    const movedOrders = orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled'].includes(o.orderStatus));
+    if (movedOrders.length === 0) return;
+
+    if (!window.confirm(`Are you sure you want to mark all ${movedOrders.length} moved shipments as Shipped?`)) return;
+
+    setShipmentActionProgress({ active: true, message: `Marking ${movedOrders.length} orders as shipped...` });
+    try {
+      let count = 0;
+      for (const order of movedOrders) {
+        await updateDoc(doc(firestoreDb, 'orders', order.id), {
+          orderStatus: 'shipped',
+          shippedAt: new Date()
+        });
+        count++;
+      }
+      setShipmentActionProgress({ active: false, message: `Successfully marked ${count} orders as Shipped!` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Failed to update status: ${err.message}`);
+    }
+  };
+
+  const handleMarkSelectedShipped = async () => {
+    const selectedIds = Object.keys(selectedToShipOrders).filter(id => selectedToShipOrders[id]);
+    if (selectedIds.length === 0) return;
+
+    if (!window.confirm(`Mark ${selectedIds.length} selected orders as Shipped?`)) return;
+
+    setShipmentActionProgress({ active: true, message: `Marking ${selectedIds.length} selected orders as shipped...` });
+    try {
+      const selectedOrdersList = orders.filter(o => selectedIds.includes(o.id));
+      let count = 0;
+      for (const order of selectedOrdersList) {
+        await updateDoc(doc(firestoreDb, 'orders', order.id), {
+          orderStatus: 'shipped',
+          shippedAt: new Date()
+        });
+        count++;
+      }
+      setSelectedToShipOrders({});
+      setShipmentActionProgress({ active: false, message: `Successfully marked ${count} orders as Shipped!` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Failed to update status: ${err.message}`);
+    }
+  };
+
+  // ── Cancel Shipment Handler ──
+  const handleCancelShipment = async (order) => {
+    if (!window.confirm(`Are you sure you want to cancel the shipment for AWB: ${order.awbNumber}?`)) return;
+
+    setShipmentActionProgress({ active: true, message: `Cancelling shipment...` });
+    setOrdersError("");
+    try {
+      await handleCallNimbusApi('cancel_shipment', {
+        awbNumber: order.awbNumber
+      });
+
+      await updateDoc(doc(firestoreDb, 'orders', order.id), {
+        orderStatus: 'appended', // Reset to appended (QR Ready)
+        nimbuspostOrderId: null,
+        shipmentId: null,
+        awbNumber: null,
+        courierPartner: null,
+        shippingLabelUrl: null,
+        shipmentCreatedAt: null
+      });
+
+      setShipmentActionProgress({ active: false, message: `Shipment cancelled and refunded successfully!` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Cancellation failed: ${err.message}`);
+    }
+  };
+
+  // ── Bulk Mark as Packed ──
+  const handleBulkMarkAsPacked = async () => {
+    const selectedIds = Object.keys(selectedToShipOrders).filter(id => selectedToShipOrders[id]);
+    if (selectedIds.length === 0) return;
+
+    setShipmentActionProgress({ active: true, message: `Marking as PACKED...` });
+    setOrdersError("");
+    let count = 0;
+    try {
+      for (const id of selectedIds) {
+        const order = orders.find(o => o.id === id);
+        if (order && (order.orderStatus === 'shipment_created' || order.orderStatus === 'label_printed')) {
+          await updateDoc(doc(firestoreDb, 'orders', order.id), {
+            orderStatus: 'packed'
+          });
+          count++;
+        }
+      }
+      setSelectedToShipOrders({});
+      setShipmentActionProgress({ active: false, message: `Successfully marked ${count} orders as packed!` });
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Packing update failed: ${err.message}`);
+    }
+  };
+
+  // ── Bulk Schedule Pickup (Manifest) ──
+  const handleBulkSchedulePickup = async () => {
+    const selectedIds = Object.keys(selectedToShipOrders).filter(id => selectedToShipOrders[id]);
+    if (selectedIds.length === 0) return;
+
+    const awbNumbers = selectedIds
+      .map(id => orders.find(o => o.id === id))
+      .filter(o => o && o.orderStatus === 'packed' && o.awbNumber)
+      .map(o => o.awbNumber);
+
+    if (awbNumbers.length === 0) {
+      alert("Please select packed orders with generated AWBs to schedule pickup.");
+      return;
+    }
+
+    setShipmentActionProgress({ active: true, message: `Scheduling pickup & creating manifest for ${awbNumbers.length} packages...` });
+    setOrdersError("");
+    try {
+      const res = await handleCallNimbusApi('manifest', { awbNumbers });
+
+      // Update all selected orders to pickup_scheduled and store the manifest URL
+      for (const id of selectedIds) {
+        const order = orders.find(o => o.id === id);
+        if (order && order.orderStatus === 'packed') {
+          await updateDoc(doc(firestoreDb, 'orders', order.id), {
+            orderStatus: 'pickup_scheduled',
+            manifestUrl: res.manifestUrl
+          });
+        }
+      }
+
+      setSelectedToShipOrders({});
+      setShipmentActionProgress({ active: false, message: `Pickup scheduled successfully!` });
+      if (res.manifestUrl) {
+        window.open(res.manifestUrl, '_blank');
+      }
+      setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+    } catch (err) {
+      console.error(err);
+      setShipmentActionProgress({ active: false, message: '' });
+      setOrdersError(`Pickup scheduling failed: ${err.message}`);
     }
   };
 
@@ -1046,11 +1411,12 @@ const AdminPanel = ({
     });
 
     pdf.save("qr-print-sheet.pdf");
-    setShowLogoDownloadPrompt(true);
   };
 
-  const handleDownloadLogoPdf = () => {
+  const handleDownloadLogoPdf = async () => {
     if (appendedQrs.length === 0) return;
+
+    setShipmentActionProgress({ active: true, message: "Preparing backside print sheet..." });
 
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -1066,7 +1432,8 @@ const AdminPanel = ({
     const gapX = 2;
     const gapY = 4;
 
-    appendedQrs.forEach((entry, index) => {
+    for (let index = 0; index < appendedQrs.length; index++) {
+      const entry = appendedQrs[index];
       const pageIndex = index % itemsPerPage;
 
       if (index > 0 && pageIndex === 0) {
@@ -1079,23 +1446,42 @@ const AdminPanel = ({
       const x = marginX + col * (colWidth + gapX);
       const y = marginY + row * (rowHeight + gapY);
 
-      // 1. Draw outer grey border (45mm x 60mm)
+      // 1. Add appropriate backside cover (centered at 40x55 size to match front dimensions)
+      if (entry.typeofqr === 'personalised' && entry.version === 2) {
+        if (entry.imageUrl) {
+          const customCanvas = await loadLogoCanvas(
+            entry.imageUrl
+          );
+          if (customCanvas) {
+            pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 40, 55);
+          } else {
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(8);
+            pdf.text("Image Load Failed", x + colWidth / 2, y + rowHeight / 2, { align: "center" });
+          }
+        } else {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(8);
+          pdf.text("No Image", x + colWidth / 2, y + rowHeight / 2, { align: "center" });
+        }
+      } else {
+        if (logoImage) {
+          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 40, 55);
+        } else {
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(10);
+          pdf.text("I'm Here Logo", x + colWidth / 2, y + rowHeight / 2, { align: "center" });
+        }
+      }
+
+      // 2. Draw outer grey border (45mm x 60mm) on top of the image
       pdf.setDrawColor(209, 213, 219);
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
-
-      // 2. Add brand logo in full cover (45mm x 60mm)
-      if (logoImage) {
-        pdf.addImage(logoImage, "PNG", x, y, colWidth, rowHeight);
-      } else {
-        pdf.setFont("helvetica", "bold");
-        pdf.setFontSize(10);
-        pdf.text("I'm Here Logo", x + colWidth / 2, y + rowHeight / 2, { align: "center" });
-      }
-    });
+    }
 
     pdf.save("logo-print-sheet.pdf");
-    setShowLogoDownloadPrompt(false);
+    setShipmentActionProgress({ active: false, message: "" });
   };
 
   // Helper: Save generated customer link to Firestore database on demand
@@ -1177,6 +1563,32 @@ const AdminPanel = ({
       setAdminError(`Failed to clear database: ${err.message}. Check Firestore Rules.`);
     } finally {
       setClearing(false);
+    }
+  };
+
+  // Action: Clear Orders
+  const handleClearOrders = async () => {
+    if (!firestoreDb) return;
+    const confirmClear = window.confirm("Are you sure you want to delete all active and mock orders from the database?");
+    if (!confirmClear) return;
+    
+    setLoading(true);
+    setAdminError("");
+    setAdminSuccess("");
+    try {
+      const querySnapshot = await getDocs(collection(firestoreDb, 'orders'));
+      if (querySnapshot.empty) {
+        setAdminSuccess("Orders database is already empty!");
+        return;
+      }
+      const deletePromises = querySnapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+      await Promise.all(deletePromises);
+      setAdminSuccess("All orders deleted successfully!");
+    } catch (err) {
+      console.error(err);
+      setAdminError(`Failed to clear orders: ${err.message}.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1522,6 +1934,28 @@ const AdminPanel = ({
               </button>
             </div>
           )}
+
+          {/* Clear Orders Control */}
+          <button
+            type="button"
+            className="btn btn-danger-outline"
+            onClick={handleClearOrders}
+            disabled={loading || clearing}
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              border: '1px solid rgba(244, 63, 94, 0.2)',
+              color: 'var(--accent-rose)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Clear Orders"
+          >
+            <Trash2 size={14} />
+            Clear Orders
+          </button>
 
           {/* Logout Button */}
           <button
@@ -2193,208 +2627,896 @@ const AdminPanel = ({
       {activeAdminTab === 'orders' && (
         <div className="orders-tab-layout">
 
-          {/* LEFT: Orders List */}
-          <div className="orders-list-panel">
-            <div className="orders-panel-header">
-              <div>
-                <h2 className="orders-panel-title">📦 Pending Orders</h2>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {orders.length === 0 ? 'No new orders' : `${orders.length} order${orders.length > 1 ? 's' : ''} waiting to be processed`}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+            {/* LEFT: Orders List */}
+            <div className="orders-list-panel">
+              {/* Sub-tab navigation inside Orders */}
+              <div className="orders-subtabs-nav" style={{ display: 'flex', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
                 <button
                   type="button"
-                  onClick={handleAppendAllToPdf}
-                  disabled={orders.length === 0 || appendProgress.active}
-                  className="btn btn-primary"
+                  className={`orders-subtab-btn ${ordersSubTab === 'pending_qr' ? 'active' : ''}`}
+                  onClick={() => setOrdersSubTab('pending_qr')}
                   style={{
-                    padding: '9px 16px',
-                    fontSize: '0.85rem',
+                    background: 'transparent',
+                    border: 'none',
+                    color: ordersSubTab === 'pending_qr' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
                     fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '7px',
-                    opacity: (orders.length === 0 || appendProgress.active) ? 0.5 : 1,
-                    cursor: (orders.length === 0 || appendProgress.active) ? 'not-allowed' : 'pointer'
+                    fontSize: '0.88rem',
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    borderBottom: ordersSubTab === 'pending_qr' ? '2.5px solid var(--accent-indigo)' : 'none',
+                    transition: 'all 0.2s'
                   }}
                 >
-                  {appendProgress.active ? (
-                    <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} /> Processing...</>
-                  ) : (
-                    <><Zap size={14} /> Append All to PDF</>
-                  )}
+                  📝 Pending QR Generation ({orders.filter(o => o.orderStatus === 'orderplaced').length})
+                </button>
+                <button
+                  type="button"
+                  className={`orders-subtab-btn ${ordersSubTab === 'to_ship' ? 'active' : ''}`}
+                  onClick={() => setOrdersSubTab('to_ship')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: ordersSubTab === 'to_ship' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    borderBottom: ordersSubTab === 'to_ship' ? '2.5px solid var(--accent-indigo)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🚚 Orders to Ship ({orders.filter(o => o.orderStatus === 'appended').length})
+                </button>
+                <button
+                  type="button"
+                  className={`orders-subtab-btn ${ordersSubTab === 'moved_to_shipment' ? 'active' : ''}`}
+                  onClick={() => setOrdersSubTab('moved_to_shipment')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: ordersSubTab === 'moved_to_shipment' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                    fontWeight: 700,
+                    fontSize: '0.88rem',
+                    padding: '6px 12px',
+                    cursor: 'pointer',
+                    borderBottom: ordersSubTab === 'moved_to_shipment' ? '2.5px solid var(--accent-indigo)' : 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  🚀 Moved to Shipment ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
                 </button>
               </div>
-            </div>
 
-            {/* Progress Banner */}
-            {(appendProgress.active || appendProgress.message) && (
-              <div className="append-progress-banner">
-                {appendProgress.active ? (
-                  <>
-                    <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#a5b4fc' }}>
-                        {appendProgress.message}
-                      </div>
-                      {appendProgress.total > 0 && (
-                        <div className="append-progress-bar-track">
-                          <div
-                            className="append-progress-bar-fill"
-                            style={{ width: `${Math.round((appendProgress.done / appendProgress.total) * 100)}%` }}
-                          />
-                        </div>
+            {/* Render subtabs */}
+            {ordersSubTab === 'pending_qr' ? (
+              <>
+                <div className="orders-panel-header">
+                  <div>
+                    <h2 className="orders-panel-title">📦 Pending Orders</h2>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {orders.filter(o => o.orderStatus === 'orderplaced').length === 0 ? 'No new orders' : `${orders.filter(o => o.orderStatus === 'orderplaced').length} order${orders.filter(o => o.orderStatus === 'orderplaced').length > 1 ? 's' : ''} waiting to be processed`}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={handleAppendAllToPdf}
+                      disabled={orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active}
+                      className="btn btn-primary"
+                      style={{
+                        padding: '9px 16px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        opacity: (orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active) ? 0.5 : 1,
+                        cursor: (orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active) ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {appendProgress.active ? (
+                        <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} /> Processing...</>
+                      ) : (
+                        <><Zap size={14} /> Append All to PDF</>
                       )}
-                    </div>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, flexShrink: 0 }}>
-                      {appendProgress.done}/{appendProgress.total}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#10b981' }}>{appendProgress.message}</span>
-                  </>
-                )}
-              </div>
-            )}
+                    </button>
+                  </div>
+                </div>
 
-            {ordersError && (
-              <div className="status-msg status-msg-error" style={{ marginBottom: '12px' }}>
-                <AlertTriangle size={16} style={{ flexShrink: 0 }} />
-                <span>{ordersError}</span>
-              </div>
-            )}
-
-            {/* Orders Cards */}
-            {ordersLoading ? (
-              <div style={{ textAlign: 'center', padding: '40px 0' }}>
-                <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading orders...</p>
-              </div>
-            ) : orders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
-                <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
-                <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No pending orders</p>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
-                  New orders will appear here when customers place them.
-                </p>
-              </div>
-            ) : (
-              <div className="orders-cards-list">
-                {orders.map((order, oIdx) => (
-                  <div key={order.id} className="order-card">
-                    {/* Order Header */}
-                    <div className="order-card-header" style={{ cursor: 'pointer' }} onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div className="order-card-name">{order.customerName || 'Unknown Customer'}</div>
-                        <div className="order-card-meta">
-                          <span><Phone size={11} /> {order.orderedPhoneNumber || '—'}</span>
-                          <span><Mail size={11} /> {order.orderedEmail || '—'}</span>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                          <span className={`order-badge ${order.paymentMode === 'cod' ? 'badge-cod' : 'badge-online'}`}>
-                            {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
-                          </span>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>₹{order.totalAmount}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="btn-toggle-order"
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#10b981',
-                            cursor: 'pointer',
-                            padding: '4px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          {expandedOrders[order.id] ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Collapsible Content */}
-                    {expandedOrders[order.id] && (
+                {/* Progress Banner */}
+                {(appendProgress.active || appendProgress.message) && (
+                  <div className="append-progress-banner" style={{ marginBottom: '12px' }}>
+                    {appendProgress.active ? (
                       <>
-                        {/* Items */}
-                        <div className="order-card-items">
-                          {(order.items || []).map((item, iIdx) => (
-                            <div key={iIdx} className="order-item-row">
-                              {item.thumbnailUrl ? (
-                                <img src={item.thumbnailUrl} alt={item.typeofqr} className="order-item-thumb" />
-                              ) : (
-                                <div className="order-item-thumb-placeholder">
-                                  {item.typeofqr === 'classic_black' ? '⬛' : item.typeofqr === 'classic_white' ? '⬜' : '🎨'}
-                                </div>
-                              )}
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div className="order-item-type">
-                                  {item.typeofqr === 'personalised' ? '🎨 Personalised' :
-                                   item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
-                                </div>
-                                <div className="order-item-qty">Qty: <strong>{item.quantity}</strong> × ₹{item.unitPrice}</div>
-                                {item.typeofqr === 'personalised' && item.imageUrl && (
-                                  <div style={{ fontSize: '0.7rem', color: 'var(--accent-emerald)', marginTop: '2px' }}>✓ Image on Cloudinary</div>
-                                )}
-                              </div>
-                              <div className="order-item-total">₹{(item.quantity * item.unitPrice)}</div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Shipping address */}
-                        {order.shippingAddress && (
-                          <div className="order-card-address">
-                            📍 {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
+                        <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#a5b4fc' }}>
+                            {appendProgress.message}
                           </div>
-                        )}
-
-                        {/* Total QR tags to generate for this order */}
-                        <div className="order-card-footer">
-                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                            Will generate <strong style={{ color: 'var(--accent-cyan)' }}>
-                              {(order.items || []).reduce((s, i) => s + (i.quantity || 1), 0)}
-                            </strong> QR tag{(order.items || []).reduce((s, i) => s + (i.quantity || 1), 0) > 1 ? 's' : ''}
-                          </span>
+                          {appendProgress.total > 0 && (
+                            <div className="append-progress-bar-track">
+                              <div
+                                className="append-progress-bar-fill"
+                                style={{ width: `${Math.round((appendProgress.done / appendProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                          )}
                         </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, flexShrink: 0 }}>
+                          {appendProgress.done}/{appendProgress.total}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#10b981' }}>{appendProgress.message}</span>
                       </>
                     )}
                   </div>
-                ))}
-              </div>
+                )}
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ marginBottom: '12px' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading orders...</p>
+                  </div>
+                ) : orders.filter(o => o.orderStatus === 'orderplaced').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No pending orders</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      New orders will appear here when customers place them.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => o.orderStatus === 'orderplaced').map((order) => (
+                      <div key={order.id} className="order-card">
+                        {/* Order Header */}
+                        <div className="order-card-header" style={{ cursor: 'pointer' }} onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="order-card-name">{order.customerName || 'Unknown Customer'}</div>
+                            <div className="order-card-meta">
+                              <span><Phone size={11} /> {order.orderedPhoneNumber || '—'}</span>
+                              <span><Mail size={11} /> {order.orderedEmail || '—'}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                              <span className={`order-badge ${order.paymentMode === 'cod' ? 'badge-cod' : 'badge-online'}`}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>₹{order.totalAmount}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-toggle-order"
+                              style={{ background: 'transparent', border: 'none', color: '#10b981', cursor: 'pointer', padding: '4px' }}
+                            >
+                              {expandedOrders[order.id] ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Content */}
+                        {expandedOrders[order.id] && (
+                          <>
+                            <div className="order-card-items">
+                              {(order.items || []).map((item, iIdx) => (
+                                <div key={iIdx} className="order-item-row">
+                                  {item.thumbnailUrl ? (
+                                    <img src={item.thumbnailUrl} alt={item.typeofqr} className="order-item-thumb" />
+                                  ) : (
+                                    <div className="order-item-thumb-placeholder">
+                                      {item.typeofqr === 'classic_black' ? '⬛' : item.typeofqr === 'classic_white' ? '⬜' : '🎨'}
+                                    </div>
+                                  )}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div className="order-item-type">
+                                      {item.typeofqr === 'personalised' ? '🎨 Personalised' :
+                                       item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
+                                    </div>
+                                    <div className="order-item-qty">Qty: <strong>{item.quantity}</strong> × ₹{item.unitPrice}</div>
+                                  </div>
+                                  <div className="order-item-total">₹{(item.quantity * item.unitPrice)}</div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {order.shippingAddress && (
+                              <div className="order-card-address">
+                                📍 {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : ordersSubTab === 'to_ship' ? (
+              /* ORDERS TO SHIP TAB (NIMBUSPOST SHIPPING INTEGRATION) */
+              <>
+                <div className="orders-panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h2 className="orders-panel-title">🚚 Shipping Dashboard</h2>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Process shipments, print labels, and schedule courier pickups via NimbusPost
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bulk Actions Bar */}
+                  <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-to-ship"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => o.orderStatus === 'appended').length > 0 &&
+                          orders.filter(o => o.orderStatus === 'appended').every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const toShipList = orders.filter(o => o.orderStatus === 'appended');
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            toShipList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-to-ship" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => o.orderStatus === 'appended').length})
+                      </label>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
+                      Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkBookShipments}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      🚀 Add Selected to NimbusPost
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkMarkAsPacked}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                    >
+                      📦 Mark as Packed
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkSchedulePickup}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                    >
+                      📅 Schedule Pickup
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shipping Action Progress Banner */}
+                {(shipmentActionProgress.active || shipmentActionProgress.message) && (
+                  <div className="append-progress-banner" style={{ margin: '12px 0', background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
+                    {shipmentActionProgress.active ? (
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', marginRight: '8px' }} />
+                    ) : (
+                      <CheckCircle2 size={16} style={{ color: '#10b981', marginRight: '8px' }} />
+                    )}
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: shipmentActionProgress.active ? '#a5b4fc' : '#10b981' }}>
+                      {shipmentActionProgress.message}
+                    </span>
+                  </div>
+                )}
+
+                {/* NimbusPost Rates and Wallet Dashboard */}
+                <div className="nimbus-rates-dashboard glass-panel" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', marginBottom: '20px' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Truck size={18} /> NimbusPost B2B Shipping Rates & Wallet
+                  </h3>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Live Wallet Balance</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: nimbusWallet !== null && nimbusWallet < 0 ? '#ef4444' : '#10b981', marginTop: '4px' }}>
+                        {fetchingWallet ? (
+                          <span style={{ fontSize: '1.0rem', color: 'var(--text-secondary)' }}>Loading...</span>
+                        ) : nimbusWallet !== null ? (
+                          `₹${nimbusWallet.toFixed(2)}`
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Pending Shipping Cost (Cheapest Courier)</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
+                        ₹{Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Refill</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
+                        ₹{Math.max(0, Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0) - (nimbusWallet || 0)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Order ID</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Recipient</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Destination</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Cheapest Partner</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', textAlign: 'right' }}>Charges</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.filter(o => o.orderStatus === 'appended').map(order => {
+                          const rate = shippingRates[order.id];
+                          return (
+                            <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: 700 }}>{order.id}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.customerName}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.shippingAddress?.city} ({order.shippingAddress?.pincode})</td>
+                              <td style={{ padding: '8px 12px', color: '#a5b4fc', fontWeight: 600 }}>
+                                {ratesLoading && !rate ? (
+                                  <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Calculating...</span>
+                                ) : rate ? (
+                                  `${rate.name}`
+                                ) : (
+                                  'Not Calculated / Pincode Error'
+                                )}
+                              </td>
+                              <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#f59e0b' }}>
+                                {rate ? `₹${rate.charges.toFixed(2)}` : '₹0.00'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {orders.filter(o => o.orderStatus === 'appended').length === 0 && (
+                          <tr>
+                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                              No pending orders ready for shipment.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ margin: '12px 0' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading shipments...</p>
+                  </div>
+                ) : orders.filter(o => o.orderStatus === 'appended').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No orders to ship</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      Orders will appear here once their QR PDFs are generated.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => o.orderStatus === 'appended').map((order) => {
+                      const isSelected = !!selectedToShipOrders[order.id];
+                      return (
+                        <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
+                          
+                          {/* Shipping Card Header */}
+                          <div className="order-card-header" style={{ paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => setSelectedToShipOrders(prev => ({ ...prev, [order.id]: e.target.checked }))}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              />
+                              <div>
+                                <div className="order-card-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                  {order.customerName || 'Unknown Customer'}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>({order.id})</span>
+                                </div>
+                                <div className="order-card-meta">
+                                  <span>📞 {order.orderedPhoneNumber || '—'}</span>
+                                  <span>✉️ {order.orderedEmail || '—'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                              <span className={`shipping-status-badge badge-${order.orderStatus}`}>
+                                {order.orderStatus === 'appended' && '📝 QR Ready'}
+                                {order.orderStatus === 'shipment_created' && '🚚 Shipment Booked'}
+                                {order.orderStatus === 'label_printed' && '🖨️ Label Printed'}
+                                {order.orderStatus === 'packed' && '📦 Packed'}
+                                {order.orderStatus === 'pickup_scheduled' && '📅 Pickup Scheduled'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Address & Products Details */}
+                          <div style={{ fontSize: '0.82rem', padding: '12px', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>📍 Shipping Address:</strong> {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - <strong>{order.shippingAddress?.pincode}</strong>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong>📦 Items ({order.items?.reduce((s, i) => s + (i.quantity || 1), 0)}):</strong>
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} style={{ paddingLeft: '8px', color: 'var(--text-secondary)' }}>
+                                  • {item.typeofqr === 'personalised' ? 'Personalised Tag' : 'Classic Tag'} × {item.quantity}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Shipment details if created */}
+                          {order.awbNumber && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(99,102,241,0.04)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', borderTop: '1px dashed rgba(99,102,241,0.15)' }}>
+                              <div><strong>AWB:</strong> {order.awbNumber}</div>
+                              <div><strong>Courier:</strong> {order.courierPartner || 'NimbusPost'}</div>
+                              {order.nimbuspostOrderId && <div><strong>Nimbus ID:</strong> {order.nimbuspostOrderId}</div>}
+                            </div>
+                          )}
+
+                          {order.orderStatus === 'appended' && shippingRates[order.id] && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(245,158,11,0.04)', display: 'flex', justifyContent: 'space-between', gap: '8px', borderTop: '1px dashed rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                              <div><strong>Calculated Courier:</strong> {shippingRates[order.id].name}</div>
+                              <div><strong>Rate:</strong> ₹{shippingRates[order.id].charges.toFixed(2)}</div>
+                            </div>
+                          )}
+
+                          {/* Shipping Card Actions */}
+                          <div className="order-card-actions" style={{ display: 'flex', padding: '12px', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
+                            {order.orderStatus === 'appended' && (
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleBookShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                🚀 Create Nimbus Shipment
+                              </button>
+                            )}
+
+                            {order.shippingLabelUrl && (
+                              <a
+                                href={order.shippingLabelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                onClick={async () => {
+                                  // Automatically advance status to label_printed if it's shipment_created
+                                  if (order.orderStatus === 'shipment_created') {
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'label_printed'
+                                    });
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(99,102,241,0.15)', border: '1px solid var(--accent-indigo)', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Download size={11} /> Download Shipping Label
+                              </a>
+                            )}
+
+                            {(order.orderStatus === 'shipment_created' || order.orderStatus === 'label_printed') && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { orderStatus: 'packed' });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#10b981', border: 'none', color: '#ffffff' }}
+                              >
+                                ✓ Mark Packed
+                              </button>
+                            )}
+
+                            {order.orderStatus === 'packed' && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  setShipmentActionProgress({ active: true, message: 'Scheduling pickup...' });
+                                  try {
+                                    const res = await handleCallNimbusApi('manifest', { awbNumbers: [order.awbNumber] });
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'pickup_scheduled',
+                                      manifestUrl: res.manifestUrl
+                                    });
+                                    setShipmentActionProgress({ active: false, message: 'Pickup scheduled successfully!' });
+                                    if (res.manifestUrl) window.open(res.manifestUrl, '_blank');
+                                    setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+                                  } catch (err) {
+                                    setShipmentActionProgress({ active: false, message: '' });
+                                    setOrdersError(err.message);
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#f59e0b', border: 'none', color: '#ffffff' }}
+                              >
+                                📅 Schedule Pickup
+                              </button>
+                            )}
+
+                            {order.manifestUrl && (
+                              <a
+                                href={order.manifestUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(245,158,11,0.15)', border: '1px solid #f59e0b', color: '#ffffff' }}
+                              >
+                                📄 View Manifest
+                              </a>
+                            )}
+
+                            {['shipment_created', 'label_printed', 'packed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn btn-danger-outline"
+                                onClick={() => handleCancelShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* MOVED TO SHIPMENT TAB */
+              <>
+                <div className="orders-panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h2 className="orders-panel-title">🚀 Moved to Shipment</h2>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Manage booked shipments, print labels, download manifests, or mark orders as shipped
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bulk Actions Bar */}
+                  <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-shipments"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length > 0 &&
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const shipmentsList = orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus));
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            shipmentsList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-shipments" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
+                      </label>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
+                      Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleMarkSelectedShipped}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                    >
+                      🚚 Mark Selected as Shipped
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleMarkAllShipped}
+                      disabled={orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled'].includes(o.orderStatus)).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)' }}
+                    >
+                      🚚 Mark All as Shipped
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkMarkAsPacked}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)' }}
+                    >
+                      📦 Mark as Packed
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkSchedulePickup}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                    >
+                      📅 Schedule Pickup
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shipping Action Progress Banner */}
+                {(shipmentActionProgress.active || shipmentActionProgress.message) && (
+                  <div className="append-progress-banner" style={{ margin: '12px 0', background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
+                    {shipmentActionProgress.active ? (
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', marginRight: '8px' }} />
+                    ) : (
+                      <CheckCircle2 size={16} style={{ color: '#10b981', marginRight: '8px' }} />
+                    )}
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: shipmentActionProgress.active ? '#a5b4fc' : '#10b981' }}>
+                      {shipmentActionProgress.message}
+                    </span>
+                  </div>
+                )}
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ margin: '12px 0' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading shipments...</p>
+                  </div>
+                ) : orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No shipments booked yet</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      Once you book shipments from "Orders to Ship", they will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).map((order) => {
+                      const isSelected = !!selectedToShipOrders[order.id];
+                      return (
+                        <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
+                          
+                          {/* Shipping Card Header */}
+                          <div className="order-card-header" style={{ paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => setSelectedToShipOrders(prev => ({ ...prev, [order.id]: e.target.checked }))}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              />
+                              <div>
+                                <div className="order-card-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                  {order.customerName || 'Unknown Customer'}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>({order.id})</span>
+                                </div>
+                                <div className="order-card-meta">
+                                  <span>📞 {order.orderedPhoneNumber || '—'}</span>
+                                  <span>✉️ {order.orderedEmail || '—'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                              <span className={`shipping-status-badge badge-${order.orderStatus}`} style={{ 
+                                background: order.orderStatus === 'shipped' ? 'rgba(16, 185, 129, 0.15)' : '',
+                                color: order.orderStatus === 'shipped' ? '#10b981' : ''
+                              }}>
+                                {order.orderStatus === 'shipment_created' && '🚚 Shipment Booked'}
+                                {order.orderStatus === 'label_printed' && '🖨️ Label Printed'}
+                                {order.orderStatus === 'packed' && '📦 Packed'}
+                                {order.orderStatus === 'pickup_scheduled' && '📅 Pickup Scheduled'}
+                                {order.orderStatus === 'shipped' && '✨ Shipped'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Address & Products Details */}
+                          <div style={{ fontSize: '0.82rem', padding: '12px', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>📍 Shipping Address:</strong> {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - <strong>{order.shippingAddress?.pincode}</strong>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong>📦 Items ({order.items?.reduce((s, i) => s + (i.quantity || 1), 0)}):</strong>
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} style={{ paddingLeft: '8px', color: 'var(--text-secondary)' }}>
+                                  • {item.typeofqr === 'personalised' ? 'Personalised Tag' : 'Classic Tag'} × {item.quantity}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Shipment details if created */}
+                          {order.awbNumber && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(99,102,241,0.04)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', borderTop: '1px dashed rgba(99,102,241,0.15)' }}>
+                              <div><strong>AWB:</strong> {order.awbNumber}</div>
+                              <div><strong>Courier:</strong> {order.courierPartner || 'NimbusPost'}</div>
+                              {order.nimbuspostOrderId && <div><strong>Nimbus ID:</strong> {order.nimbuspostOrderId}</div>}
+                            </div>
+                          )}
+
+                          {/* Shipping Card Actions */}
+                          <div className="order-card-actions" style={{ display: 'flex', padding: '12px', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
+                            
+                            {order.shippingLabelUrl && (
+                              <a
+                                href={order.shippingLabelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                onClick={async () => {
+                                  if (order.orderStatus === 'shipment_created') {
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'label_printed'
+                                    });
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(99,102,241,0.15)', border: '1px solid var(--accent-indigo)', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Download size={11} /> Download Shipping Label
+                              </a>
+                            )}
+
+                            {['shipment_created', 'label_printed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { orderStatus: 'packed' });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#10b981', border: 'none', color: '#ffffff' }}
+                              >
+                                ✓ Mark Packed
+                              </button>
+                            )}
+
+                            {order.orderStatus === 'packed' && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  setShipmentActionProgress({ active: true, message: 'Scheduling pickup...' });
+                                  try {
+                                    const res = await handleCallNimbusApi('manifest', { awbNumbers: [order.awbNumber] });
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'pickup_scheduled',
+                                      manifestUrl: res.manifestUrl
+                                    });
+                                    setShipmentActionProgress({ active: false, message: 'Pickup scheduled successfully!' });
+                                    if (res.manifestUrl) window.open(res.manifestUrl, '_blank');
+                                    setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+                                  } catch (err) {
+                                    setShipmentActionProgress({ active: false, message: '' });
+                                    setOrdersError(err.message);
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#f59e0b', border: 'none', color: '#ffffff' }}
+                              >
+                                📅 Schedule Pickup
+                              </button>
+                            )}
+
+                            {order.manifestUrl && (
+                              <a
+                                href={order.manifestUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(245,158,11,0.15)', border: '1px solid #f59e0b', color: '#ffffff' }}
+                              >
+                                📄 View Manifest
+                              </a>
+                            )}
+
+                            {['packed', 'pickup_scheduled'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { 
+                                    orderStatus: 'shipped',
+                                    shippedAt: new Date()
+                                  });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', color: '#ffffff' }}
+                              >
+                                🚚 Mark Shipped
+                              </button>
+                            )}
+
+                            {['shipment_created', 'label_printed', 'packed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn btn-danger-outline"
+                                onClick={() => handleCancelShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* RIGHT: PDF Preview (sticky) */}
+          {/* RIGHT: PDF Previews (collapsible accordions) */}
           <div className="orders-pdf-panel">
-            <div className="glass-panel card-content" style={{ position: 'sticky', top: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>PDF Sheet Preview</h3>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                    {appendedQrs.length} tag{appendedQrs.length !== 1 ? 's' : ''} appended
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  {appendedQrs.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleDownloadPdf}
-                      className="btn btn-primary"
-                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px' }}
-                    >
-                      <Download size={12} /> PDF ({appendedQrs.length})
-                    </button>
-                  )}
-                </div>
+            <div className="glass-panel card-content" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  📄 PDF Sheets Preview
+                </h3>
+                {appendedQrs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearPdfSheet}
+                    className="btn btn-danger-outline"
+                    style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Trash2 size={10} /> Clear Sheet
+                  </button>
+                )}
               </div>
 
               {appendedQrs.length === 0 ? (
@@ -2404,41 +3526,138 @@ const AdminPanel = ({
                   <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Press "Append All to PDF" to generate.</p>
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                  {(() => {
-                    const pages = [];
-                    for (let i = 0; i < appendedQrs.length; i += 16) {
-                      pages.push(appendedQrs.slice(i, i + 16));
-                    }
-                    return pages.map((pageItems, pageIdx) => (
-                      <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Page {pageIdx + 1} of {pages.length}
-                        </span>
-                        <div className="pdf-preview-page">
-                          {Array.from({ length: 16 }).map((_, slotIdx) => {
-                            const hasItem = slotIdx < pageItems.length;
-                            if (hasItem) {
-                              const slotEntry = pageItems[slotIdx];
-                              const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
-                              return (
-                                <div key={slotIdx} className="pdf-preview-item">
-                                  <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" />
-                                  {renderGuideOverlay(pageIdx, slotIdx)}
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
-                                  {renderGuideOverlay(pageIdx, slotIdx)}
-                                </div>
-                              );
-                            }
-                          })}
-                        </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  
+                  {/* ACCORDION 1: FRONT SIDE (QR CODES) */}
+                  <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
+                    <div 
+                      onClick={() => setFrontPreviewOpen(!frontPreviewOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: frontPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {frontPreviewOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Front Side (QR Codes)</span>
                       </div>
-                    ));
-                  })()}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDownloadPdf(); }}
+                        className="btn btn-primary"
+                        style={{ padding: '5px 10px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Download size={10} /> Front PDF
+                      </button>
+                    </div>
+
+                    {frontPreviewOpen && (
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        {(() => {
+                          const pages = [];
+                          for (let i = 0; i < appendedQrs.length; i += 16) {
+                            pages.push(appendedQrs.slice(i, i + 16));
+                          }
+                          return pages.map((pageItems, pageIdx) => (
+                            <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                Page {pageIdx + 1} of {pages.length}
+                              </span>
+                              <div className="pdf-preview-page">
+                                {Array.from({ length: 16 }).map((_, slotIdx) => {
+                                  const hasItem = slotIdx < pageItems.length;
+                                  if (hasItem) {
+                                    const slotEntry = pageItems[slotIdx];
+                                    const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item">
+                                        <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" />
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ACCORDION 2: BACK SIDE (COVERS/LOGOS) */}
+                  <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
+                    <div 
+                      onClick={() => setBackPreviewOpen(!backPreviewOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: backPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {backPreviewOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Back Side (Covers/Logos)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDownloadLogoPdf(); }}
+                        className="btn btn-success"
+                        style={{ padding: '5px 10px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', color: '#ffffff' }}
+                      >
+                        <Download size={10} /> Back PDF
+                      </button>
+                    </div>
+
+                    {backPreviewOpen && (
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        {(() => {
+                          const pages = [];
+                          for (let i = 0; i < appendedQrs.length; i += 16) {
+                            pages.push(appendedQrs.slice(i, i + 16));
+                          }
+                          return pages.map((pageItems, pageIdx) => (
+                            <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                Page {pageIdx + 1} of {pages.length}
+                              </span>
+                              <div className="pdf-preview-page">
+                                {Array.from({ length: 16 }).map((_, slotIdx) => {
+                                  const hasItem = slotIdx < pageItems.length;
+                                  if (hasItem) {
+                                    const slotEntry = pageItems[slotIdx];
+                                    
+                                    // Determine image src for backside cover preview
+                                    let backImgSrc = '/full logo.png';
+                                    if (slotEntry?.typeofqr === 'personalised' && slotEntry?.version === 2) {
+                                      backImgSrc = slotEntry?.imageUrl || '';
+                                    }
+                                    
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item" style={{ background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {backImgSrc ? (
+                                          <img src={backImgSrc} alt={`Back ${slotIdx}`} className="pdf-preview-image" style={{ objectFit: 'cover' }} />
+                                        ) : (
+                                          <span style={{ fontSize: '0.62rem', fontWeight: 'bold', color: '#ef4444' }}>No Image</span>
+                                        )}
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               )}
             </div>
@@ -3120,74 +4339,6 @@ const AdminPanel = ({
           </div>
         )}
       </div>
-
-      {/* Logo Download Prompt Overlay Modal */}
-      {showLogoDownloadPrompt && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(0, 0, 0, 0.7)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          backdropFilter: 'blur(4px)'
-        }}>
-          <div style={{
-            background: '#111827',
-            border: '1px solid rgba(255,255,255,0.08)',
-            borderRadius: '16px',
-            padding: '24px',
-            maxWidth: '400px',
-            width: '90%',
-            textAlign: 'center',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4)'
-          }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🏷️</div>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ffffff', marginBottom: '8px' }}>
-              Download Back-side Logos?
-            </h3>
-            <p style={{ fontSize: '0.88rem', color: '#9ca3af', lineHeight: 1.5, marginBottom: '20px' }}>
-              Your front-side QR codes PDF has been downloaded. Would you like to download the matching back-side brand logos PDF with the same dimensions?
-            </p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <button
-                type="button"
-                onClick={() => setShowLogoDownloadPrompt(false)}
-                style={{
-                  padding: '10px 16px',
-                  borderRadius: '8px',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'transparent',
-                  color: '#9ca3af',
-                  fontWeight: 600,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
-                }}
-              >
-                No, thanks
-              </button>
-              <button
-                type="button"
-                onClick={handleDownloadLogoPdf}
-                style={{
-                  padding: '10px 18px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
-                }}
-              >
-                Download Logo PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

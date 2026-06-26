@@ -49,11 +49,11 @@ const KeyringSvg = ({ width = 60, height = 115, marginBottom = '-38px', marginRi
 
     <defs>
       <linearGradient id="metal-grad" x1="14" y1="6" x2="46" y2="38" gradientUnits="userSpaceOnUse">
-        <stop offset="0%" stop-color="#e5e7eb" />
-        <stop offset="25%" stop-color="#9ca3af" />
-        <stop offset="50%" stop-color="#d1d5db" />
-        <stop offset="75%" stop-color="#6b7280" />
-        <stop offset="100%" stop-color="#cbd5e1" />
+        <stop offset="0%" stopColor="#e5e7eb" />
+        <stop offset="25%" stopColor="#9ca3af" />
+        <stop offset="50%" stopColor="#d1d5db" />
+        <stop offset="75%" stopColor="#6b7280" />
+        <stop offset="100%" stopColor="#cbd5e1" />
       </linearGradient>
     </defs>
   </svg>
@@ -97,19 +97,24 @@ function drawBrandedQr(uploadedImg, cropState, presetOptions) {
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (bgMode === 'image' && uploadedImg && cropState) {
-    const s = cropState.scale || 1;
-    const srcX = cropState.x * s;
-    const srcY = cropState.y * s;
-    const srcSize = cropState.size * s;
-
-    const logoCanvas = document.createElement('canvas');
-    logoCanvas.width = 320;
-    logoCanvas.height = 320;
-    const lCtx = logoCanvas.getContext('2d');
+  if (bgMode === 'image' && uploadedImg) {
+    const yOffset = presetOptions.yOffset || 0;
     try {
-      lCtx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
-      ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+      if (cropState) {
+        const s = cropState.scale || 1;
+        const srcX = cropState.x * s;
+        const srcY = cropState.y * s;
+        const srcSize = cropState.size * s;
+
+        const logoCanvas = document.createElement('canvas');
+        logoCanvas.width = 320;
+        logoCanvas.height = 320;
+        const lCtx = logoCanvas.getContext('2d');
+        lCtx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
+        ctx.drawImage(logoCanvas, 0, yOffset, canvas.width, canvas.height);
+      } else {
+        ctx.drawImage(uploadedImg, 0, yOffset, canvas.width, canvas.height);
+      }
       if (overlayDarkness > 0) {
         ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -218,7 +223,8 @@ const OrderPage = () => {
   const [showAddMoreOptions, setShowAddMoreOptions] = useState(false);
 
   /* ── Zoom Preview Modal State ── */
-  const [activePreviewUrl, setActivePreviewUrl] = useState(null);
+  const [activeCartItem, setActiveCartItem] = useState(null);
+  const [isModalFlipped, setIsModalFlipped] = useState(false);
 
   /* ── Quantity Alert Modal State ── */
   const [showQtyAlert, setShowQtyAlert] = useState(false);
@@ -231,6 +237,8 @@ const OrderPage = () => {
   const [isMidnightFlipped, setIsMidnightFlipped] = useState(false);
   const [isDaylightFlipped, setIsDaylightFlipped] = useState(false);
   const [logoImage, setLogoImage] = useState(null);
+  const [logoIconImage, setLogoIconImage] = useState(null);
+  const [selectedVersion, setSelectedVersion] = useState(1);
   const [isStruck, setIsStruck] = useState(false);
 
   /* ── Checkout form states ── */
@@ -252,6 +260,12 @@ const OrderPage = () => {
     const img = new Image();
     img.src = '/full logo.png';
     img.onload = () => setLogoImage(img);
+  }, []);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = '/logo icon.png';
+    img.onload = () => setLogoIconImage(img);
   }, []);
 
   /* ─────────────────────────────────────────────────
@@ -410,52 +424,82 @@ const OrderPage = () => {
       // Back-side rendering (Logo brand in full cover)
       // 1. Draw appropriate background
       if (isPersonalised && uploadedImg && cropState.dispW > 0) {
-        const s = cropState.scale || 1;
-        const srcX = cropState.x * s;
-        const srcY = cropState.y * s;
-        const srcSize = cropState.size * s;
-        try {
-          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
-          ctx.fillStyle = "rgba(0,0,0,0.4)"; // overlay darkness
-          ctx.fillRect(0, 0, W, H);
-        } catch (e) {
-          ctx.fillStyle = '#000000';
-          ctx.fillRect(0, 0, W, H);
+        if (selectedVersion === 1) {
+          const s = cropState.scale || 1;
+          const srcX = cropState.x * s;
+          const srcY = cropState.y * s;
+          const srcSize = cropState.size * s;
+          try {
+            ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
+            ctx.fillStyle = "rgba(0,0,0,0.4)"; // overlay darkness
+            ctx.fillRect(0, 0, W, H);
+          } catch (e) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, W, H);
+          }
+          // Draw brand logo in full cover
+          if (logoImage) {
+            ctx.drawImage(logoImage, 0, 0, W, H);
+          }
+        } else {
+          // Version 2: Back side is custom image only
+          const s = cropState.scale || 1;
+          const srcX = cropState.x * s;
+          const srcY = cropState.y * s;
+          const srcSize = cropState.size * s;
+          try {
+            ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
+          } catch (e) {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, W, H);
+          }
         }
       } else if (preset) {
         ctx.fillStyle = preset.bgColor;
         ctx.fillRect(0, 0, W, H);
+        if (logoImage) {
+          ctx.drawImage(logoImage, 0, 0, W, H);
+        }
       } else {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, W, H);
       }
-
-      // 2. Draw brand logo in full cover
-      if (logoImage) {
-        // Easily adjustable logo coordinates for the user
-        const logoX = 0;
-        const logoY = 0;
-        const logoW = W;
-        const logoH = H;
-        ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
-      }
     } else {
       // Front-side rendering (QR code tag design)
       if (isPersonalised && uploadedImg && cropState.dispW > 0) {
-        const brandedCanvas = drawBrandedQr(uploadedImg, cropState, {
-          dotColor: '#ffffff',
-          bgColor: '#000000',
-          bgMode: 'image',
-          overlayDarkness: 40,
-          dotShape: 'circle',
-          cornerShape: 'circle',
-          dotSize: 80,
-          frameText: "SCAN ME TO FIND ME",
-          frameBgColor: '#000000',
-          frameTextColor: '#ffffff'
-        });
-        if (brandedCanvas) {
-          ctx.drawImage(brandedCanvas, 0, 0);
+        if (selectedVersion === 1) {
+          const brandedCanvas = drawBrandedQr(uploadedImg, cropState, {
+            dotColor: '#ffffff',
+            bgColor: '#000000',
+            bgMode: 'image',
+            overlayDarkness: 40,
+            dotShape: 'circle',
+            cornerShape: 'circle',
+            dotSize: 80,
+            frameText: "SCAN ME TO FIND ME",
+            frameBgColor: '#000000',
+            frameTextColor: '#ffffff'
+          });
+          if (brandedCanvas) {
+            ctx.drawImage(brandedCanvas, 0, 0);
+          }
+        } else {
+          const brandedCanvas = drawBrandedQr(logoIconImage, null, {
+            dotColor: '#ffffff',
+            bgColor: '#000000',
+            bgMode: 'image',
+            overlayDarkness: 40,
+            dotShape: 'circle',
+            cornerShape: 'circle',
+            dotSize: 80,
+            frameText: "SCAN ME TO FIND ME",
+            frameBgColor: '#000000',
+            frameTextColor: '#ffffff',
+            yOffset: 35
+          });
+          if (brandedCanvas) {
+            ctx.drawImage(brandedCanvas, 0, 0);
+          }
         }
       } else if (preset) {
         const brandedCanvas = drawBrandedQr(null, null, {
@@ -477,7 +521,7 @@ const OrderPage = () => {
         ctx.fillRect(0, 0, W, H);
       }
     }
-  }, [uploadedImg, cropState, classicPreset, step, isPreviewFlipped, logoImage, qrLibLoaded]);
+  }, [uploadedImg, cropState, classicPreset, step, isPreviewFlipped, logoImage, logoIconImage, selectedVersion, qrLibLoaded]);
 
   useEffect(() => { drawKeychain(); }, [drawKeychain]);
 
@@ -523,6 +567,117 @@ const OrderPage = () => {
       }
     }
   }, [logoImage, qrLibLoaded]);
+
+  const generatePreviews = () => {
+    const canvas = keychainCanvasRef.current;
+    if (!canvas) return { front: '', back: '' };
+
+    const W = 640; const H = 700;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    const isPersonalised = (step === 'personalised');
+
+    // --- 1. Draw Front ---
+    let frontUrl = '';
+    if (isPersonalised && uploadedImg && cropState.dispW > 0) {
+      if (selectedVersion === 1) {
+        const brandedCanvas = drawBrandedQr(uploadedImg, cropState, {
+          dotColor: '#ffffff',
+          bgColor: '#000000',
+          bgMode: 'image',
+          overlayDarkness: 40,
+          dotShape: 'circle',
+          cornerShape: 'circle',
+          dotSize: 80,
+          frameText: "SCAN ME TO FIND ME",
+          frameBgColor: '#000000',
+          frameTextColor: '#ffffff'
+        });
+        if (brandedCanvas) ctx.drawImage(brandedCanvas, 0, 0);
+      } else {
+        const brandedCanvas = drawBrandedQr(logoIconImage, null, {
+          dotColor: '#ffffff',
+          bgColor: '#000000',
+          bgMode: 'image',
+          overlayDarkness: 40,
+          dotShape: 'circle',
+          cornerShape: 'circle',
+          dotSize: 80,
+          frameText: "SCAN ME TO FIND ME",
+          frameBgColor: '#000000',
+          frameTextColor: '#ffffff',
+          yOffset: 35
+        });
+        if (brandedCanvas) ctx.drawImage(brandedCanvas, 0, 0);
+      }
+    }
+    frontUrl = canvas.toDataURL();
+
+    // --- 2. Draw Back ---
+    ctx.clearRect(0, 0, W, H);
+    if (isPersonalised && uploadedImg && cropState.dispW > 0) {
+      if (selectedVersion === 1) {
+        const s = cropState.scale || 1;
+        const srcX = cropState.x * s;
+        const srcY = cropState.y * s;
+        const srcSize = cropState.size * s;
+        try {
+          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
+          ctx.fillStyle = "rgba(0,0,0,0.4)";
+          ctx.fillRect(0, 0, W, H);
+        } catch (e) {}
+        if (logoImage) ctx.drawImage(logoImage, 0, 0, W, H);
+      } else {
+        const s = cropState.scale || 1;
+        const srcX = cropState.x * s;
+        const srcY = cropState.y * s;
+        const srcSize = cropState.size * s;
+        try {
+          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
+        } catch (e) {}
+      }
+    }
+    const backUrl = canvas.toDataURL();
+
+    // Restore canvas state
+    drawKeychain();
+
+    return { front: frontUrl, back: backUrl };
+  };
+
+  const generateClassicPreviews = (preset) => {
+    const canvas = document.createElement('canvas');
+    const W = 640; const H = 700;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Front
+    const brandedCanvas = drawBrandedQr(null, null, {
+      dotColor: preset.dotColor,
+      bgColor: preset.bgColor,
+      bgMode: 'solid',
+      dotShape: 'circle',
+      cornerShape: 'circle',
+      dotSize: 80,
+      frameText: "SCAN ME TO FIND ME",
+      frameBgColor: preset.id === 'midnight' ? '#000000' : '#111111',
+      frameTextColor: '#ffffff'
+    });
+    if (brandedCanvas) ctx.drawImage(brandedCanvas, 0, 0);
+    const frontUrl = canvas.toDataURL();
+
+    // Back
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = preset.bgColor;
+    ctx.fillRect(0, 0, W, H);
+    if (logoImage) {
+      ctx.drawImage(logoImage, 0, 0, W, H);
+    }
+    const backUrl = canvas.toDataURL();
+
+    return { front: frontUrl, back: backUrl };
+  };
 
   useEffect(() => {
     if (step === 'classic' && qrLibLoaded) {
@@ -689,9 +844,11 @@ const OrderPage = () => {
   const handleAddToCart = () => {
     if (step === 'personalised') {
       if (!uploadedImg) return;
-      drawKeychain();
+      const { front, back } = generatePreviews();
+      const previewUrl = front;
+      const backPreviewUrl = back;
+      
       const keychainCanvas = keychainCanvasRef.current;
-      const previewUrl = keychainCanvas?.toDataURL() || '';
       const thumbnailUrl = keychainCanvas ? createThumbnail(keychainCanvas) : previewUrl;
 
       // Compute source crop coordinates (original image pixels)
@@ -700,16 +857,31 @@ const OrderPage = () => {
       const srcCropY = Math.round(cropState.y * s);
       const srcCropSize = Math.round(cropState.size * s);
 
+      // Get the clean cropped image as base64
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = 320;
+      cropCanvas.height = 320;
+      const cCtx = cropCanvas.getContext('2d');
+      try {
+        cCtx.drawImage(uploadedImg, srcCropX, srcCropY, srcCropSize, srcCropSize, 0, 0, 320, 320);
+      } catch (e) {
+        console.warn("Failed to crop image for cart item:", e);
+      }
+      const croppedBase64 = cropCanvas.toDataURL('image/jpeg', 0.85);
+
       setCartItems(prev => [...prev, {
         id: Date.now(),
         type: 'personalised',
         typeofqr: 'personalised',
         previewUrl,
+        backPreviewUrl,
         thumbnailUrl,
-        label: 'Personalised Tag',
+        label: `Personalised Tag (Version ${selectedVersion})`,
         qty,
         unitPrice: prices.personalisedDiscounted,
         originalPrice: prices.personalisedOriginal,
+        version: selectedVersion,
+        croppedBase64,
         // Store blob and crop info for order saving
         _uploadedBlob: uploadedBlob,
         _srcCropX: srcCropX,
@@ -721,13 +893,17 @@ const OrderPage = () => {
       setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
       setCropLocked(false);
       setQty(1);
+      setSelectedVersion(1);
 
     } else if (step === 'classic') {
       if (!classicPreset) return;
       const preset = CLASSIC_PRESETS.find(p => p.id === classicPreset);
+      const { front, back } = generateClassicPreviews(preset);
+      const previewUrl = front;
+      const backPreviewUrl = back;
+      
       const canvasRef = classicPreset === 'midnight' ? midnightCanvasRef : daylightCanvasRef;
       const canvasEl = canvasRef.current;
-      const previewUrl = canvasEl?.toDataURL() || '';
       const thumbnailUrl = canvasEl ? createThumbnail(canvasEl) : previewUrl;
       const typeofqr = classicPreset === 'midnight' ? 'classic_black' : 'classic_white';
       setCartItems(prev => [...prev, {
@@ -735,6 +911,7 @@ const OrderPage = () => {
         type: 'classic',
         typeofqr,
         previewUrl,
+        backPreviewUrl,
         thumbnailUrl,
         label: `Classic ${preset.name} Tag`,
         qty: classicQty,
@@ -794,29 +971,19 @@ const OrderPage = () => {
   const handleSaveOrder = async (paymentMode, initialStatus = 'paymentPending') => {
     if (!firestoreDb) throw new Error('Database not available.');
 
-    // Build items array (upload images first)
-    const tempOrderId = `temp_${Date.now()}`;
     const orderItems = [];
 
     for (let idx = 0; idx < cartItems.length; idx++) {
       const item = cartItems[idx];
-      let imageDownloadUrl = '';
-      let cloudinaryPublicId = '';
-
-      if (item.typeofqr === 'personalised' && item._uploadedBlob) {
-        const uploadResult = await uploadImageToCloudinary(item._uploadedBlob, tempOrderId, idx);
-        imageDownloadUrl = uploadResult.url;
-        cloudinaryPublicId = uploadResult.publicId;
-      }
 
       orderItems.push({
         typeofqr: item.typeofqr,
         quantity: item.qty,
         unitPrice: item.unitPrice,
         thumbnailUrl: item.thumbnailUrl || '',
+        version: item.version || 1,
         ...(item.typeofqr === 'personalised' ? {
-          imageUrl: imageDownloadUrl,       // Cloudinary secure_url
-          cloudinaryPublicId,
+          tempBase64Image: item.croppedBase64 || '',
           srcCropX: item._srcCropX || 0,
           srcCropY: item._srcCropY || 0,
           srcCropSize: item._srcCropSize || 0,
@@ -867,7 +1034,7 @@ const OrderPage = () => {
         }
       }
 
-      // 2. Initiate Zaakpay payment (pass firestoreOrderId as metadata)
+      // 2. Initiate Cashfree payment (pass firestoreOrderId as metadata)
       const response = await fetch('/api/initiate-payment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -890,30 +1057,23 @@ const OrderPage = () => {
         throw new Error(data.error || 'Failed to initiate payment transaction.');
       }
 
-      // 3. Submit form to Zaakpay gateway
-      const form = document.createElement('form');
-      form.method = 'POST';
-      form.action = data.gatewayUrl;
-
-      Object.keys(data.params).forEach(key => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = data.params[key];
-        form.appendChild(input);
-      });
-
-      // Pass firestoreOrderId as a hidden field so payment-response can include it in the redirect
-      if (firestoreOrderId) {
-        const fsInput = document.createElement('input');
-        fsInput.type = 'hidden';
-        fsInput.name = 'firestoreOrderId';
-        fsInput.value = firestoreOrderId;
-        form.appendChild(fsInput);
+      if (!data.paymentSessionId) {
+        throw new Error('Payment session ID was not generated.');
       }
 
-      document.body.appendChild(form);
-      form.submit();
+      // Initialize Cashfree SDK and trigger checkout
+      if (typeof window.Cashfree === 'undefined') {
+        throw new Error('Cashfree SDK failed to load. Please check your internet connection and refresh.');
+      }
+
+      const cashfree = window.Cashfree({
+        mode: data.environment === 'production' ? 'production' : 'sandbox'
+      });
+
+      cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: '_self'
+      });
 
     } catch (err) {
       isSubmitting.current = false;
@@ -942,7 +1102,7 @@ const OrderPage = () => {
         orderId = await handleSaveOrder('cod', 'orderplaced');
       }
       // Redirect to success page with COD mode
-      window.location.href = `/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&mode=cod&amount=${encodeURIComponent(total)}`;
+      window.location.href = `/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&mode=cod&amount=${encodeURIComponent(total)}&fsOrderId=${encodeURIComponent(orderId)}`;
     } catch (err) {
       isSubmitting.current = false;
       console.error('COD order save error:', err);
@@ -1096,7 +1256,10 @@ const OrderPage = () => {
                       </div>
                       <button
                         className="cart-item-preview-btn"
-                        onClick={() => setActivePreviewUrl(item.previewUrl)}
+                        onClick={() => {
+                          setActiveCartItem(item);
+                          setIsModalFlipped(false);
+                        }}
                         title="View Tag Design"
                       >
                         <Eye size={18} />
@@ -1395,6 +1558,48 @@ const OrderPage = () => {
                     </div>
                   </div>
 
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '20px 0', textAlign: 'left', width: '100%' }}>
+                    <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Select Tag Style Version:</label>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVersion(1)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: selectedVersion === 1 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
+                          background: selectedVersion === 1 ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>Custom Image</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Front: QR on custom photo<br />Back: Full logo cover</div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVersion(2)}
+                        style={{
+                          flex: 1,
+                          padding: '10px',
+                          borderRadius: '10px',
+                          border: selectedVersion === 2 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
+                          background: selectedVersion === 2 ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
+                          color: 'var(--text-primary)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>Logo Edition</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Front: QR on logo icon<br />Back: Custom photo cover</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="sticky-order-summary">
                     <div className="summary-price-row">
                       <div className="summary-label">
@@ -1415,8 +1620,6 @@ const OrderPage = () => {
                       <ShoppingCart size={18} /> Add to Order
                     </button>
                   </div>
-
-                </div>
               </div>
             )}
 
@@ -1577,7 +1780,7 @@ const OrderPage = () => {
 
             <h2 className="order-section-title"><Truck size={22} /> Shipping & Checkout</h2>
             <p className="order-section-subtitle">
-              Enter your shipping information below to place your order. Payments are processed securely via Zaakpay.
+              Enter your shipping information below to place your order. Payments are processed securely via Cashfree.
             </p>
 
             {checkoutError && (
@@ -1759,23 +1962,24 @@ const OrderPage = () => {
                 >
                   {checkoutLoading ? (
                     <>
-                      <div className="payment-spinner" /> Saving & Redirecting to Zaakpay...
+                      <div className="payment-spinner" /> Saving & Redirecting to Cashfree...
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={18} /> Pay ₹{total} securely
+                      <ShieldCheck size={18} /> Pay ₹{total} via Cashfree
                     </>
                   )}
                 </button>
 
-                {/* Divider */}
+                {/* Divider
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
                   <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }} />
                   <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>OR</span>
                   <div style={{ flex: 1, height: '1px', background: 'var(--border-light)' }} />
                 </div>
+                */}
 
-                {/* COD Button */}
+                {/* COD Button
                 <button
                   type="button"
                   onClick={handleCOD}
@@ -1816,6 +2020,7 @@ const OrderPage = () => {
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textAlign: 'center', margin: 0 }}>
                   COD available · Pay when your order arrives 🚚
                 </p>
+                */}
               </div>
 
             </form>
@@ -1825,10 +2030,10 @@ const OrderPage = () => {
       </div>
 
       {/* ── Zoom Preview Modal ── */}
-      {activePreviewUrl && (
+      {activeCartItem && (
         <div
           className="preview-zoom-modal"
-          onClick={() => setActivePreviewUrl(null)}
+          onClick={() => setActiveCartItem(null)}
           style={{
             position: 'fixed',
             top: 0,
@@ -1860,12 +2065,12 @@ const OrderPage = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="keychain-idle-swing zoom-swing">
-              <div className="hanging-keychain-wrapper">
+            <div className={`keychain-idle-swing zoom-swing ${isModalFlipped ? 'flipped' : ''}`}>
+              <div className={`hanging-keychain-wrapper ${isModalFlipped ? 'flipped' : ''}`} style={{ alignItems: isModalFlipped ? 'flex-start' : 'flex-end' }}>
                 <KeyringSvg width={69} height={132} marginBottom="-44px" marginRight="0px" />
                 <div style={{ position: 'relative' }}>
                   <img
-                    src={activePreviewUrl}
+                    src={isModalFlipped ? (activeCartItem.backPreviewUrl || activeCartItem.previewUrl) : activeCartItem.previewUrl}
                     alt="Design Preview"
                     style={{
                       width: '300px',
@@ -1879,7 +2084,8 @@ const OrderPage = () => {
                   <div className="tag-hole-eyelet" style={{
                     position: 'absolute',
                     top: '14px',
-                    right: '25px',
+                    right: isModalFlipped ? 'auto' : '25px',
+                    left: isModalFlipped ? '25px' : 'auto',
                     width: '18px',
                     height: '18px',
                     borderRadius: '50%',
@@ -1891,22 +2097,41 @@ const OrderPage = () => {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setActivePreviewUrl(null)}
-              style={{
-                marginTop: '20px',
-                padding: '10px 24px',
-                background: 'rgba(15, 23, 42, 0.05)',
-                border: '1px solid rgba(15, 23, 42, 0.15)',
-                color: 'var(--text-primary)',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                fontWeight: 600,
-                fontSize: '0.85rem'
-              }}
-            >
-              Close Preview
-            </button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button
+                onClick={() => setIsModalFlipped(f => !f)}
+                style={{
+                  padding: '10px 24px',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  border: '1px solid var(--accent-indigo)',
+                  color: 'var(--accent-indigo)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <RotateCw size={14} /> Flip Tag
+              </button>
+              <button
+                onClick={() => setActiveCartItem(null)}
+                style={{
+                  padding: '10px 24px',
+                  background: 'rgba(15, 23, 42, 0.05)',
+                  border: '1px solid rgba(15, 23, 42, 0.15)',
+                  color: 'var(--text-primary)',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem'
+                }}
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

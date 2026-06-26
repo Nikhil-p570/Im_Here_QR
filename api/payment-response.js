@@ -1,7 +1,6 @@
 /* global process */
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 
 // Helper to load dotenv keys locally if not defined in process.env (for local dev testing)
 const getEnv = (key) => {
@@ -27,55 +26,56 @@ const getEnv = (key) => {
   return '';
 };
 
-export default function handler(req, res) {
-  // Zaakpay returns response as POST request
-  if (req.method !== 'POST') {
+export default async function handler(req, res) {
+  // Cashfree redirects user back to return_url via GET request
+  if (req.method !== 'GET') {
     return res.status(405).send('Method Not Allowed');
   }
 
   try {
-    const params = { ...req.body };
-    const receivedChecksum = params.checksum;
-    delete params.checksum;
+    const orderId = req.query.order_id || 'UNKNOWN';
+    const fsOrderId = req.query.fsOrderId || '';
+    const amount = req.query.amount || '0.00';
 
-    const secretKey = getEnv('ZAAKPAY_SECRET_KEY') || 'YOUR_ZAAKPAY_SECRET_KEY_PLACEHOLDER';
+    // Cashfree Credentials
+    const appId = getEnv('CASHFREE_APP_ID') || 'YOUR_CASHFREE_APP_ID_PLACEHOLDER';
+    const secretKey = getEnv('CASHFREE_SECRET_KEY') || 'YOUR_CASHFREE_SECRET_KEY_PLACEHOLDER';
+    const environment = getEnv('CASHFREE_ENVIRONMENT') || 'sandbox'; // 'sandbox' or 'production'
 
-    // Calculate expected Checksum
-    const sortedKeys = Object.keys(params).sort();
-    const dataString = sortedKeys.map(key => `${key}=${params[key]}`).join('&');
+    const gatewayUrl = environment === 'production'
+      ? `https://api.cashfree.com/pg/orders/${orderId}`
+      : `https://sandbox.cashfree.com/pg/orders/${orderId}`;
 
-    const expectedChecksum = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataString)
-      .digest('hex');
+    // Verify payment status with Cashfree GET Order API
+    const cfRes = await fetch(gatewayUrl, {
+      method: 'GET',
+      headers: {
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+        'x-api-version': '2023-08-01'
+      }
+    });
 
-    const isAuthentic = (receivedChecksum === expectedChecksum);
-    
-    // Determine success (responseCode '100' is payment success in Zaakpay)
-    const isSuccess = isAuthentic && (params.responseCode === '100');
-    const orderId = params.orderId || 'UNKNOWN';
-    const amount = params.amount ? (parseFloat(params.amount) / 100).toFixed(2) : '0.00';
-    const firestoreOrderId = params.firestoreOrderId || '';
+    const data = await cfRes.json();
 
-    // Redirect user back to frontend page
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers.host;
-    
+
     let redirectUrl;
-    if (isSuccess) {
-      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}${firestoreOrderId ? `&fsOrderId=${encodeURIComponent(firestoreOrderId)}` : ''}`;
+
+    if (cfRes.ok && data.order_status === 'PAID') {
+      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}${fsOrderId ? `&fsOrderId=${encodeURIComponent(fsOrderId)}` : ''}`;
     } else {
-      const errorMsg = !isAuthentic ? 'Checksum Verification Failed' : (params.responseDescription || 'Payment Failed');
+      const errorMsg = data.order_status || 'Payment Failed';
       redirectUrl = `${protocol}://${host}/payment-status?status=failure&orderId=${encodeURIComponent(orderId)}&error=${encodeURIComponent(errorMsg)}`;
     }
 
-    // Set 302 Redirect Header
+    // Redirect to the frontend status page
     res.writeHead(302, { Location: redirectUrl });
     return res.end();
 
   } catch (error) {
     console.error("Payment response processing failed:", error);
-    // Fallback redirect to failure route
     const protocol = req.headers['x-forwarded-proto'] || 'http';
     const host = req.headers.host;
     res.writeHead(302, { Location: `${protocol}://${host}/payment-status?status=failure&error=internal_server_error` });
