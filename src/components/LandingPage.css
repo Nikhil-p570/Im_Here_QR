@@ -202,15 +202,18 @@ html {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 14px;
-  background: rgba(79, 70, 229, 0.05);
-  border: 1px solid rgba(79, 70, 229, 0.12);
+  padding: 6px 16px;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(79, 70, 229, 0.03) 100%);
+  border: 1px solid rgba(79, 70, 229, 0.22);
   border-radius: 40px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: #4F46E5;
   margin-bottom: 24px;
   width: fit-content;
+  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.05);
 }
 
 .lp-hero-badge-dot {
@@ -630,9 +633,9 @@ html {
   bottom: 4px;
   left: 4px;
   width: calc(50% - 4px);
-  background: #fff;
+  background: #4F46E5;
   border-radius: 100px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
 }
@@ -654,7 +657,7 @@ html {
 }
 
 .lp-version-toggle-btn.active {
-  color: #0f172a;
+  color: #ffffff;
 }
 
 .lp-carousel-stage {

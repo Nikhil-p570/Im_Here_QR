@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
   Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck,
-  Palette, Layers, Zap, ShieldCheck
+  Palette, Layers, Zap, ShieldCheck, ArrowLeft
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import { initializeFirebase } from '../firebase';
@@ -197,18 +197,18 @@ const OrderPage = () => {
 
   /* ── 3D Premium Preview Tilt ── */
   const [tiltStyle, setTiltStyle] = useState({ transform: 'rotateX(0deg) rotateY(0deg)' });
-  
+
   const handlePreviewMouseMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -12; 
+    const rotateX = ((y - centerY) / centerY) * -12;
     const rotateY = ((x - centerX) / centerX) * 12;
     setTiltStyle({ transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` });
   };
-  
+
   const handlePreviewMouseLeave = () => {
     setTiltStyle({ transform: 'rotateX(0deg) rotateY(0deg)' });
   };
@@ -334,7 +334,7 @@ const OrderPage = () => {
           classicDiscounted: data.classicDiscounted !== undefined ? data.classicDiscounted : prev.classicDiscounted
         }));
       }
-    } catch {}
+    } catch { }
 
     // 2. Fetch from Firestore for remote sync
     if (!firestoreDb) return;
@@ -353,7 +353,7 @@ const OrderPage = () => {
           // Cache in localStorage
           try {
             localStorage.setItem('imhere_prices', JSON.stringify(data));
-          } catch {}
+          } catch { }
         }
       } catch (err) {
         console.warn("Failed to fetch settings/prices from Firestore in client:", err);
@@ -626,7 +626,7 @@ const OrderPage = () => {
           ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
           ctx.fillStyle = "rgba(0,0,0,0.4)";
           ctx.fillRect(0, 0, W, H);
-        } catch (e) {}
+        } catch (e) { }
         if (logoImage) ctx.drawImage(logoImage, 0, 0, W, H);
       } else {
         const s = cropState.scale || 1;
@@ -635,7 +635,7 @@ const OrderPage = () => {
         const srcSize = cropState.size * s;
         try {
           ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
-        } catch (e) {}
+        } catch (e) { }
       }
     }
     const backUrl = canvas.toDataURL();
@@ -847,7 +847,7 @@ const OrderPage = () => {
       const { front, back } = generatePreviews();
       const previewUrl = front;
       const backPreviewUrl = back;
-      
+
       const keychainCanvas = keychainCanvasRef.current;
       const thumbnailUrl = keychainCanvas ? createThumbnail(keychainCanvas) : previewUrl;
 
@@ -901,7 +901,7 @@ const OrderPage = () => {
       const { front, back } = generateClassicPreviews(preset);
       const previewUrl = front;
       const backPreviewUrl = back;
-      
+
       const canvasRef = classicPreset === 'midnight' ? midnightCanvasRef : daylightCanvasRef;
       const canvasEl = canvasRef.current;
       const thumbnailUrl = canvasEl ? createThumbnail(canvasEl) : previewUrl;
@@ -1136,15 +1136,15 @@ const OrderPage = () => {
         <div className="order-hero-container">
           <div className="order-hero-content">
             <div className="order-hero-badge">Premium Smart QR Tags</div>
-            <h1>Design a tag that's<br/><span>uniquely yours.</span></h1>
+            <h1>Design a tag that's<br /><span>uniquely yours.</span></h1>
             <p>
               Secure your belongings with a beautifully crafted metal or acrylic tag. One scan brings it all back.
             </p>
             <div className="hero-trust-row">
-              <div className="trust-pill"><Tag size={13}/> From ₹{prices.classicDiscounted}</div>
-              <div className="trust-pill"><Truck size={13}/> Free Shipping</div>
-              <div className="trust-pill"><Zap size={13}/> Water Resistant</div>
-              <div className="trust-pill"><ShieldCheck size={13}/> No App Required</div>
+              <div className="trust-pill"><Tag size={13} /> From ₹{prices.classicDiscounted}</div>
+              <div className="trust-pill"><Truck size={13} /> Free Shipping</div>
+              <div className="trust-pill"><Zap size={13} /> Water Resistant</div>
+              <div className="trust-pill"><ShieldCheck size={13} /> No App Required</div>
             </div>
             <button className="btn-primary-large" onClick={() => {
               const el = document.getElementById('style-selection');
@@ -1357,11 +1357,11 @@ const OrderPage = () => {
         ════════════════════════════════════════════ */}
         {step === 'personalised' && (
           <div className="configurator-layout">
-            
+
             {/* ── Left Column: Controls ── */}
             <div className="configurator-controls-column">
               <button className="back-btn" onClick={() => { setStep('home'); setUploadedImg(null); }}>
-                ← Back
+                <ArrowLeft size={16} /> Back
               </button>
 
               <div className="configurator-header">
@@ -1372,152 +1372,152 @@ const OrderPage = () => {
                 </p>
               </div>
 
-            {!uploadedImg ? (
-              <div className="upload-zone" onClick={() => fileInputRef.current?.click()} id="upload-zone">
-                <Upload size={42} className="upload-icon" />
-                <p>Tap to upload your photo</p>
-                <span>JPG, PNG, HEIC, WEBP supported</span>
-              </div>
-            ) : (
-              <div className="configurator-editor-panel">
-                <div className="section-label">
-                  {cropLocked
-                    ? <><Lock size={12} /> Position locked</>
-                    : <>Drag box to reposition · Pull corners to resize</>}
+              {!uploadedImg ? (
+                <div className="upload-zone" onClick={() => fileInputRef.current?.click()} id="upload-zone">
+                  <Upload size={42} className="upload-icon" />
+                  <p>Tap to upload your photo</p>
+                  <span>JPG, PNG, HEIC, WEBP supported</span>
                 </div>
+              ) : (
+                <div className="configurator-editor-panel">
+                  <div className="section-label">
+                    {cropLocked
+                      ? <><Lock size={12} /> Position locked</>
+                      : <>Drag box to reposition · Pull corners to resize</>}
+                  </div>
 
+                  <div
+                    className="crop-editor-wrap"
+                    style={{ width: cropState.dispW, height: cropState.dispH }}
+                  >
+                    <canvas ref={cropCanvasRef} style={{ display: 'block', borderRadius: 8 }} />
+
+                    {/* Visual crop box with rule-of-thirds grid, corners and midpoint markers */}
                     <div
-                      className="crop-editor-wrap"
-                      style={{ width: cropState.dispW, height: cropState.dispH }}
+                      className={`crop-box ${cropLocked ? 'locked' : ''}`}
+                      style={{
+                        left: cropState.x,
+                        top: cropState.y,
+                        width: cropState.size,
+                        height: cropState.size,
+                        borderColor: cropLocked ? '#6366f1' : 'rgba(255, 255, 255, 0.45)',
+                        cursor: cropLocked ? 'default' : dragging ? 'grabbing' : 'grab',
+                        touchAction: 'none',
+                        boxShadow: cropLocked
+                          ? '0 0 0 2px rgba(99,102,241,0.2)'
+                          : '0 0 0 2px rgba(255,255,255,0.1)'
+                      }}
+                      onPointerDown={handleCropBoxDown}
+                      onPointerMove={handlePointerMove}
+                      onPointerUp={handlePointerUp}
+                      onPointerCancel={handlePointerUp}
                     >
-                      <canvas ref={cropCanvasRef} style={{ display: 'block', borderRadius: 8 }} />
+                      {/* Custom visual overlay */}
+                      <div className="crop-box-overlay">
+                        {/* Grid Lines (Rule of Thirds) */}
+                        <div className="crop-grid-line-v v1" />
+                        <div className="crop-grid-line-v v2" />
+                        <div className="crop-grid-line-h h1" />
+                        <div className="crop-grid-line-h h2" />
 
-                      {/* Visual crop box with rule-of-thirds grid, corners and midpoint markers */}
-                      <div
-                        className={`crop-box ${cropLocked ? 'locked' : ''}`}
-                        style={{
-                          left: cropState.x,
-                          top: cropState.y,
-                          width: cropState.size,
-                          height: cropState.size,
-                          borderColor: cropLocked ? '#6366f1' : 'rgba(255, 255, 255, 0.45)',
-                          cursor: cropLocked ? 'default' : dragging ? 'grabbing' : 'grab',
-                          touchAction: 'none',
-                          boxShadow: cropLocked
-                            ? '0 0 0 2px rgba(99,102,241,0.2)'
-                            : '0 0 0 2px rgba(255,255,255,0.1)'
-                        }}
-                        onPointerDown={handleCropBoxDown}
-                        onPointerMove={handlePointerMove}
-                        onPointerUp={handlePointerUp}
-                        onPointerCancel={handlePointerUp}
-                      >
-                        {/* Custom visual overlay */}
-                        <div className="crop-box-overlay">
-                          {/* Grid Lines (Rule of Thirds) */}
-                          <div className="crop-grid-line-v v1" />
-                          <div className="crop-grid-line-v v2" />
-                          <div className="crop-grid-line-h h1" />
-                          <div className="crop-grid-line-h h2" />
+                        {/* Midpoint Bars */}
+                        <div className="crop-edge-bar bar-top" />
+                        <div className="crop-edge-bar bar-bottom" />
+                        <div className="crop-edge-bar bar-left" />
+                        <div className="crop-edge-bar bar-right" />
 
-                          {/* Midpoint Bars */}
-                          <div className="crop-edge-bar bar-top" />
-                          <div className="crop-edge-bar bar-bottom" />
-                          <div className="crop-edge-bar bar-left" />
-                          <div className="crop-edge-bar bar-right" />
-
-                          {/* Corners (L-brackets) */}
-                          <div className="crop-corner-bracket corner-tl" />
-                          <div className="crop-corner-bracket corner-tr" />
-                          <div className="crop-corner-bracket corner-bl" />
-                          <div className="crop-corner-bracket corner-br" />
-                        </div>
-
-                        {/* 4 corner resize handles */}
-                        {!cropLocked && ['nw', 'ne', 'sw', 'se'].map(handle => (
-                          <div
-                            key={handle}
-                            className={`crop-handle crop-handle-${handle}`}
-                            onPointerDown={(e) => handleResizeDown(e, handle)}
-                            onPointerMove={handlePointerMove}
-                            onPointerUp={handlePointerUp}
-                          />
-                        ))}
+                        {/* Corners (L-brackets) */}
+                        <div className="crop-corner-bracket corner-tl" />
+                        <div className="crop-corner-bracket corner-tr" />
+                        <div className="crop-corner-bracket corner-bl" />
+                        <div className="crop-corner-bracket corner-br" />
                       </div>
-                    </div>
 
-                    {/* Controls below crop editor */}
-                    <div className="crop-controls">
-                      <button
-                        className={`lock-btn ${cropLocked ? 'locked' : ''}`}
-                        onClick={() => setCropLocked(l => !l)}
-                        id="btn-lock-crop"
-                      >
-                        {cropLocked ? <><Lock size={14} /> Locked</> : <><Unlock size={14} /> Lock Position</>}
-                      </button>
-
-                      <button
-                        className="change-photo-btn"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        <ImageIcon size={13} /> Change Photo
-                      </button>
-
-                      <button
-                        className="change-photo-btn"
-                        onClick={handleRotateImage}
-                      >
-                        <RotateCw size={13} /> Rotate Photo
-                      </button>
-
-                      <button
-                        className="change-photo-btn"
-                        style={{ borderColor: 'var(--accent-rose, #ef4444)', color: 'var(--accent-rose, #ef4444)' }}
-                        onClick={() => {
-                          setUploadedImg(null);
-                          setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
-                          setCropLocked(false);
-                        }}
-                      >
-                        <Trash2 size={13} /> Remove Photo
-                      </button>
-                    </div>
-
-                    {/* Qty is kept for logic, but Add to Cart moved to Sticky Summary */}
-                    <div className="qty-control" style={{ marginTop: '32px' }}>
-                      <label>How many tags with this photo?</label>
-                      <div className="qty-stepper">
-                        <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
-                          <Minus size={16} />
-                        </button>
-                        <span className="qty-value">{qty}</span>
-                        <button
-                          className="qty-btn"
-                          onClick={() => {
-                            if (qty === 1) {
-                              setShowQtyAlert(true);
-                            }
-                            setQty(q => q + 1);
-                          }}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
+                      {/* 4 corner resize handles */}
+                      {!cropLocked && ['nw', 'ne', 'sw', 'se'].map(handle => (
+                        <div
+                          key={handle}
+                          className={`crop-handle crop-handle-${handle}`}
+                          onPointerDown={(e) => handleResizeDown(e, handle)}
+                          onPointerMove={handlePointerMove}
+                          onPointerUp={handlePointerUp}
+                        />
+                      ))}
                     </div>
                   </div>
-            )}
-            
+
+                  {/* Controls below crop editor */}
+                  <div className="crop-controls">
+                    <button
+                      className={`lock-btn ${cropLocked ? 'locked' : ''}`}
+                      onClick={() => setCropLocked(l => !l)}
+                      id="btn-lock-crop"
+                    >
+                      {cropLocked ? <><Lock size={14} /> Locked</> : <><Unlock size={14} /> Lock Position</>}
+                    </button>
+
+                    <button
+                      className="change-photo-btn"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImageIcon size={13} /> Change Photo
+                    </button>
+
+                    <button
+                      className="change-photo-btn"
+                      onClick={handleRotateImage}
+                    >
+                      <RotateCw size={13} /> Rotate Photo
+                    </button>
+
+                    <button
+                      className="change-photo-btn"
+                      style={{ borderColor: 'var(--accent-rose, #ef4444)', color: 'var(--accent-rose, #ef4444)' }}
+                      onClick={() => {
+                        setUploadedImg(null);
+                        setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
+                        setCropLocked(false);
+                      }}
+                    >
+                      <Trash2 size={13} /> Remove Photo
+                    </button>
+                  </div>
+
+                  {/* Qty is kept for logic, but Add to Cart moved to Sticky Summary */}
+                  <div className="qty-control" style={{ marginTop: '32px' }}>
+                    <label>How many tags with this photo?</label>
+                    <div className="qty-stepper">
+                      <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
+                        <Minus size={16} />
+                      </button>
+                      <span className="qty-value">{qty}</span>
+                      <button
+                        className="qty-btn"
+                        onClick={() => {
+                          if (qty === 1) {
+                            setShowQtyAlert(true);
+                          }
+                          setQty(q => q + 1);
+                        }}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
             </div> {/* End Left Column */}
 
             {/* ── Right Column: Sticky Preview ── */}
             {uploadedImg && (
               <div className="configurator-preview-column">
-                <div 
+                <div
                   className="configurator-preview-sticky"
                   onMouseMove={handlePreviewMouseMove}
                   onMouseLeave={handlePreviewMouseLeave}
                 >
-                  <div 
+                  <div
                     className="keychain-frame premium-tangible-preview"
                     style={{ ...tiltStyle, transition: 'transform 0.1s ease-out' }}
                   >
@@ -1547,7 +1547,7 @@ const OrderPage = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="preview-controls-overlay">
                       <button
                         className="btn-flip-preview premium-flip-btn"
@@ -1560,42 +1560,48 @@ const OrderPage = () => {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '20px 0', textAlign: 'left', width: '100%' }}>
                     <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Select Tag Style Version:</label>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                       <button
                         type="button"
-                        onClick={() => setSelectedVersion(1)}
+                        onClick={() => { setSelectedVersion(1); setIsPreviewFlipped(false); }}
                         style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: '10px',
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
                           border: selectedVersion === 1 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
-                          background: selectedVersion === 1 ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
-                          color: 'var(--text-primary)',
+                          background: selectedVersion === 1 ? 'var(--accent-indigo)' : 'transparent',
+                          color: selectedVersion === 1 ? '#ffffff' : 'var(--text-primary)',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>Custom Image</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Front: QR on custom photo<br />Back: Full logo cover</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Custom Image</div>
+                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.3 }}>Front: QR on custom photo · Back: Full logo cover</div>
                       </button>
                       <button
                         type="button"
-                        onClick={() => setSelectedVersion(2)}
+                        onClick={() => { setSelectedVersion(2); setIsPreviewFlipped(true); }}
                         style={{
-                          flex: 1,
-                          padding: '10px',
-                          borderRadius: '10px',
+                          width: '100%',
+                          padding: '12px 16px',
+                          borderRadius: '12px',
                           border: selectedVersion === 2 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
-                          background: selectedVersion === 2 ? 'rgba(99, 102, 241, 0.08)' : 'transparent',
-                          color: 'var(--text-primary)',
+                          background: selectedVersion === 2 ? 'var(--accent-indigo)' : 'transparent',
+                          color: selectedVersion === 2 ? '#ffffff' : 'var(--text-primary)',
                           cursor: 'pointer',
                           textAlign: 'left',
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>Logo Edition</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Front: QR on logo icon<br />Back: Custom photo cover</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Logo Edition</div>
+                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.3 }}>Front: QR on logo icon · Back: Custom photo cover</div>
                       </button>
                     </div>
                   </div>
@@ -1603,23 +1609,22 @@ const OrderPage = () => {
                   <div className="sticky-order-summary">
                     <div className="summary-price-row">
                       <div className="summary-label">
-                        <span style={{ fontWeight: 600, color: '#0f172a' }}>Personalised Tag</span>
-                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Qty: {qty}</span>
+                        <span>Personalised Tag</span>
+                        <span>Qty: {qty}</span>
                       </div>
                       <span className="summary-price">₹{prices.personalisedDiscounted * qty}</span>
                     </div>
-                    <div className="summary-trust-row">
-                      <span><Truck size={12}/> Ships in 24hrs</span>
-                    </div>
+
                     <button
                       className="btn-primary-large"
                       onClick={handleAddToCart}
                       id="btn-add-personalised-to-cart"
-                      style={{ width: '100%', marginTop: '16px' }}
+                      style={{ width: '100%', marginTop: '8px' }}
                     >
                       <ShoppingCart size={18} /> Add to Order
                     </button>
                   </div>
+                </div>
               </div>
             )}
 
@@ -1638,7 +1643,7 @@ const OrderPage = () => {
         ════════════════════════════════════════════ */}
         {step === 'classic' && (
           <div className="setup-panel">
-            <button className="back-btn" onClick={() => setStep('home')}>← Back</button>
+            <button className="back-btn" onClick={() => setStep('home')}><ArrowLeft size={16} /> Back</button>
 
             <h2 className="order-section-title">⬛ Classic Tag</h2>
             <p className="order-section-subtitle">
@@ -1776,11 +1781,11 @@ const OrderPage = () => {
         ════════════════════════════════════════════ */}
         {step === 'checkout' && (
           <div className="setup-panel animate-fade-in">
-            <button className="back-btn" onClick={() => setStep('home')}>← Back to Cart</button>
+            <button className="back-btn" onClick={() => setStep('home')}><ArrowLeft size={16} /> Back to Cart</button>
 
             <h2 className="order-section-title"><Truck size={22} /> Shipping & Checkout</h2>
             <p className="order-section-subtitle">
-              Enter your shipping information below to place your order. Payments are processed securely via Cashfree.
+              Enter your shipping information below to place your order.
             </p>
 
             {checkoutError && (
@@ -1798,13 +1803,11 @@ const OrderPage = () => {
               </div>
             )}
 
-            <form onSubmit={handlePayNow} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
-              
+            <form onSubmit={handlePayNow} style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px', marginTop: '24px' }}>
+
               {/* Shipping Address Fields */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '8px', color: 'var(--text-primary)' }}>
-                  Shipping Information
-                </h3>
+
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div className="form-group">

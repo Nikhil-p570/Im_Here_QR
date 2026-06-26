@@ -88,7 +88,11 @@ const KeyringSvg = () => (
 
 // ── Single Keychain Card (3D Flip) ─────────────────────────────────
 const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) => {
-  const [isFlipped, setIsFlipped] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(version === 2);
+
+  useEffect(() => {
+    setIsFlipped(version === 2);
+  }, [version]);
   const frontCanvasRef = useRef(null);
   const backCanvasRef = useRef(null);
   const [imgLoaded, setImgLoaded] = useState(null);
@@ -740,7 +744,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <div>
               <div className="lp-hero-badge">
                 <span className="lp-hero-badge-dot" />
-                Smart QR Recovery Platform
+                Smart & Customizable QR Tags
               </div>
 
               <h1 className="lp-hero-h1">
