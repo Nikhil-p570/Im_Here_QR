@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
-  Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck
+  Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck,
+  Palette, Layers, Zap, ShieldCheck
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import { initializeFirebase } from '../firebase';
@@ -188,6 +189,24 @@ const OrderPage = () => {
 
   /* ── Resize crop box ── */
   const [resizing, setResizing] = useState(null);
+
+  /* ── 3D Premium Preview Tilt ── */
+  const [tiltStyle, setTiltStyle] = useState({ transform: 'rotateX(0deg) rotateY(0deg)' });
+  
+  const handlePreviewMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -12; 
+    const rotateY = ((x - centerX) / centerX) * 12;
+    setTiltStyle({ transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)` });
+  };
+  
+  const handlePreviewMouseLeave = () => {
+    setTiltStyle({ transform: 'rotateX(0deg) rotateY(0deg)' });
+  };
 
   /* ── Classic flow ── */
   const [classicPreset, setClassicPreset] = useState(null);
@@ -954,12 +973,33 @@ const OrderPage = () => {
 
       {/* ── Hero ── */}
       <div className="order-hero">
-        <div className="order-hero-badge">🔖 Smart QR Keychains</div>
-        <h1>Order Your <span>I'm Here</span> Tag</h1>
-        <p>
-          Attach to your bags, bike keys, car keys, or wallet — one scan
-          brings your belongings back to you.
-        </p>
+        <div className="order-hero-container">
+          <div className="order-hero-content">
+            <div className="order-hero-badge">Premium Smart QR Tags</div>
+            <h1>Design a tag that's<br/><span>uniquely yours.</span></h1>
+            <p>
+              Secure your belongings with a beautifully crafted metal or acrylic tag. One scan brings it all back.
+            </p>
+            <div className="hero-trust-row">
+              <div className="trust-pill"><Tag size={13}/> From ₹{prices.classicDiscounted}</div>
+              <div className="trust-pill"><Truck size={13}/> Free Shipping</div>
+              <div className="trust-pill"><Zap size={13}/> Water Resistant</div>
+              <div className="trust-pill"><ShieldCheck size={13}/> No App Required</div>
+            </div>
+            <button className="btn-primary-large" onClick={() => {
+              const el = document.getElementById('style-selection');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}>
+              Start Designing
+            </button>
+          </div>
+          <div className="order-hero-visual">
+            <div className="floating-hero-render">
+              <div className="hero-mockup personalised-hero-mockup" />
+              <div className="hero-mockup classic-hero-mockup" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="order-main">
@@ -971,13 +1011,11 @@ const OrderPage = () => {
         {step === 'home' && (
           <>
             {(cartItems.length === 0 || forceShowSelection) && (
-              <div className="order-section">
-                <h2 className="order-section-title">
-                  <Tag size={22} /> Choose Your Tag Style
-                </h2>
-                <p className="order-section-subtitle">
-                  Both styles come with your unique I'm Here QR code — just different looks.
-                </p>
+              <div className="order-section" id="style-selection">
+                <div className="section-header-centered">
+                  <h2 className="order-section-title">Choose Your Style</h2>
+                  <p className="order-section-subtitle">Select the perfect canvas for your premium recovery tag.</p>
+                </div>
 
                 <div className="tag-type-grid">
                   {/* Personalised */}
@@ -987,18 +1025,26 @@ const OrderPage = () => {
                     role="button"
                     id="btn-choose-personalised"
                   >
-                    <div className="tag-type-icon">🎨</div>
-                    <h3>Personalised</h3>
-                    <p>
-                      Your photo as the background — your pet, a favourite memory, or
-                      anything you love. Makes your tag truly yours.
-                    </p>
-                    <div className="tag-type-price">
-                      <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.personalisedOriginal}</span>
-                      <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.personalisedDiscounted}</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)' }}> per tag</span>
+                    <div className="premium-card-image">
+                      <div className="luxury-mockup-wrapper">
+                        <div className="luxury-mockup-img" style={{ backgroundImage: 'url(/premium_qr_tag.png)' }} />
+                        <div className="luxury-mockup-reflection" />
+                      </div>
                     </div>
-                    <div className="tag-type-cta">Customise Mine →</div>
+                    <div className="premium-card-content">
+                      <h3>Personalised</h3>
+                      <p className="emotional-copy">Carry your memories. Turn your favourite photo into a premium recovery tag.</p>
+                      <div className="premium-card-features">
+                        Pet · Anime · Car · Travel · Nature · Portrait
+                      </div>
+                      <div className="premium-card-footer">
+                        <div className="tag-type-price">
+                          <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.personalisedOriginal}</span>
+                          <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.personalisedDiscounted}</span>
+                        </div>
+                        <div className="tag-type-cta">Start Designing</div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Classic */}
@@ -1008,18 +1054,26 @@ const OrderPage = () => {
                     role="button"
                     id="btn-choose-classic"
                   >
-                    <div className="tag-type-icon">⬛</div>
-                    <h3>Classic</h3>
-                    <p>
-                      Clean, minimal, instantly recognisable. Two iconic colour
-                      combinations that always look sharp.
-                    </p>
-                    <div className="tag-type-price">
-                      <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.classicOriginal}</span>
-                      <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.classicDiscounted}</span>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--accent-cyan)' }}> per tag</span>
+                    <div className="premium-card-image">
+                      <div className="luxury-mockup-wrapper">
+                        <div className="luxury-mockup-img classic-black-img" />
+                        <div className="luxury-mockup-reflection" />
+                      </div>
                     </div>
-                    <div className="tag-type-cta">Pick a Style →</div>
+                    <div className="premium-card-content">
+                      <h3>Classic</h3>
+                      <p className="emotional-copy">Minimal. Elegant. Always recognizable. Two iconic combinations.</p>
+                      <div className="premium-card-features">
+                        Black Edition · White Edition
+                      </div>
+                      <div className="premium-card-footer">
+                        <div className="tag-type-price">
+                          <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.classicOriginal}</span>
+                          <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.classicDiscounted}</span>
+                        </div>
+                        <div className="tag-type-cta">Select Style</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1062,7 +1116,7 @@ const OrderPage = () => {
 
                 {totalSavings > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: '#10b981', fontWeight: 600, marginBottom: '8px' }}>
-                    <span>✨ Total Savings</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={14} /> Total Savings</span>
                     <span>−₹{totalSavings}</span>
                   </div>
                 )}
@@ -1083,7 +1137,7 @@ const OrderPage = () => {
                         }}
                         style={{ border: '1px solid rgba(139, 92, 246, 0.4)', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)' }}
                       >
-                        🎨 Add Personalised Tag
+                        <Palette size={16} /> Add Personalised Tag
                       </button>
                       <button
                         className="btn-add-more"
@@ -1093,7 +1147,7 @@ const OrderPage = () => {
                         }}
                         style={{ border: '1px solid rgba(6, 182, 212, 0.4)', color: '#06b6d4', background: 'rgba(6, 182, 212, 0.05)' }}
                       >
-                        ⬛ Add Classic Tag
+                        <Layers size={16} /> Add Classic Tag
                       </button>
                       <button
                         onClick={() => setShowAddMoreOptions(false)}
@@ -1139,18 +1193,21 @@ const OrderPage = () => {
             STEP: PERSONALISED
         ════════════════════════════════════════════ */}
         {step === 'personalised' && (
-          <div className="setup-panel">
-            <button className="back-btn" onClick={() => { setStep('home'); setUploadedImg(null); }}>
-              ← Back
-            </button>
+          <div className="configurator-layout">
+            
+            {/* ── Left Column: Controls ── */}
+            <div className="configurator-controls-column">
+              <button className="back-btn" onClick={() => { setStep('home'); setUploadedImg(null); }}>
+                ← Back
+              </button>
 
-            <h2 className="order-section-title">
-              <Sparkles size={22} /> Personalise Your Tag
-            </h2>
-            <p className="order-section-subtitle">
-              Upload a photo — your pet, a memory, artwork — and preview it on your keychain tag.
-              Drag the crop square to choose which part of the image appears.
-            </p>
+              <div className="configurator-header">
+                <h2 className="order-section-title">Personalise Your Tag</h2>
+                <p className="order-section-subtitle">
+                  Upload a photo — your pet, a memory, artwork — and preview it on your keychain tag.
+                  Drag the crop square to choose which part of the image appears.
+                </p>
+              </div>
 
             {!uploadedImg ? (
               <div className="upload-zone" onClick={() => fileInputRef.current?.click()} id="upload-zone">
@@ -1159,16 +1216,12 @@ const OrderPage = () => {
                 <span>JPG, PNG, HEIC, WEBP supported</span>
               </div>
             ) : (
-              <>
-                <div className="crop-preview-grid">
-
-                  {/* ── Left: Crop Editor ── */}
-                  <div>
-                    <div className="section-label">
-                      {cropLocked
-                        ? <><Lock size={12} /> Position locked — scroll won't move it</>
-                        : <>Drag box to reposition · Pull corners to resize</>}
-                    </div>
+              <div className="configurator-editor-panel">
+                <div className="section-label">
+                  {cropLocked
+                    ? <><Lock size={12} /> Position locked</>
+                    : <>Drag box to reposition · Pull corners to resize</>}
+                </div>
 
                     <div
                       className="crop-editor-wrap"
@@ -1266,97 +1319,105 @@ const OrderPage = () => {
                         <Trash2 size={13} /> Remove Photo
                       </button>
                     </div>
-                  </div>
 
-                  {/* ── Right: Keychain Preview ── */}
-                  <div className="keychain-preview-section">
-                    <div className="section-label">Live Preview</div>
-                    <div className="keychain-frame">
-                      <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
-                        <div
-                          className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
-                          style={{
-                            alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                    {/* Qty is kept for logic, but Add to Cart moved to Sticky Summary */}
+                    <div className="qty-control" style={{ marginTop: '32px' }}>
+                      <label>How many tags with this photo?</label>
+                      <div className="qty-stepper">
+                        <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
+                          <Minus size={16} />
+                        </button>
+                        <span className="qty-value">{qty}</span>
+                        <button
+                          className="qty-btn"
+                          onClick={() => {
+                            if (qty === 1) {
+                              setShowQtyAlert(true);
+                            }
+                            setQty(q => q + 1);
                           }}
                         >
-                          <KeyringSvg />
-                          <div style={{ position: 'relative' }}>
-                            <canvas ref={keychainCanvasRef} className="keychain-canvas" />
-                            <div className="tag-hole-eyelet" style={{
-                              position: 'absolute',
-                              top: '12px',
-                              right: isPreviewFlipped ? 'auto' : '22px',
-                              left: isPreviewFlipped ? '22px' : 'auto',
-                              width: '16px',
-                              height: '16px',
-                              borderRadius: '50%',
-                              border: '3.5px solid #cbd5e1',
-                              background: '#0a0a0a',
-                              boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
-                              zIndex: 6
-                            }} />
-                          </div>
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+            )}
+            
+            </div> {/* End Left Column */}
+
+            {/* ── Right Column: Sticky Preview ── */}
+            {uploadedImg && (
+              <div className="configurator-preview-column">
+                <div 
+                  className="configurator-preview-sticky"
+                  onMouseMove={handlePreviewMouseMove}
+                  onMouseLeave={handlePreviewMouseLeave}
+                >
+                  <div 
+                    className="keychain-frame premium-tangible-preview"
+                    style={{ ...tiltStyle, transition: 'transform 0.1s ease-out' }}
+                  >
+                    <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
+                      <div
+                        className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
+                        style={{
+                          alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                        }}
+                      >
+                        <KeyringSvg />
+                        <div style={{ position: 'relative' }}>
+                          <canvas ref={keychainCanvasRef} className="keychain-canvas premium-canvas-shadow" />
+                          <div className="tag-hole-eyelet" style={{
+                            position: 'absolute',
+                            top: '12px',
+                            right: isPreviewFlipped ? 'auto' : '22px',
+                            left: isPreviewFlipped ? '22px' : 'auto',
+                            width: '16px',
+                            height: '16px',
+                            borderRadius: '50%',
+                            border: '3.5px solid #cbd5e1',
+                            background: '#0a0a0a',
+                            boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                            zIndex: 6
+                          }} />
                         </div>
                       </div>
-                      <div className="keychain-label">Your I'm Here Tag</div>
+                    </div>
+                    
+                    <div className="preview-controls-overlay">
                       <button
-                        className="btn-flip-preview"
+                        className="btn-flip-preview premium-flip-btn"
                         onClick={() => setIsPreviewFlipped(prev => !prev)}
-                        style={{
-                          marginTop: '8px',
-                          padding: '6px 16px',
-                          borderRadius: '20px',
-                          background: 'rgba(15, 23, 42, 0.05)',
-                          border: '1px solid rgba(15, 23, 42, 0.15)',
-                          color: 'var(--text-primary)',
-                          cursor: 'pointer',
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s'
-                        }}
                       >
                         <RotateCw size={14} /> Flip Tag
                       </button>
                     </div>
                   </div>
-                </div>
 
-                {/* Qty + Add to Cart */}
-                <div className="qty-and-add">
-                  <div className="qty-control">
-                    <label>How many tags with this photo?</label>
-                    <div className="qty-stepper">
-                      <button className="qty-btn" onClick={() => setQty(q => Math.max(1, q - 1))}>
-                        <Minus size={16} />
-                      </button>
-                      <span className="qty-value">{qty}</span>
-                      <button
-                        className="qty-btn"
-                        onClick={() => {
-                          if (qty === 1) {
-                            setShowQtyAlert(true);
-                          }
-                          setQty(q => q + 1);
-                        }}
-                      >
-                        <Plus size={16} />
-                      </button>
+                  <div className="sticky-order-summary">
+                    <div className="summary-price-row">
+                      <div className="summary-label">
+                        <span style={{ fontWeight: 600, color: '#0f172a' }}>Personalised Tag</span>
+                        <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Qty: {qty}</span>
+                      </div>
+                      <span className="summary-price">₹{prices.personalisedDiscounted * qty}</span>
                     </div>
-                    <p className="qty-hint">₹{prices.personalisedDiscounted} × {qty} = ₹{prices.personalisedDiscounted * qty}</p>
+                    <div className="summary-trust-row">
+                      <span><Truck size={12}/> Ships in 24hrs</span>
+                    </div>
+                    <button
+                      className="btn-primary-large"
+                      onClick={handleAddToCart}
+                      id="btn-add-personalised-to-cart"
+                      style={{ width: '100%', marginTop: '16px' }}
+                    >
+                      <ShoppingCart size={18} /> Add to Order
+                    </button>
                   </div>
 
-                  <button
-                    className="btn-add-to-cart"
-                    onClick={handleAddToCart}
-                    id="btn-add-personalised-to-cart"
-                  >
-                    <ShoppingCart size={18} /> Add to Order
-                  </button>
                 </div>
-              </>
+              </div>
             )}
 
             <input
@@ -1514,7 +1575,7 @@ const OrderPage = () => {
           <div className="setup-panel animate-fade-in">
             <button className="back-btn" onClick={() => setStep('home')}>← Back to Cart</button>
 
-            <h2 className="order-section-title">📦 Checkout Details</h2>
+            <h2 className="order-section-title"><Truck size={22} /> Shipping & Checkout</h2>
             <p className="order-section-subtitle">
               Enter your shipping information below to place your order. Payments are processed securely via Zaakpay.
             </p>
@@ -1670,7 +1731,7 @@ const OrderPage = () => {
                   ))}
                   {totalSavings > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#10b981', fontWeight: 600, marginTop: '4px' }}>
-                      <span>✨ Total Savings</span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={14} /> Total Savings</span>
                       <span>−₹{totalSavings}</span>
                     </div>
                   )}
@@ -1702,7 +1763,7 @@ const OrderPage = () => {
                     </>
                   ) : (
                     <>
-                      💳 Pay ₹{total} via Zaakpay
+                      <ShieldCheck size={18} /> Pay ₹{total} securely
                     </>
                   )}
                 </button>
