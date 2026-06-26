@@ -711,11 +711,18 @@ html {
   z-index: 20;
 }
 
-.lp-carousel-nav:hover {
-  background: #4F46E5;
-  color: #fff;
-  border-color: #4F46E5;
-  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2);
+@media (hover: hover) {
+  .lp-carousel-nav:hover {
+    background: #4F46E5;
+    color: #fff;
+    border-color: #4F46E5;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.2);
+  }
+}
+
+.lp-carousel-nav:active {
+  background: #f1f5f9;
+  transform: translateY(-50%) scale(0.95);
 }
 
 .lp-carousel-nav.prev {
@@ -1217,6 +1224,10 @@ html {
    RESPONSIVE
    ══════════════════════════════════════ */
 @media (max-width: 1024px) {
+  .lp-version-toggle-container {
+    margin-bottom: 100px; /* Push carousel further down on mobile/tablet viewports */
+  }
+
   .lp-hero-inner {
     grid-template-columns: 1fr;
     text-align: center;
