@@ -202,7 +202,11 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
   }, [drawFace]);
 
   const handleCardClick = () => {
-    if (isActive) window.open('/id?=preview', '_blank');
+    if (window.innerWidth < 768) {
+      setIsFlipped(prev => !prev);
+    } else {
+      if (isActive) window.open('/id?=preview', '_blank');
+    }
   };
 
   return (
@@ -228,7 +232,9 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
                 boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8)',
               }} />
             </div>
-            <div className="lp-keychain-face back">
+            <div className="lp-keychain-face back"
+              style={{ cursor: isActive ? 'pointer' : 'default' }}
+              onClick={handleCardClick}>
               <canvas ref={backCanvasRef} style={{ width: '100%', height: '100%' }} />
               <div style={{
                 position: 'absolute', top: '10px', left: '14px',
