@@ -470,7 +470,7 @@
 }
 
 .configurator-header h2 {
-  font-size: 2rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #0f172a;
@@ -478,10 +478,10 @@
 }
 
 .configurator-header p {
-  font-size: 1.05rem;
+  font-size: 0.88rem;
   color: #64748b;
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .configurator-editor-panel {
@@ -571,8 +571,8 @@
 }
 
 .upload-zone .upload-icon { color: #64748b; margin-bottom: 8px; }
-.upload-zone p { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin: 0; }
-.upload-zone span { font-size: 0.9rem; color: #94a3b8; }
+.upload-zone p { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; }
+.upload-zone span { font-size: 0.82rem; color: #94a3b8; }
 
 /* ── Crop Editor ───────────────────────────── */
 .section-label {
