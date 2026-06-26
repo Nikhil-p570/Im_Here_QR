@@ -48,16 +48,19 @@ export default function PaymentStatus() {
   const fsOrderId = params.get('fsOrderId'); // Firestore order doc ID (for online payment)
 
   const [orderUpdated, setOrderUpdated] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState(
+    status === 'success' ? (mode === 'cod' ? 'success' : 'verifying') : 'failure'
+  );
   const hasRun = useRef(false);
 
-  // For online payment success: update Firestore order status to 'orderplaced'
+  // For online payment success: verify and clean up Firestore order items
   useEffect(() => {
     if (status !== 'success' || !fsOrderId) return;
     if (orderUpdated) return;
     if (hasRun.current) return;
     hasRun.current = true;
 
-    const updateOrderStatus = async () => {
+    const verifyAndUpdateOrder = async () => {
       try {
         const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         let config = null;
@@ -77,53 +80,73 @@ export default function PaymentStatus() {
             config = data.config;
           }
         }
+
         if (config && config.apiKey) {
           const db = initializeFirebase(config);
           const docRef = doc(db, 'orders', fsOrderId);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const orderData = docSnap.data();
-            const updatedItems = [...(orderData.items || [])];
-            let needsUpdate = false;
-
-            // Loop items and upload tempBase64Image to Cloudinary
-            for (let idx = 0; idx < updatedItems.length; idx++) {
-              const item = updatedItems[idx];
-              if (item.typeofqr === 'personalised' && item.tempBase64Image) {
-                const uploadResult = await uploadImageToCloudinary(item.tempBase64Image, fsOrderId, idx);
-                if (uploadResult.url) {
-                  item.imageUrl = uploadResult.url;
-                  item.cloudinaryPublicId = uploadResult.publicId;
-                  // Only delete the temp base64 field to save space if upload was successful
-                  delete item.tempBase64Image;
-                }
-                needsUpdate = true;
+          
+          // Poll/Retry up to 3 times to ensure the backend-triggered database update has completed
+          let docSnap;
+          let orderData;
+          let attempts = 0;
+          
+          while (attempts < 3) {
+            docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              orderData = docSnap.data();
+              // If it's COD, it was already set to orderplaced. If Online, the backend must have verified and set it.
+              if (orderData.orderStatus === 'orderplaced') {
+                break;
               }
             }
+            attempts++;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
 
-            const updatePayload = {
-              orderStatus: 'orderplaced'
-            };
-            if (mode !== 'cod') {
-              updatePayload.cashfreeOrderId = orderId || '';
-            }
-            if (needsUpdate) {
-              updatePayload.items = updatedItems;
-            }
+          if (!docSnap.exists() || orderData.orderStatus !== 'orderplaced') {
+            console.error("Order payment verification failed or status not updated by backend.");
+            setVerificationStatus('failure');
+            return;
+          }
 
+          setVerificationStatus('success');
+
+          const updatedItems = [...(orderData.items || [])];
+          let needsUpdate = false;
+
+          // Loop items and upload tempBase64Image to Cloudinary
+          for (let idx = 0; idx < updatedItems.length; idx++) {
+            const item = updatedItems[idx];
+            if (item.typeofqr === 'personalised' && item.tempBase64Image) {
+              const uploadResult = await uploadImageToCloudinary(item.tempBase64Image, fsOrderId, idx);
+              if (uploadResult.url) {
+                item.imageUrl = uploadResult.url;
+                item.cloudinaryPublicId = uploadResult.publicId;
+                // Only delete the temp base64 field to save space if upload was successful
+                delete item.tempBase64Image;
+              }
+              needsUpdate = true;
+            }
+          }
+
+          const updatePayload = {};
+          if (needsUpdate) {
+            updatePayload.items = updatedItems;
             await updateDoc(docRef, updatePayload);
           }
 
           setOrderUpdated(true);
         }
       } catch (err) {
-        console.warn('Order status update failed:', err);
+        console.warn('Order status update/verification failed:', err);
+        if (mode !== 'cod') {
+          setVerificationStatus('failure');
+        }
       }
     };
 
-    updateOrderStatus();
-  }, [status, mode, fsOrderId, orderId]);
+    verifyAndUpdateOrder();
+  }, [status, mode, fsOrderId, orderId, orderUpdated]);
 
   const handleGoHome = () => {
     window.location.href = '/orders';
@@ -131,11 +154,26 @@ export default function PaymentStatus() {
 
   const isCod = mode === 'cod';
 
+  if (verificationStatus === 'verifying') {
+    return (
+      <div className="payment-status-container">
+        <div className="payment-glow-bg" />
+        <div className="payment-status-card glass-panel animate-fade-in" style={{ textAlign: 'center', padding: '40px' }}>
+          <div className="status-icon-wrapper success-glow" style={{ animation: 'spin 2s linear infinite', borderTopColor: '#ffdf00' }}>
+            {/* Simple spinner using CSS keyframes */}
+          </div>
+          <h1 className="status-title" style={{ marginTop: '20px' }}>Verifying Payment...</h1>
+          <p className="status-subtitle">Please wait while we confirm your payment transaction security.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="payment-status-container">
       <div className="payment-glow-bg" />
       <div className="payment-status-card glass-panel animate-fade-in">
-        {status === 'success' ? (
+        {verificationStatus === 'success' ? (
           <div className="status-content success">
             <div className="status-icon-wrapper success-glow">
               {isCod

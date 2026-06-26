@@ -2,6 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { getFirestore, doc, getDoc, updateDoc } from "firebase/firestore";
+
 // Helper to load dotenv keys locally if not defined in process.env (for local dev testing)
 const getEnv = (key) => {
   if (process.env[key]) {
@@ -24,6 +27,26 @@ const getEnv = (key) => {
     console.error("Error reading fallback local env in payment-response API:", err);
   }
   return '';
+};
+
+// Initialize Firebase
+const getFirebaseDb = () => {
+  const config = {
+    apiKey: getEnv('VITE_FIREBASE_API_KEY'),
+    authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+    projectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
+    storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+    messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+    appId: getEnv('VITE_FIREBASE_APP_ID'),
+    measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID')
+  };
+
+  if (!config.apiKey) {
+    throw new Error("Missing Firebase configuration env variables.");
+  }
+
+  const app = getApps().length === 0 ? initializeApp(config) : getApp();
+  return getFirestore(app);
 };
 
 export default async function handler(req, res) {
@@ -64,7 +87,31 @@ export default async function handler(req, res) {
     let redirectUrl;
 
     if (cfRes.ok && data.order_status === 'PAID') {
-      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(amount)}${fsOrderId ? `&fsOrderId=${encodeURIComponent(fsOrderId)}` : ''}`;
+      // 1. Secure Validation: Fetch order from database and verify amount paid
+      const db = getFirebaseDb();
+      const orderDocRef = doc(db, 'orders', fsOrderId);
+      const orderDocSnap = await getDoc(orderDocRef);
+
+      if (!orderDocSnap.exists()) {
+        throw new Error('Order not found in database.');
+      }
+
+      const orderData = orderDocSnap.data();
+      const dbAmount = parseFloat(orderData.totalAmount);
+      const paidAmount = parseFloat(data.order_amount);
+
+      // Check for price tampering
+      if (Math.abs(dbAmount - paidAmount) > 0.01) {
+        throw new Error('Security Alert: Paid amount does not match the database order amount.');
+      }
+
+      // 2. Secure Update: Mark order as placed directly on the server
+      await updateDoc(orderDocRef, {
+        orderStatus: 'orderplaced',
+        cashfreeOrderId: orderId
+      });
+
+      redirectUrl = `${protocol}://${host}/payment-status?status=success&orderId=${encodeURIComponent(orderId)}&amount=${encodeURIComponent(paidAmount)}${fsOrderId ? `&fsOrderId=${encodeURIComponent(fsOrderId)}` : ''}`;
     } else {
       const errorMsg = data.order_status || 'Payment Failed';
       redirectUrl = `${protocol}://${host}/payment-status?status=failure&orderId=${encodeURIComponent(orderId)}&error=${encodeURIComponent(errorMsg)}`;

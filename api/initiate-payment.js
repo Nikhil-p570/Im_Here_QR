@@ -2,6 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 
+import { initializeApp, getApp, getApps } from "firebase/app";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+
 // Helper to load dotenv keys locally if not defined in process.env (for local dev testing)
 const getEnv = (key) => {
   if (process.env[key]) {
@@ -26,6 +29,26 @@ const getEnv = (key) => {
   return '';
 };
 
+// Initialize Firebase
+const getFirebaseDb = () => {
+  const config = {
+    apiKey: getEnv('VITE_FIREBASE_API_KEY'),
+    authDomain: getEnv('VITE_FIREBASE_AUTH_DOMAIN'),
+    projectId: getEnv('VITE_FIREBASE_PROJECT_ID'),
+    storageBucket: getEnv('VITE_FIREBASE_STORAGE_BUCKET'),
+    messagingSenderId: getEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
+    appId: getEnv('VITE_FIREBASE_APP_ID'),
+    measurementId: getEnv('VITE_FIREBASE_MEASUREMENT_ID')
+  };
+
+  if (!config.apiKey) {
+    throw new Error("Missing Firebase configuration env variables.");
+  }
+
+  const app = getApps().length === 0 ? initializeApp(config) : getApp();
+  return getFirestore(app);
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -42,8 +65,28 @@ export default async function handler(req, res) {
     } = req.body;
 
     // Validation
-    if (!amount || !buyerEmail || !buyerPhoneNumber) {
-      return res.status(400).json({ error: 'Missing required parameters: amount, buyerEmail, buyerPhoneNumber are required.' });
+    if (!amount || !buyerEmail || !buyerPhoneNumber || !firestoreOrderId) {
+      return res.status(400).json({ error: 'Missing required parameters: amount, buyerEmail, buyerPhoneNumber, and firestoreOrderId are required.' });
+    }
+
+    // Secure Verification: Fetch the order from Firestore and verify the amount
+    const db = getFirebaseDb();
+    const orderDocRef = doc(db, 'orders', firestoreOrderId);
+    const orderDocSnap = await getDoc(orderDocRef);
+
+    if (!orderDocSnap.exists()) {
+      return res.status(404).json({ error: 'Order not found in database.' });
+    }
+
+    const orderData = orderDocSnap.data();
+    
+    // Check if price or quantity totals were tampered with
+    const dbTotal = parseFloat(orderData.totalAmount);
+    const clientTotal = parseFloat(amount);
+    
+    // Check with tolerance for float precision
+    if (Math.abs(dbTotal - clientTotal) > 0.01) {
+      return res.status(400).json({ error: 'Security alert: Order amount mismatch detected.' });
     }
 
     // Cashfree Credentials
