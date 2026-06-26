@@ -615,7 +615,7 @@ html {
 .lp-version-toggle-container {
   display: flex;
   justify-content: center;
-  margin-bottom: 48px;
+  margin-bottom: 72px; /* Increased from 48px to give keyrings more top clearance */
 }
 
 .lp-version-toggle {
