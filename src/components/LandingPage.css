@@ -1394,7 +1394,17 @@ html {
   }
   
   .lp-carousel-nav {
-    display: none; /* Hide arrows on mobile, rely on dots to save space and prevent overlap */
+    display: flex;
+    width: 38px;
+    height: 38px;
+  }
+  
+  .lp-carousel-nav.prev {
+    left: -10px;
+  }
+  
+  .lp-carousel-nav.next {
+    right: -10px;
   }
   
   .lp-carousel-dots {
