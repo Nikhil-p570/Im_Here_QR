@@ -210,12 +210,7 @@ const CustomerRegistration = ({
           </p>
         </div>
 
-        <div className="status-msg status-msg-error" style={{ fontSize: '0.8rem', padding: '10px 14px', marginBottom: '20px', borderStyle: 'dashed' }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-          <span>
-            ⚠️ Keep it clean: Anyone who scans this physical tag will see the digital secrets you drop below.
-          </span>
-        </div>
+
 
         <form onSubmit={handleSaveRegistration} className="form-group" style={{ gap: '16px' }}>
           <div className="form-group">
