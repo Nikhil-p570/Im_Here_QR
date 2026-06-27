@@ -2617,7 +2617,10 @@ const AdminPanel = ({
                   src={flipPreview ? getBacksidePreviewUrl() : qrImageUrl}
                   alt={flipPreview ? "Backside Preview" : "Resulting QR Code"}
                   style={{
-                    maxWidth: '100%',
+                    width: '100%',
+                    maxWidth: '380px',
+                    aspectRatio: hasFrame ? '640/700' : '1/1',
+                    objectFit: 'cover',
                     borderRadius: '10px',
                     display: 'block',
                     margin: '12px auto',
