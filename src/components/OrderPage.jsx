@@ -1843,7 +1843,7 @@ const OrderPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Street Address *</label>
+                  <label>Full Address *</label>
                   <input
                     type="text"
                     className="text-input"
