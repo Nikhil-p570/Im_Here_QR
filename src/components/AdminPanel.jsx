@@ -92,6 +92,9 @@ const AdminPanel = ({
   const [frameBgColor, setFrameBgColor] = useState("#000000");
   const [frameTextColor, setFrameTextColor] = useState("#ffffff");
   const [logoScale, setLogoScale] = useState(22);
+  const [selectedVersion, setSelectedVersion] = useState(1);
+  const [flipPreview, setFlipPreview] = useState(false);
+
 
   // QR Cropper State
   const [cropState, setCropState] = useState({
@@ -377,6 +380,16 @@ const AdminPanel = ({
     return out;
   };
 
+  const getBacksidePreviewUrl = () => {
+    if (uploadedImg && selectedVersion === 2) {
+      const logoCanvas = getLogoCanvas();
+      if (logoCanvas) {
+        return logoCanvas.toDataURL('image/jpeg', 0.95);
+      }
+    }
+    return '/full logo.png';
+  };
+
   async function handleGenerateQR(urlOverride) {
     const activeUrl = urlOverride || qrUrl;
     if (!activeUrl.trim()) {
@@ -432,14 +445,26 @@ const AdminPanel = ({
 
     let bgImageMissing = false;
     if (bgMode === 'image') {
-      if (logoCanvas) {
-        ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
-        if (overlayDarkness > 0) {
-          ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+      if (selectedVersion === 2) {
+        if (logoIconImage) {
+          ctx.drawImage(logoIconImage, 0, 35, canvas.width, canvas.height);
+          if (overlayDarkness > 0) {
+            ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+        } else {
+          bgImageMissing = true;
         }
       } else {
-        bgImageMissing = true;
+        if (logoCanvas) {
+          ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+          if (overlayDarkness > 0) {
+            ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
+        } else {
+          bgImageMissing = true;
+        }
       }
     }
 
@@ -528,6 +553,7 @@ const AdminPanel = ({
     frameBgColor,
     frameTextColor,
     logoScale,
+    selectedVersion,
     cropState.x,
     cropState.y,
     cropState.size,
@@ -1289,8 +1315,17 @@ const AdminPanel = ({
       return;
     }
 
-    // Store both the image and the ID together so undo can delete the right DB entry
-    const entry = { qrUrl: qrImageUrl, id: result?.id || null };
+    const logoCanvas = getLogoCanvas();
+    const entry = {
+      qrUrl: qrImageUrl,
+      id: result?.id || null,
+      typeofqr: uploadedImg ? 'personalised' : (bgColor === '#ffffff' ? 'classic_white' : 'classic_black'),
+      version: selectedVersion,
+      imageUrl: logoCanvas ? logoCanvas.toDataURL('image/jpeg', 0.9) : '',
+      srcCropX: cropState.x,
+      srcCropY: cropState.y,
+      srcCropSize: cropState.size
+    };
     setAppendedQrs(prev => [...prev, entry]);
     setUndoneQrs([]); // Clear redo stack on new action
 
@@ -1337,7 +1372,9 @@ const AdminPanel = ({
         id: entryId,
         domain: predefinedDomain,
         createdAt: new Date(),
-        status: 'unregistered'
+        status: 'unregistered',
+        typeofqr: nextItem.typeofqr || 'classic_black',
+        version: nextItem.version || 1
       }).catch(err => {
         console.error("Redo: Firestore re-save failed:", err);
       });
@@ -1493,7 +1530,9 @@ const AdminPanel = ({
         id: currentResult.id,
         domain: currentResult.domain,
         createdAt: new Date(),
-        status: 'unregistered'
+        status: 'unregistered',
+        typeofqr: uploadedImg ? 'personalised' : (bgColor === '#ffffff' ? 'classic_white' : 'classic_black'),
+        version: selectedVersion
       });
       const updated = { ...currentResult, isSavedToDb: true };
       setResult(updated);
@@ -2277,19 +2316,45 @@ const AdminPanel = ({
               </div>
 
               {bgMode === 'image' && uploadedImg && (
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Image overlay darkness:</span>
-                    <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
-                  </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="80"
-                    value={overlayDarkness}
-                    onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
-                    style={{ width: '100%', accentColor: '#e8402c' }}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Select Tag Style Version</label>
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVersion(1)}
+                        className={`mode-btn ${selectedVersion === 1 ? 'active' : ''}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                      >
+                        <span style={{ fontWeight: 700 }}>Custom Image (V1)</span>
+                        <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Photo | Back: Logo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedVersion(2)}
+                        className={`mode-btn ${selectedVersion === 2 ? 'active' : ''}`}
+                        style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                      >
+                        <span style={{ fontWeight: 700 }}>Logo Edition (V2)</span>
+                        <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Logo | Back: Photo</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Image overlay darkness:</span>
+                      <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="80"
+                      value={overlayDarkness}
+                      onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
+                      style={{ width: '100%', accentColor: '#e8402c' }}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -2549,8 +2614,8 @@ const AdminPanel = ({
             {qrImageUrl ? (
               <div style={{ textAlign: 'center' }}>
                 <img
-                  src={qrImageUrl}
-                  alt="Resulting QR Code"
+                  src={flipPreview ? getBacksidePreviewUrl() : qrImageUrl}
+                  alt={flipPreview ? "Backside Preview" : "Resulting QR Code"}
                   style={{
                     maxWidth: '100%',
                     borderRadius: '10px',
@@ -2560,6 +2625,27 @@ const AdminPanel = ({
                     boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
                   }}
                 />
+
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setFlipPreview(prev => !prev)}
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-secondary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    fontSize: '0.85rem',
+                    padding: '12px 16px',
+                    marginBottom: '8px'
+                  }}
+                >
+                  🔄 Flip Tag ({flipPreview ? 'See Front' : 'See Back'})
+                </button>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <button
