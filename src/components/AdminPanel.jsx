@@ -1315,16 +1315,30 @@ const AdminPanel = ({
       return;
     }
 
+    // Check if duplicate QR is already appended
+    const isDuplicate = appendedQrs.some(e => 
+      (result?.id && e?.id === result.id) || (qrUrl.trim() && e?.destUrl === qrUrl.trim())
+    );
+
+    if (isDuplicate) {
+      const confirmAppend = window.confirm("This same QR code is already appended to the sheet. Do you want to add it again for sure?");
+      if (!confirmAppend) {
+        return;
+      }
+    }
+
     const logoCanvas = getLogoCanvas();
     const entry = {
       qrUrl: qrImageUrl,
+      destUrl: qrUrl.trim(),
       id: result?.id || null,
       typeofqr: uploadedImg ? 'personalised' : (bgColor === '#ffffff' ? 'classic_white' : 'classic_black'),
       version: selectedVersion,
       imageUrl: logoCanvas ? logoCanvas.toDataURL('image/jpeg', 0.9) : '',
       srcCropX: cropState.x,
       srcCropY: cropState.y,
-      srcCropSize: cropState.size
+      srcCropSize: cropState.size,
+      isManual: true
     };
     setAppendedQrs(prev => [...prev, entry]);
     setUndoneQrs([]); // Clear redo stack on new action
@@ -2666,6 +2680,29 @@ const AdminPanel = ({
                     <Plus size={18} />
                     APPEND TO PDF SHEET
                   </button>
+
+                  {appendedQrs.length > 0 && appendedQrs[appendedQrs.length - 1]?.isManual && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveLastQr}
+                      className="btn btn-danger-outline"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        borderColor: 'rgba(244, 63, 94, 0.4)',
+                        color: 'var(--accent-rose)',
+                        fontSize: '0.85rem',
+                        padding: '12px 16px',
+                        marginTop: '2px',
+                        marginBottom: '2px'
+                      }}
+                    >
+                      ↩️ UNDO LAST APPEND
+                    </button>
+                  )}
 
                   <button
                     type="button"
