@@ -206,7 +206,7 @@ const CustomerRegistration = ({
             You're the first one to scan me! Claim me!
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '8px', lineHeight: '1.5' }}>
-            This physical tag is unclaimed and waiting for you. Claim me first to link your contact details, set up your profile, and make sure your gear is always connected to you!
+            Fill in the details below so they are visible when someone scans your QR tag.
           </p>
         </div>
 
