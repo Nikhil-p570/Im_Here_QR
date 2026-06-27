@@ -398,11 +398,11 @@ const CustomerRegistration = ({
                 outline: 'none'
               }}
             >
-              <option value="What is the name of your first pet?" style={{ background: '#0f172a' }}>What is the name of your first pet?</option>
-              <option value="What is your secret name?" style={{ background: '#0f172a' }}>What is your secret name?</option>
-              <option value="In what city were you born?" style={{ background: '#0f172a' }}>In what city were you born?</option>
-              <option value="What was the name of your first school?" style={{ background: '#0f172a' }}>What was the name of your first school?</option>
-              <option value="custom" style={{ background: '#0f172a' }}>Write your own custom question...</option>
+              <option value="What is the name of your first pet?">What is the name of your first pet?</option>
+              <option value="What is your secret name?">What is your secret name?</option>
+              <option value="In what city were you born?">In what city were you born?</option>
+              <option value="What was the name of your first school?">What was the name of your first school?</option>
+              <option value="custom">Write your own custom question...</option>
             </select>
           </div>
 
