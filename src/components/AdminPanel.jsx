@@ -1603,6 +1603,7 @@ const AdminPanel = ({
 
       setLookupResult({
         totalQuantity,
+        customerName: orderData?.customerName || 'N/A',
         orderedPhoneNumber: orderData?.orderedPhoneNumber || linkData.orderedPhoneNumber || 'N/A',
         orderedEmail: orderData?.orderedEmail || linkData.orderedEmail || 'N/A',
         tagId: tagId
@@ -4827,7 +4828,17 @@ const AdminPanel = ({
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 
-                {/* 1. Total Quantity */}
+                {/* 1. Customer Name */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Customer Name
+                  </span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {lookupResult.customerName}
+                  </span>
+                </div>
+
+                {/* 2. Total Quantity */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
                     Total Quantity Ordered
