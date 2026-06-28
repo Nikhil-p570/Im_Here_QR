@@ -3712,8 +3712,24 @@ const AdminPanel = ({
                                     const slotEntry = pageItems[slotIdx];
                                     const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
                                     return (
-                                      <div key={slotIdx} className="pdf-preview-item">
-                                        <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" />
+                                      <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
+                                        {/* Render background underlay */}
+                                        {slotEntry?.typeofqr === 'personalised' && (
+                                          <img 
+                                            src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl} 
+                                            alt="bg" 
+                                            className="pdf-preview-image" 
+                                            style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }} 
+                                          />
+                                        )}
+                                        {slotEntry?.typeofqr === 'classic_black' && (
+                                          <div className="pdf-preview-image" style={{ background: '#000000' }} />
+                                        )}
+                                        {slotEntry?.typeofqr === 'classic_white' && (
+                                          <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
+                                        )}
+                                        {/* Render QR overlay */}
+                                        <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" style={{ zIndex: 2 }} />
                                         {renderGuideOverlay(pageIdx, slotIdx)}
                                       </div>
                                     );
@@ -4456,14 +4472,31 @@ const AdminPanel = ({
                         const slotEntry = pageItems[slotIdx];
                         const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
                         return (
-                          <div key={slotIdx} className="pdf-preview-item">
-                            <img
-                              src={slotQrUrl}
-                              alt={`QR Slot ${slotIdx}`}
-                              className="pdf-preview-image"
-                            />
-                            {renderGuideOverlay(pageIdx, slotIdx)}
-                          </div>
+                           <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
+                             {/* Render background underlay */}
+                             {slotEntry?.typeofqr === 'personalised' && (
+                               <img 
+                                 src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl} 
+                                 alt="bg" 
+                                 className="pdf-preview-image" 
+                                 style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }} 
+                               />
+                             )}
+                             {slotEntry?.typeofqr === 'classic_black' && (
+                               <div className="pdf-preview-image" style={{ background: '#000000' }} />
+                             )}
+                             {slotEntry?.typeofqr === 'classic_white' && (
+                               <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
+                             )}
+                             {/* Render QR overlay */}
+                             <img
+                               src={slotQrUrl}
+                               alt={`QR Slot ${slotIdx}`}
+                               className="pdf-preview-image"
+                               style={{ zIndex: 2 }}
+                             />
+                             {renderGuideOverlay(pageIdx, slotIdx)}
+                           </div>
                         );
                       } else {
                         return (
