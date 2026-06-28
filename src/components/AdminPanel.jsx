@@ -1700,7 +1700,7 @@ const AdminPanel = ({
     const scaleDown = Math.min(1, maxW / img.width);
     const dispW = Math.round(img.width * scaleDown);
     const dispH = Math.round(img.height * scaleDown);
-    const initSize = Math.round(Math.min(dispW, dispH) * 0.6);
+    const initSize = Math.round(Math.min(dispW, dispH) * 1.0);
 
     setCropState({
       x: (dispW - initSize) / 2,
