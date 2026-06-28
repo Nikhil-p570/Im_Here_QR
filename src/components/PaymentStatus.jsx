@@ -148,6 +148,16 @@ export default function PaymentStatus() {
     verifyAndUpdateOrder();
   }, [status, mode, fsOrderId, orderId, orderUpdated]);
 
+  useEffect(() => {
+    if (verificationStatus === 'success') {
+      try {
+        localStorage.removeItem('imhere_cart');
+      } catch (e) {
+        console.warn("Failed to clear cart from localStorage:", e);
+      }
+    }
+  }, [verificationStatus]);
+
   const handleGoHome = () => {
     window.location.href = '/orders';
   };

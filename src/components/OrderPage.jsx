@@ -221,7 +221,23 @@ const OrderPage = () => {
   const [classicQty, setClassicQty] = useState(1);
 
   /* ── Cart ── */
-  const [cartItems, setCartItems] = useState([]);
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('imhere_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('imhere_cart', JSON.stringify(cartItems));
+    } catch (e) {
+      console.warn("Failed to save cart to localStorage:", e);
+    }
+  }, [cartItems]);
+
   const [forceShowSelection, setForceShowSelection] = useState(false);
   const [showAddMoreOptions, setShowAddMoreOptions] = useState(false);
 
