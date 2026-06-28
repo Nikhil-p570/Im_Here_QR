@@ -1480,8 +1480,8 @@ const AdminPanel = ({
         pdf.rect(x + 2.5, y + 2.5, 52, 52, "F");
       }
 
-      // 3. Add QR image centered (40mm x 45mm), leaving 6mm horizontal & 3.5mm vertical margin inside the 52x52 inner area
-      pdf.addImage(qrUrl, "PNG", x + 8.5, y + 6.0, 40, 45);
+      // 3. Add QR image centered (36mm x 40mm), leaving 8mm horizontal & 6mm vertical margin inside the 52x52 inner area
+      pdf.addImage(qrUrl, "PNG", x + 10.5, y + 8.5, 36, 40);
 
       // ---- TEMPORARY VISUAL DIMENSION DRAWINGS ----
       pdf.setDrawColor(255, 0, 0); // Red
@@ -1498,9 +1498,9 @@ const AdminPanel = ({
       pdf.text(`Photo: 52x52mm`, x + 3.5, y + 6.0);
 
       pdf.setDrawColor(0, 0, 255); // Blue
-      pdf.rect(x + 8.5, y + 6.0, 40, 45); // Blue QR Box
+      pdf.rect(x + 10.5, y + 8.5, 36, 40); // Blue QR Box
       pdf.setTextColor(0, 0, 255);
-      pdf.text(`QR: 40x45mm`, x + 9.5, y + 9.5);
+      pdf.text(`QR: 36x40mm`, x + 11.5, y + 12.0);
     });
 
     pdf.save("qr-print-sheet.pdf");
@@ -4436,7 +4436,7 @@ const AdminPanel = ({
               PDF Print Sheet Preview
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 40mm x 45mm QR code centered.
+              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 36mm x 40mm QR code centered.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
