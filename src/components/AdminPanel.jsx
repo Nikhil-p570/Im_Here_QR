@@ -1430,10 +1430,13 @@ const AdminPanel = ({
     packingPhoneToBoxMapRef.current = packingPhoneToBoxMap;
   }, [packingPhoneToBoxMap]);
 
+  const lastScannedTagRef = useRef({ id: '', time: 0 });
+
   const startCamera = async () => {
     setCameraActive(true);
     setLookupError("");
     setLookupResult(null);
+    lastScannedTagRef.current = { id: '', time: 0 }; // reset on camera start
 
     // Give DOM a tick to render the video element
     setTimeout(async () => {
@@ -1459,6 +1462,22 @@ const AdminPanel = ({
         const html5QrCode = new Html5Qrcode("qr-file-reader");
         qrScannerRef.current = html5QrCode;
 
+        // Process decoded QR text safely
+        const processDecodedText = async (decodedText) => {
+          const now = Date.now();
+          // Throttle duplicate scans of the same tag ID to once every 2.5 seconds
+          if (lastScannedTagRef.current.id === decodedText && now - lastScannedTagRef.current.time < 2500) {
+            return;
+          }
+          lastScannedTagRef.current = { id: decodedText, time: now };
+
+          if (!packingSessionActiveRef.current) {
+            stopCamera();
+          }
+          setLookupId(decodedText);
+          await performLookup(decodedText);
+        };
+
         // Start real-time frame capturing and scanning loop (every 400ms)
         const scanInterval = setInterval(async () => {
           if (!video || video.paused || video.ended) return;
@@ -1477,9 +1496,7 @@ const AdminPanel = ({
             try {
               // 1. Try scanning original (dark-on-light) frame
               const decodedText = await html5QrCode.scanFile(originalFile, false);
-              stopCamera();
-              setLookupId(decodedText);
-              await performLookup(decodedText);
+              await processDecodedText(decodedText);
             } catch (err) {
               // 2. Original failed, try scanning inverted (light-on-dark) frame
               try {
@@ -1497,9 +1514,7 @@ const AdminPanel = ({
                   const invertedFile = new File([invertedBlob], "inverted_frame.png", { type: "image/png" });
                   try {
                     const decodedText = await html5QrCode.scanFile(invertedFile, false);
-                    stopCamera();
-                    setLookupId(decodedText);
-                    await performLookup(decodedText);
+                    await processDecodedText(decodedText);
                   } catch (invertErr) {
                     // Both scan attempts failed for this frame, continue loop
                   }
