@@ -1550,6 +1550,28 @@ const AdminPanel = ({
     await performLookup(lookupId);
   };
 
+  const handleUploadQrFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLookupError("");
+    setLookupResult(null);
+    setLookupLoading(true);
+
+    try {
+      const html5QrCode = new Html5Qrcode("qr-file-reader");
+      const decodedText = await html5QrCode.scanFile(file, false);
+      setLookupId(decodedText);
+      await performLookup(decodedText);
+    } catch (err) {
+      console.error("QR file scan failed:", err);
+      setLookupError("Could not detect any QR code in this image. Make sure the QR is clear and well-lit.");
+    } finally {
+      setLookupLoading(false);
+      e.target.value = "";
+    }
+  };
+
   const renderGuideOverlay = (pageIdx, slotIdx) => {
     return null;
   };
@@ -4578,7 +4600,7 @@ const AdminPanel = ({
             Scan a physical keychain using your device camera or type/paste its QR link or Tag ID below to lookup the order details.
           </p>
 
-          {/* Camera Scanning Section */}
+          {/* Camera Scanning & File Upload Section */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
             {cameraActive ? (
               <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -4593,14 +4615,34 @@ const AdminPanel = ({
                 </button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={startCamera}
-                className="btn btn-primary"
-                style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
-              >
-                📷 Start Camera Scan
-              </button>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="btn btn-primary"
+                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
+                >
+                  📷 Start Camera Scan
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('qr-file-input').click()}
+                  className="btn"
+                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', color: 'white' }}
+                >
+                  📁 Upload QR Image
+                </button>
+                
+                <input
+                  type="file"
+                  id="qr-file-input"
+                  accept="image/*"
+                  onChange={handleUploadQrFile}
+                  style={{ display: 'none' }}
+                />
+                <div id="qr-file-reader" style={{ display: 'none' }}></div>
+              </div>
             )}
           </div>
 
