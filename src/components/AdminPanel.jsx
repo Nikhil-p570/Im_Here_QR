@@ -1502,7 +1502,19 @@ const AdminPanel = ({
         cameraIntervalRef.current = scanInterval;
       } catch (err) {
         console.error("Camera startup failed:", err);
-        setLookupError(`Could not access camera: ${err.message || "Permissions denied"}`);
+        let msg = "Could not access camera";
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+          msg += ": Permissions denied. Please check your browser site settings.";
+        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+          msg += ": Camera is already in use by another tab or app.";
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+          msg += ": No camera found on this device.";
+        } else if (err.name === "OverconstrainedError") {
+          msg += ": No camera matches the requested constraints.";
+        } else {
+          msg += `: ${err.message || err.toString()}`;
+        }
+        setLookupError(msg);
         setCameraActive(false);
       }
     }, 100);
