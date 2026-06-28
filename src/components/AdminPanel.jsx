@@ -390,7 +390,7 @@ const AdminPanel = ({
     return '/full logo black.png';
   };
 
-  async function handleGenerateQR(urlOverride) {
+  async function handleGenerateQR(urlOverride, makeTransparent = false) {
     const activeUrl = urlOverride || qrUrl;
     if (!activeUrl.trim()) {
       setQrNoteText("Enter a URL or generate a customer ID link first.");
@@ -440,11 +440,15 @@ const AdminPanel = ({
     const ctx = canvas.getContext('2d');
 
     // Fill background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (makeTransparent) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     let bgImageMissing = false;
-    if (bgMode === 'image') {
+    if (bgMode === 'image' && !makeTransparent) {
       if (selectedVersion === 2) {
         if (logoIconImage) {
           ctx.drawImage(logoIconImage, 0, 35, canvas.width, canvas.height);
@@ -469,7 +473,7 @@ const AdminPanel = ({
     }
 
     // Set shadow for dots to guarantee scan contrast on light background images
-    if (bgMode === 'image') {
+    if (bgMode === 'image' && !makeTransparent) {
       ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.shadowBlur = 6;
       ctx.shadowOffsetX = 1;
@@ -914,26 +918,8 @@ const AdminPanel = ({
     canvas.height = qrSize + bannerH;
     const ctx = canvas.getContext('2d');
 
-    // Fill background
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw image background for personalised
-    if (bgMode === 'image') {
-      if (version === 2 && logoIconImage) {
-        ctx.drawImage(logoIconImage, 0, 35, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      } else if (logoCanvas) {
-        ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-      ctx.shadowColor = 'rgba(0,0,0,0.6)';
-      ctx.shadowBlur = 6;
-      ctx.shadowOffsetX = 1;
-      ctx.shadowOffsetY = 1;
-    }
+    // Make background transparent for clean layering in PDF
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw dots
     for (let row = 0; row < moduleCount; row++) {
@@ -1309,7 +1295,7 @@ const AdminPanel = ({
     }
   };
 
-  const handleAppendToPdf = () => {
+  const handleAppendToPdf = async () => {
     if (!qrImageUrl) {
       setDownloadError("Please generate a QR code first.");
       return;
@@ -1327,9 +1313,16 @@ const AdminPanel = ({
       }
     }
 
+    // 1. Temporarily generate a transparent version of the QR code
+    await handleGenerateQR(qrUrl.trim(), true);
+    const transparentQrUrl = qrCanvasRef.current ? qrCanvasRef.current.toDataURL('image/png') : qrImageUrl;
+
+    // 2. Restore the original QR code with background for screen preview
+    await handleGenerateQR(qrUrl.trim(), false);
+
     const logoCanvas = getLogoCanvas();
     const entry = {
-      qrUrl: qrImageUrl,
+      qrUrl: transparentQrUrl, // Store transparent version in the PDF entry!
       destUrl: qrUrl.trim(),
       id: result?.id || null,
       typeofqr: uploadedImg ? 'personalised' : (bgColor === '#ffffff' ? 'classic_white' : 'classic_black'),
