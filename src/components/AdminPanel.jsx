@@ -1418,7 +1418,14 @@ const AdminPanel = ({
   const [packingPhoneToBoxMap, setPackingPhoneToBoxMap] = useState({});
   const [maxBoxNumber, setMaxBoxNumber] = useState(0);
   const [lastAssignedBox, setLastAssignedBox] = useState(null);
+  const [packingBoxesData, setPackingBoxesData] = useState({});
+  const [showExportModal, setShowExportModal] = useState(false);
   const [packingHistory, setPackingHistory] = useState([]);
+
+  const packingBoxesDataRef = useRef(packingBoxesData);
+  useEffect(() => {
+    packingBoxesDataRef.current = packingBoxesData;
+  }, [packingBoxesData]);
 
   const packingSessionActiveRef = useRef(packingSessionActive);
   useEffect(() => {
@@ -1627,13 +1634,20 @@ const AdminPanel = ({
         totalQuantity = 1;
       }
 
+      let formattedAddress = 'N/A';
+      if (orderData?.shippingAddress) {
+        const addrObj = orderData.shippingAddress;
+        formattedAddress = `${addrObj.address || ''}, ${addrObj.city || ''}, ${addrObj.state || ''} - ${addrObj.pincode || ''}`;
+      }
+
       const lookupObj = {
         totalQuantity,
         customerName: orderData?.customerName || 'N/A',
         orderedPhoneNumber: orderData?.orderedPhoneNumber || linkData.orderedPhoneNumber || 'N/A',
         orderedEmail: orderData?.orderedEmail || linkData.orderedEmail || 'N/A',
         tagId: tagId,
-        firestoreOrderId: linkData.firestoreOrderId || 'N/A'
+        firestoreOrderId: linkData.firestoreOrderId || 'N/A',
+        shippingAddress: formattedAddress
       };
 
       setLookupResult(lookupObj);
@@ -1664,6 +1678,29 @@ const AdminPanel = ({
           ...prev,
           [groupingKey]: boxNum
         }));
+        
+        setPackingBoxesData(prevBoxes => {
+          const existing = prevBoxes[boxNum] || {
+            customerName: lookupObj.customerName,
+            orderedPhoneNumber: lookupObj.orderedPhoneNumber,
+            orderedEmail: lookupObj.orderedEmail,
+            address: lookupObj.shippingAddress,
+            tags: []
+          };
+          
+          const updatedTags = existing.tags.includes(tagId) 
+            ? existing.tags 
+            : [...existing.tags, tagId];
+            
+          return {
+            ...prevBoxes,
+            [boxNum]: {
+              ...existing,
+              tags: updatedTags
+            }
+          };
+        });
+
         setLastAssignedBox(resultDetail);
         setPackingHistory(prev => [resultDetail, ...prev]);
         if (isNew) {
@@ -4840,39 +4877,63 @@ const AdminPanel = ({
                   }
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (packingSessionActive) {
-                    const confirmEnd = window.confirm("Are you sure you want to end this packing session? This will reset all assigned boxes.");
-                    if (confirmEnd) {
-                      setPackingSessionActive(false);
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (packingSessionActive) {
+                      const confirmEnd = window.confirm("Are you sure you want to end this packing session? This will reset all assigned boxes.");
+                      if (confirmEnd) {
+                        setPackingSessionActive(false);
+                        setPackingPhoneToBoxMap({});
+                        setMaxBoxNumber(0);
+                        setLastAssignedBox(null);
+                        setPackingHistory([]);
+                        setPackingBoxesData({});
+                      }
+                    } else {
+                      setPackingSessionActive(true);
                       setPackingPhoneToBoxMap({});
                       setMaxBoxNumber(0);
                       setLastAssignedBox(null);
                       setPackingHistory([]);
+                      setPackingBoxesData({});
                     }
-                  } else {
-                    setPackingSessionActive(true);
-                    setPackingPhoneToBoxMap({});
-                    setMaxBoxNumber(0);
-                    setLastAssignedBox(null);
-                    setPackingHistory([]);
-                  }
-                }}
-                className={`btn ${packingSessionActive ? 'btn-danger-outline' : 'btn-primary'}`}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '0.82rem',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  border: packingSessionActive ? '1px solid rgba(244, 63, 94, 0.4)' : 'none',
-                  background: packingSessionActive ? 'transparent' : 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
-                  color: packingSessionActive ? 'var(--accent-rose)' : '#ffffff'
-                }}
-              >
-                {packingSessionActive ? '⏹️ End Packing Session' : '▶️ Start Packing Session'}
-              </button>
+                  }}
+                  className={`btn ${packingSessionActive ? 'btn-danger-outline' : 'btn-primary'}`}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    border: packingSessionActive ? '1px solid rgba(244, 63, 94, 0.4)' : 'none',
+                    background: packingSessionActive ? 'transparent' : 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+                    color: packingSessionActive ? 'var(--accent-rose)' : '#ffffff'
+                  }}
+                >
+                  {packingSessionActive ? '⏹️ End Packing Session' : '▶️ Start Packing Session'}
+                </button>
+
+                {packingSessionActive && Object.keys(packingBoxesData).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowExportModal(true)}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '0.82rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      border: '1px solid var(--border-light)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    📋 Ask for Box Info
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Display Current Box Assignment Prominently */}
@@ -5115,6 +5176,114 @@ const AdminPanel = ({
                   </a>
                 </div>
 
+              </div>
+            </div>
+          )}
+          {/* Modal for Exported Box Information */}
+          {showExportModal && (
+            <div className="modal-overlay" style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0, 0, 0, 0.85)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px'
+            }}>
+              <div className="glass-panel" style={{
+                width: '100%',
+                maxWidth: '600px',
+                background: '#111827',
+                border: '1px solid var(--border-light)',
+                borderRadius: '16px',
+                padding: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>📋 Exported Box Information</h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowExportModal(false)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Copy the text below and paste it directly to ChatGPT along with your shipping labels PDF text.
+                </p>
+
+                <textarea
+                  readOnly
+                  value={
+                    Object.entries(packingBoxesData)
+                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                      .map(([boxNum, data]) => {
+                        return `BOX ${boxNum}
+Name: ${data.customerName}
+Phone: ${data.orderedPhoneNumber}
+Email: ${data.orderedEmail}
+Address: ${data.address}
+Tags in box: ${data.tags.join(', ')}
+---------------------------------------------`;
+                      })
+                      .join('\n\n')
+                  }
+                  style={{
+                    width: '100%',
+                    height: '250px',
+                    background: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    color: '#a5b4fc',
+                    fontFamily: 'monospace',
+                    fontSize: '0.82rem',
+                    resize: 'none',
+                    outline: 'none'
+                  }}
+                />
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const text = Object.entries(packingBoxesData)
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([boxNum, data]) => {
+                          return `BOX ${boxNum}
+Name: ${data.customerName}
+Phone: ${data.orderedPhoneNumber}
+Email: ${data.orderedEmail}
+Address: ${data.address}
+Tags in box: ${data.tags.join(', ')}
+---------------------------------------------`;
+                        })
+                        .join('\n\n');
+                      navigator.clipboard.writeText(text);
+                      alert("Copied box info to clipboard!");
+                    }}
+                    className="btn btn-primary"
+                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                  >
+                    Copy to Clipboard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowExportModal(false)}
+                    className="btn btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'transparent', border: '1px solid var(--border-light)' }}
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             </div>
           )}
