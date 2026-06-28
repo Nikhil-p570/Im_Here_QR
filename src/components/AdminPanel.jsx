@@ -1413,6 +1413,23 @@ const AdminPanel = ({
   const cameraIntervalRef = useRef(null);
   const cameraStreamRef = useRef(null);
 
+  // Packing Box Session Helper States
+  const [packingSessionActive, setPackingSessionActive] = useState(false);
+  const [packingPhoneToBoxMap, setPackingPhoneToBoxMap] = useState({});
+  const [maxBoxNumber, setMaxBoxNumber] = useState(0);
+  const [lastAssignedBox, setLastAssignedBox] = useState(null);
+  const [packingHistory, setPackingHistory] = useState([]);
+
+  const packingSessionActiveRef = useRef(packingSessionActive);
+  useEffect(() => {
+    packingSessionActiveRef.current = packingSessionActive;
+  }, [packingSessionActive]);
+
+  const packingPhoneToBoxMapRef = useRef(packingPhoneToBoxMap);
+  useEffect(() => {
+    packingPhoneToBoxMapRef.current = packingPhoneToBoxMap;
+  }, [packingPhoneToBoxMap]);
+
   const startCamera = async () => {
     setCameraActive(true);
     setLookupError("");
@@ -1595,13 +1612,49 @@ const AdminPanel = ({
         totalQuantity = 1;
       }
 
-      setLookupResult({
+      const lookupObj = {
         totalQuantity,
         customerName: orderData?.customerName || 'N/A',
         orderedPhoneNumber: orderData?.orderedPhoneNumber || linkData.orderedPhoneNumber || 'N/A',
         orderedEmail: orderData?.orderedEmail || linkData.orderedEmail || 'N/A',
-        tagId: tagId
-      });
+        tagId: tagId,
+        firestoreOrderId: linkData.firestoreOrderId || 'N/A'
+      };
+
+      setLookupResult(lookupObj);
+
+      if (packingSessionActiveRef.current) {
+        const groupingKey = lookupObj.orderedPhoneNumber !== 'N/A' ? lookupObj.orderedPhoneNumber : (lookupObj.firestoreOrderId !== 'N/A' ? lookupObj.firestoreOrderId : tagId);
+        
+        const prevMap = packingPhoneToBoxMapRef.current;
+        let boxNum = prevMap[groupingKey];
+        let isNew = false;
+        
+        if (!boxNum) {
+          const values = Object.values(prevMap);
+          const currentMax = values.length > 0 ? Math.max(...values) : 0;
+          boxNum = currentMax + 1;
+          isNew = true;
+        }
+        
+        const resultDetail = {
+          boxNumber: boxNum,
+          tagId: tagId,
+          customerName: lookupObj.customerName,
+          isNew: isNew,
+          timestamp: new Date().toLocaleTimeString()
+        };
+        
+        setPackingPhoneToBoxMap(prev => ({
+          ...prev,
+          [groupingKey]: boxNum
+        }));
+        setLastAssignedBox(resultDetail);
+        setPackingHistory(prev => [resultDetail, ...prev]);
+        if (isNew) {
+          setMaxBoxNumber(boxNum);
+        }
+      }
     } catch (err) {
       console.error("Lookup error:", err);
       setLookupError(`Error looking up tag: ${err.message}`);
@@ -4748,6 +4801,148 @@ const AdminPanel = ({
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '20px', textAlign: 'left', lineHeight: '1.5' }}>
             Scan a physical keychain using your device camera or type/paste its QR link or Tag ID below to lookup the order details.
           </p>
+
+          {/* Packing Helper Session Controls */}
+          <div style={{
+            background: packingSessionActive ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
+            border: packingSessionActive ? '1px solid rgba(99,102,241,0.3)' : '1px solid var(--border-light)',
+            borderRadius: '16px',
+            padding: '20px',
+            maxWidth: '600px',
+            margin: '0 auto 24px auto',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: packingSessionActive ? '#a5b4fc' : 'var(--text-primary)' }}>
+                  📦 Packing Box Helper
+                  {packingSessionActive && <span className="pulse-indicator" style={{ display: 'inline-block', width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }} />}
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {packingSessionActive 
+                    ? `Active packing session: ${Object.keys(packingPhoneToBoxMap).length} orders grouped across ${maxBoxNumber} boxes.`
+                    : 'Sort and group multiple items/tags belonging to the same customer into separate shipping boxes.'
+                  }
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (packingSessionActive) {
+                    const confirmEnd = window.confirm("Are you sure you want to end this packing session? This will reset all assigned boxes.");
+                    if (confirmEnd) {
+                      setPackingSessionActive(false);
+                      setPackingPhoneToBoxMap({});
+                      setMaxBoxNumber(0);
+                      setLastAssignedBox(null);
+                      setPackingHistory([]);
+                    }
+                  } else {
+                    setPackingSessionActive(true);
+                    setPackingPhoneToBoxMap({});
+                    setMaxBoxNumber(0);
+                    setLastAssignedBox(null);
+                    setPackingHistory([]);
+                  }
+                }}
+                className={`btn ${packingSessionActive ? 'btn-danger-outline' : 'btn-primary'}`}
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '0.82rem',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  border: packingSessionActive ? '1px solid rgba(244, 63, 94, 0.4)' : 'none',
+                  background: packingSessionActive ? 'transparent' : 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+                  color: packingSessionActive ? 'var(--accent-rose)' : '#ffffff'
+                }}
+              >
+                {packingSessionActive ? '⏹️ End Packing Session' : '▶️ Start Packing Session'}
+              </button>
+            </div>
+
+            {/* Display Current Box Assignment Prominently */}
+            {packingSessionActive && lastAssignedBox && (
+              <div style={{
+                marginTop: '16px',
+                background: lastAssignedBox.isNew ? 'rgba(16, 185, 129, 0.08)' : 'rgba(99,102,241,0.08)',
+                border: lastAssignedBox.isNew ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(99,102,241,0.25)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                animation: 'fadeIn 0.35s ease'
+              }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                  Scan Result Assignment
+                </span>
+                
+                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: lastAssignedBox.isNew ? '#10b981' : '#a5b4fc', margin: '8px 0' }}>
+                  PLACE IN BOX #{lastAssignedBox.boxNumber}
+                </div>
+                
+                {lastAssignedBox.isNew && (
+                  <span style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#10b981',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    marginBottom: '8px'
+                  }}>
+                    🆕 NEW BOX CREATED
+                  </span>
+                )}
+
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  Tag: <strong style={{ fontFamily: 'monospace' }}>#{lastAssignedBox.tagId}</strong> · Customer: <strong>{lastAssignedBox.customerName}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Packing History (Last 5 scans) */}
+            {packingSessionActive && packingHistory.length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                  Session History (Last 5 scans)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' }}>
+                  {packingHistory.slice(0, 5).map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.78rem',
+                      padding: '6px 10px',
+                      background: 'rgba(255,255,255,0.01)',
+                      border: '1px solid rgba(255,255,255,0.03)',
+                      borderRadius: '6px'
+                    }}>
+                      <div>
+                        <span style={{ fontFamily: 'monospace', opacity: 0.8, marginRight: '8px' }}>#{item.tagId}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{item.customerName}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {item.isNew && <span style={{ color: '#10b981', fontSize: '0.65rem', fontWeight: 700 }}>[NEW]</span>}
+                        <span style={{
+                          background: item.isNew ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99,102,241,0.15)',
+                          color: item.isNew ? '#10b981' : '#a5b4fc',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 700
+                        }}>
+                          Box #{item.boxNumber}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Camera Scanning & File Upload Section */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
