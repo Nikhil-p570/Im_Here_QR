@@ -241,6 +241,38 @@ const CustomerProfile = ({
         <div style={{ marginTop: '32px', borderTop: '1px solid var(--border-light)', paddingTop: '20px', color: 'var(--text-secondary)', fontSize: '0.8rem', fontStyle: 'italic', lineHeight: '1.4' }}>
           😊 Thanks for scanning! Be a sweetheart and let me know if you found my item. 😉
         </div>
+
+        {/* Public Scan Page Promotion / CTA */}
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: 'rgba(99, 102, 241, 0.05)',
+          border: '1px dashed rgba(99, 102, 241, 0.25)',
+          borderRadius: '12px',
+          textAlign: 'center'
+        }}>
+          <p style={{ margin: '0 0 8px', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+            Need such a customised smart tag for your own belongings?
+          </p>
+          <a 
+            href="/orders" 
+            style={{ 
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '0.85rem',
+              fontWeight: 800,
+              color: 'white',
+              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.15)'
+            }}
+          >
+            Order Your Tag Here <ExternalLink size={12} />
+          </a>
+        </div>
       </main>
 
       {/* floating bottom right change info button */}
