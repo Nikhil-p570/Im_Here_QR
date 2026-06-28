@@ -273,18 +273,18 @@ const AdminPanel = ({
   // Render dynamic preview of landing tag in cropper
   useEffect(() => {
     if (activeAdminTab !== 'landing_qrs' || !croppingLandingTag || !landingCropImage || !landingPreviewCanvasRef.current) return;
-    
+
     const drawPreview = async () => {
       const canvas = landingPreviewCanvasRef.current;
       canvas.width = 320;
       canvas.height = 350;
       const ctx = canvas.getContext('2d');
-      
+
       const s = cropState.scale || 1;
       const srcX = cropState.x * s;
       const srcY = cropState.y * s;
       const srcSize = cropState.size * s;
-      
+
       const logoCanvas = document.createElement('canvas');
       logoCanvas.width = 320;
       logoCanvas.height = 320;
@@ -293,17 +293,17 @@ const AdminPanel = ({
       } catch (e) {
         console.warn("Failed to draw logoCanvas for landing preview:", e);
       }
-      
+
       const ok = await ensureQrLib();
       if (!ok) return;
-      
+
       let qrResult;
       try {
         qrResult = makeQR('https://im-here-qr.vercel.app/id?=preview');
       } catch (err) {
         return;
       }
-      
+
       const { qr } = qrResult;
       const moduleCount = qr.getModuleCount();
       const qrSize = 320;
@@ -311,16 +311,16 @@ const AdminPanel = ({
       const totalModules = moduleCount + margin * 2;
       const moduleSize = qrSize / totalModules;
       const bannerH = 30; // scaled down banner
-      
+
       // Fill background
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Draw background image
       ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
+
       // Draw dots
       for (let row = 0; row < moduleCount; row++) {
         for (let col = 0; col < moduleCount; col++) {
@@ -331,16 +331,16 @@ const AdminPanel = ({
           }
         }
       }
-      
+
       // Draw corners
       drawFinder(ctx, 0, 0, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
       drawFinder(ctx, 0, moduleCount - 7, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
       drawFinder(ctx, moduleCount - 7, 0, margin, moduleSize, '#ffffff', '#000000', 'circle', bannerH);
-      
+
       // Draw banner frame
       drawBanner(ctx, qrSize, bannerH, "SCAN ME TO FIND ME", '#000000', '#ffffff', 0);
     };
-    
+
     drawPreview();
   }, [activeAdminTab, croppingLandingTag, landingCropImage, cropState.x, cropState.y, cropState.size, cropState.scale]);
 
@@ -652,7 +652,7 @@ const AdminPanel = ({
         if (data.classicOriginal !== undefined) setClassicOriginal(data.classicOriginal);
         if (data.classicDiscounted !== undefined) setClassicDiscounted(data.classicDiscounted);
       }
-    } catch {}
+    } catch { }
 
     if (!firestoreDb) return;
     const fetchPrices = async () => {
@@ -678,7 +678,7 @@ const AdminPanel = ({
     setSavingPrices(true);
     setPricingSuccess("");
     setPricingError("");
-    
+
     const pricesObj = {
       personalisedOriginal: Number(personalisedOriginal),
       personalisedDiscounted: Number(personalisedDiscounted),
@@ -689,7 +689,7 @@ const AdminPanel = ({
     // 1. Save to localStorage immediately so it reflects locally
     try {
       localStorage.setItem('imhere_prices', JSON.stringify(pricesObj));
-    } catch {}
+    } catch { }
 
     // 2. Save to Firestore for remote sync
     if (firestoreDb) {
@@ -731,13 +731,13 @@ const AdminPanel = ({
     if (!firestoreDb || activeAdminTab !== 'orders') return;
     setOrdersLoading(true);
     setOrdersError('');
-    
+
     // Fetch all active orders (filtering out delivered status)
     const q = query(
       collection(firestoreDb, 'orders'),
       where('orderStatus', '!=', 'delivered')
     );
-    
+
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
       // Sort by createdAt descending in memory (avoids requiring a complex composite index)
@@ -1112,7 +1112,7 @@ const AdminPanel = ({
       const toShipOrdersList = orders.filter(o => ['appended', 'QR_READY'].includes(o.orderStatus) && selectedIds.includes(o.id));
       for (const order of toShipOrdersList) {
         setShipmentActionProgress({ active: true, message: `Booking ${completed + 1} of ${toShipOrdersList.length}: ${order.customerName}...` });
-        
+
         const rate = shippingRates[order.id];
         const res = await handleCallNimbusApi('create_shipment', {
           orderNumber: order.id,
@@ -1310,7 +1310,7 @@ const AdminPanel = ({
     }
 
     // Check if duplicate QR is already appended
-    const isDuplicate = appendedQrs.some(e => 
+    const isDuplicate = appendedQrs.some(e =>
       (result?.id && e?.id === result.id) || (qrUrl.trim() && e?.destUrl === qrUrl.trim())
     );
 
@@ -1417,7 +1417,7 @@ const AdminPanel = ({
     setCameraActive(true);
     setLookupError("");
     setLookupResult(null);
-    
+
     // Give DOM a tick to render the video element
     setTimeout(async () => {
       try {
@@ -1434,7 +1434,7 @@ const AdminPanel = ({
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: "environment" }
         });
-        
+
         video.srcObject = stream;
         await video.play().catch((err) => console.warn("Autoplay was blocked or failed:", err));
         cameraStreamRef.current = stream;
@@ -1469,7 +1469,7 @@ const AdminPanel = ({
                 const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const data = imgData.data;
                 for (let i = 0; i < data.length; i += 4) {
-                  data[i]     = 255 - data[i];     // Red
+                  data[i] = 255 - data[i];     // Red
                   data[i + 1] = 255 - data[i + 1]; // Green
                   data[i + 2] = 255 - data[i + 2]; // Blue
                 }
@@ -1649,7 +1649,7 @@ const AdminPanel = ({
       return result;
     } catch (originalErr) {
       console.log("Original scan failed, attempting color inversion fallback...");
-      
+
       // 2. Load file into an Image object to invert pixels
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -1667,7 +1667,7 @@ const AdminPanel = ({
               const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
               const data = imgData.data;
               for (let i = 0; i < data.length; i += 4) {
-                data[i]     = 255 - data[i];     // Red
+                data[i] = 255 - data[i];     // Red
                 data[i + 1] = 255 - data[i + 1]; // Green
                 data[i + 2] = 255 - data[i + 2]; // Blue
               }
@@ -1955,7 +1955,7 @@ const AdminPanel = ({
     if (!firestoreDb) return;
     const confirmClear = window.confirm("Are you sure you want to delete all active and mock orders from the database?");
     if (!confirmClear) return;
-    
+
     setLoading(true);
     setAdminError("");
     setAdminSuccess("");
@@ -2405,661 +2405,600 @@ const AdminPanel = ({
 
       {/* Two-Column Cockpit Layout */}
       {activeAdminTab === 'generator' && (
-      <div className="dashboard-grid">
+        <div className="dashboard-grid">
 
-        {/* Left Column: Configuration Forms */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Left Column: Configuration Forms */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-          {/* Card 1: ID Generator Input */}
-          <main className="glass-panel card-content">
-            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
-              1. Customer ID Generation
-            </h2>
-            <form onSubmit={handleGenerateId} className="form-group">
-              <label htmlFor="domainInput" className="form-label" style={{ fontSize: '0.75rem' }}>
-                Predefined Host Domain
-              </label>
-              <div className="input-wrapper">
-                <Globe className="input-icon" size={20} />
-                <input
-                  id="domainInput"
-                  type="text"
-                  className="text-input"
-                  value={predefinedDomain + "/"}
-                  disabled={true}
-                  style={{ opacity: 0.8, cursor: 'not-allowed' }}
-                />
-              </div>
-
-              {error && (
-                <div className="status-msg status-msg-error">
-                  <AlertTriangle size={18} style={{ flexShrink: 0 }} />
-                  <span>{error}</span>
+            {/* Card 1: ID Generator Input */}
+            <main className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                1. Customer ID Generation
+              </h2>
+              <form onSubmit={handleGenerateId} className="form-group">
+                <label htmlFor="domainInput" className="form-label" style={{ fontSize: '0.75rem' }}>
+                  Predefined Host Domain
+                </label>
+                <div className="input-wrapper">
+                  <Globe className="input-icon" size={20} />
+                  <input
+                    id="domainInput"
+                    type="text"
+                    className="text-input"
+                    value={predefinedDomain + "/"}
+                    disabled={true}
+                    style={{ opacity: 0.8, cursor: 'not-allowed' }}
+                  />
                 </div>
-              )}
 
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || clearing}
-              >
-                {loading ? (
-                  <>
-                    <div className="spinner"></div>
-                    Checking DB & Generating...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    Generate Customer Link
-                  </>
+                {error && (
+                  <div className="status-msg status-msg-error">
+                    <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                    <span>{error}</span>
+                  </div>
                 )}
-              </button>
-            </form>
-          </main>
 
-          {/* Card 2: QR Designer Inputs */}
-          <section className="glass-panel card-content">
-            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
-              2. Branded QR Code Design
-            </h2>
-
-            {/* QR URL Input */}
-            <div className="form-group">
-              <label htmlFor="qrUrlInput" className="form-label" style={{ fontSize: '0.75rem' }}>
-                QR Destination URL
-              </label>
-              <div className="input-wrapper">
-                <Globe className="input-icon" size={20} />
-                <input
-                  id="qrUrlInput"
-                  type="text"
-                  className="text-input"
-                  placeholder="Generate ID first or type manually..."
-                  value={qrUrl}
-                  onChange={(e) => setQrUrl(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Logo File upload */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-              <label className="form-label" style={{ fontSize: '0.75rem' }}>Logo / Center graphic (Optional)</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="file"
-                  id="qrImageInput"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                />
                 <button
-                  type="button"
-                  className="btn btn-danger-outline"
-                  style={{ flex: 1, borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                  onClick={() => document.getElementById('qrImageInput').click()}
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || clearing}
                 >
-                  <ImageIcon size={18} />
-                  {uploadedImg ? "Change Logo Image" : "Upload Logo Image"}
+                  {loading ? (
+                    <>
+                      <div className="spinner"></div>
+                      Checking DB & Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={20} />
+                      Generate Customer Link
+                    </>
+                  )}
                 </button>
+              </form>
+            </main>
 
-                {uploadedImg && (
+            {/* Card 2: QR Designer Inputs */}
+            <section className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                2. Branded QR Code Design
+              </h2>
+
+              {/* QR URL Input */}
+              <div className="form-group">
+                <label htmlFor="qrUrlInput" className="form-label" style={{ fontSize: '0.75rem' }}>
+                  QR Destination URL
+                </label>
+                <div className="input-wrapper">
+                  <Globe className="input-icon" size={20} />
+                  <input
+                    id="qrUrlInput"
+                    type="text"
+                    className="text-input"
+                    placeholder="Generate ID first or type manually..."
+                    value={qrUrl}
+                    onChange={(e) => setQrUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Logo File upload */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Logo / Center graphic (Optional)</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="file"
+                    id="qrImageInput"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                  />
                   <button
                     type="button"
                     className="btn btn-danger-outline"
-                    title="Remove uploaded image"
-                    style={{ padding: '10px 14px', borderStyle: 'solid', flexShrink: 0 }}
-                    onClick={() => {
-                      setUploadedImg(null);
-                      setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1, showCropStep: false });
-                      document.getElementById('qrImageInput').value = '';
-                    }}
+                    style={{ flex: 1, borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    onClick={() => document.getElementById('qrImageInput').click()}
                   >
-                    <Trash2 size={16} />
+                    <ImageIcon size={18} />
+                    {uploadedImg ? "Change Logo Image" : "Upload Logo Image"}
                   </button>
-                )}
-              </div>
 
-              {/* Cropper step */}
-              {cropState.showCropStep && (
-                <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)' }}>
-                  <div
-                    style={{
-                      position: 'relative',
-                      margin: '10px auto',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      width: `${cropState.dispW}px`,
-                      height: `${cropState.dispH}px`,
-                      touchAction: 'none'
-                    }}
-                  >
-                    <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
-                    <div
-                      onPointerDown={handleCropBoxDown}
-                      onPointerMove={handleCropBoxMove}
-                      onPointerUp={handleCropBoxUp}
-                      onPointerCancel={handleCropBoxUp}
-                      style={{
-                        position: 'absolute',
-                        border: '1px solid rgba(255, 255, 255, 0.45)',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        cursor: dragging ? 'grabbing' : 'grab',
-                        borderRadius: '2px',
-                        width: `${cropState.size}px`,
-                        height: `${cropState.size}px`,
-                        left: `${cropState.x}px`,
-                        top: `${cropState.y}px`
+                  {uploadedImg && (
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      title="Remove uploaded image"
+                      style={{ padding: '10px 14px', borderStyle: 'solid', flexShrink: 0 }}
+                      onClick={() => {
+                        setUploadedImg(null);
+                        setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1, showCropStep: false });
+                        document.getElementById('qrImageInput').value = '';
                       }}
                     >
-                      {/* Custom visual overlay */}
-                      <div className="crop-box-overlay">
-                        {/* Grid Lines (Rule of Thirds) */}
-                        <div className="crop-grid-line-v v1" />
-                        <div className="crop-grid-line-v v2" />
-                        <div className="crop-grid-line-h h1" />
-                        <div className="crop-grid-line-h h2" />
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
 
-                        {/* Midpoint Bars */}
-                        <div className="crop-edge-bar bar-top" />
-                        <div className="crop-edge-bar bar-bottom" />
-                        <div className="crop-edge-bar bar-left" />
-                        <div className="crop-edge-bar bar-right" />
+                {/* Cropper step */}
+                {cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)' }}>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        {/* Custom visual overlay */}
+                        <div className="crop-box-overlay">
+                          {/* Grid Lines (Rule of Thirds) */}
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
 
-                        {/* Corners (L-brackets) */}
-                        <div className="crop-corner-bracket corner-tl" />
-                        <div className="crop-corner-bracket corner-tr" />
-                        <div className="crop-corner-bracket corner-bl" />
-                        <div className="crop-corner-bracket corner-br" />
+                          {/* Midpoint Bars */}
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+
+                          {/* Corners (L-brackets) */}
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
                       </div>
                     </div>
+
+                    <p className="hint" style={{ textAlign: 'center', fontSize: '0.75rem' }}>
+                      Drag the dashed square to select the logo.
+                    </p>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '6px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Logo scale on QR:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{logoScale}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="14"
+                        max="30"
+                        value={logoScale}
+                        onChange={(e) => setLogoScale(parseInt(e.target.value))}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
                   </div>
-
-                  <p className="hint" style={{ textAlign: 'center', fontSize: '0.75rem' }}>
-                    Drag the dashed square to select the logo.
-                  </p>
-
-                  <div className="form-group" style={{ marginTop: '10px' }}>
-                    <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Selection crop size:</span>
-                      <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="30"
-                      max={Math.min(cropState.dispW, cropState.dispH)}
-                      value={cropState.size}
-                      onChange={handleCropSizeChange}
-                      style={{ width: '100%', accentColor: '#e8402c' }}
-                    />
-                  </div>
-
-                  <div className="form-group" style={{ marginTop: '6px' }}>
-                    <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Logo scale on QR:</span>
-                      <span style={{ color: 'var(--accent-cyan)' }}>{logoScale}%</span>
-                    </label>
-                    <input
-                      type="range"
-                      min="14"
-                      max="30"
-                      value={logoScale}
-                      onChange={(e) => setLogoScale(parseInt(e.target.value))}
-                      style={{ width: '100%', accentColor: '#e8402c' }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Color controls */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '14px' }}>
-              <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                <div className="color-field">
-                  <input
-                    type="color"
-                    value={dotColor}
-                    onChange={(e) => setDotColor(e.target.value)}
-                    className="color-picker-input"
-                  />
-                  <label className="color-picker-label">Dot Color</label>
-                </div>
-
-                <div className="color-field">
-                  <input
-                    type="color"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="color-picker-input"
-                  />
-                  <label className="color-picker-label">Background</label>
-                </div>
-              </div>
-
-              {/* Color Presets */}
-              <div className="presets">
-                {PRESETS.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handlePresetSelect(preset)}
-                    className="preset-btn"
-                    style={{
-                      borderColor: preset.dot,
-                      background: preset.bg,
-                      color: preset.dot,
-                    }}
-                    title={preset.name}
-                  >
-                    Aa
-                  </button>
-                ))}
-              </div>
-
-              {/* Background Mode */}
-              <div className="form-group" style={{ marginTop: '6px' }}>
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Mode</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => { setBgMode("solid"); setShowLogoChip(true); }}
-                    className={`mode-btn ${bgMode === 'solid' ? 'active' : ''}`}
-                  >
-                    Solid Color
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setBgMode("image"); setShowLogoChip(false); }}
-                    className={`mode-btn ${bgMode === 'image' ? 'active' : ''}`}
-                  >
-                    Full Image
-                  </button>
-                </div>
-                {!uploadedImg && bgMode === 'image' && (
-                  <p className="hint" style={{ color: 'var(--accent-rose)', fontSize: '0.75rem' }}>Upload an image to enable Full Image background</p>
                 )}
               </div>
 
-              {bgMode === 'image' && uploadedImg && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Select Tag Style Version</label>
-                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedVersion(1)}
-                        className={`mode-btn ${selectedVersion === 1 ? 'active' : ''}`}
-                        style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
-                      >
-                        <span style={{ fontWeight: 700 }}>Custom Image (V1)</span>
-                        <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Photo | Back: Logo</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedVersion(2)}
-                        className={`mode-btn ${selectedVersion === 2 ? 'active' : ''}`}
-                        style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
-                      >
-                        <span style={{ fontWeight: 700 }}>Logo Edition (V2)</span>
-                        <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Logo | Back: Photo</span>
-                      </button>
-                    </div>
+              {/* Color controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '14px' }}>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <div className="color-field">
+                    <input
+                      type="color"
+                      value={dotColor}
+                      onChange={(e) => setDotColor(e.target.value)}
+                      className="color-picker-input"
+                    />
+                    <label className="color-picker-label">Dot Color</label>
                   </div>
 
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Image overlay darkness:</span>
-                      <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
-                    </label>
+                  <div className="color-field">
                     <input
-                      type="range"
-                      min="0"
-                      max="80"
-                      value={overlayDarkness}
-                      onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
-                      style={{ width: '100%', accentColor: '#e8402c' }}
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="color-picker-input"
                     />
+                    <label className="color-picker-label">Background</label>
                   </div>
                 </div>
-              )}
 
-              {bgMode !== 'image' && (
+                {/* Color Presets */}
+                <div className="presets">
+                  {PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset)}
+                      className="preset-btn"
+                      style={{
+                        borderColor: preset.dot,
+                        background: preset.bg,
+                        color: preset.dot,
+                      }}
+                      title={preset.name}
+                    >
+                      Aa
+                    </button>
+                  ))}
+                </div>
+
+                {/* Background Mode */}
+                <div className="form-group" style={{ marginTop: '6px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Mode</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setBgMode("solid"); setShowLogoChip(true); }}
+                      className={`mode-btn ${bgMode === 'solid' ? 'active' : ''}`}
+                    >
+                      Solid Color
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setBgMode("image"); setShowLogoChip(false); }}
+                      className={`mode-btn ${bgMode === 'image' ? 'active' : ''}`}
+                    >
+                      Full Image
+                    </button>
+                  </div>
+                  {!uploadedImg && bgMode === 'image' && (
+                    <p className="hint" style={{ color: 'var(--accent-rose)', fontSize: '0.75rem' }}>Upload an image to enable Full Image background</p>
+                  )}
+                </div>
+
+                {bgMode === 'image' && uploadedImg && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Select Tag Style Version</label>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVersion(1)}
+                          className={`mode-btn ${selectedVersion === 1 ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700 }}>Custom Image (V1)</span>
+                          <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Photo | Back: Logo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVersion(2)}
+                          className={`mode-btn ${selectedVersion === 2 ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700 }}>Logo Edition (V2)</span>
+                          <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Logo | Back: Photo</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Image overlay darkness:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="80"
+                        value={overlayDarkness}
+                        onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {bgMode !== 'image' && (
+                  <div className="checkbox-row" style={{ marginTop: '4px' }}>
+                    <input
+                      type="checkbox"
+                      id="reactLogoChipToggle"
+                      checked={showLogoChip}
+                      onChange={(e) => setShowLogoChip(e.target.checked)}
+                    />
+                    <label htmlFor="reactLogoChipToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Show logo chip in center</label>
+                  </div>
+                )}
+
+                {/* Dot Size */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Dot Size:</span>
+                    <span style={{ color: 'var(--accent-cyan)' }}>{dotSize}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="35"
+                    max="100"
+                    value={dotSize}
+                    onChange={(e) => setDotSize(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: '#e8402c' }}
+                  />
+                </div>
+
+                {/* Dot Shape */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Dot Shape</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {['square', 'rounded', 'circle'].map(shape => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => setDotShape(shape)}
+                        className={`shape-btn ${dotShape === shape ? 'active' : ''}`}
+                      >
+                        {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Corner Style */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Corner (Eye) Style</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {['square', 'rounded', 'circle'].map(shape => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => setCornerShape(shape)}
+                        className={`corner-btn ${cornerShape === shape ? 'active' : ''}`}
+                      >
+                        {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Frame toggle */}
                 <div className="checkbox-row" style={{ marginTop: '4px' }}>
                   <input
                     type="checkbox"
-                    id="reactLogoChipToggle"
-                    checked={showLogoChip}
-                    onChange={(e) => setShowLogoChip(e.target.checked)}
+                    id="reactFrameToggle"
+                    checked={hasFrame}
+                    onChange={(e) => setHasFrame(e.target.checked)}
                   />
-                  <label htmlFor="reactLogoChipToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Show logo chip in center</label>
+                  <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add frame text below</label>
+                </div>
+
+                {hasFrame && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                    <div className="form-group">
+                      <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
+                      <input
+                        type="text"
+                        id="reactFrameText"
+                        className="text-input"
+                        value={frameText}
+                        onChange={(e) => setFrameText(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                      <div className="color-field">
+                        <input
+                          type="color"
+                          value={frameBgColor}
+                          onChange={(e) => setFrameBgColor(e.target.value)}
+                          className="color-picker-input"
+                        />
+                        <label className="color-picker-label">Frame Bg</label>
+                      </div>
+
+                      <div className="color-field">
+                        <input
+                          type="color"
+                          value={frameTextColor}
+                          onChange={(e) => setFrameTextColor(e.target.value)}
+                          className="color-picker-input"
+                        />
+                        <label className="color-picker-label">Frame Text</label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {qrNoteText && (
+                <div className={`status-msg ${qrNoteClass.includes('warn') ? 'status-msg-error' : 'status-msg-success'}`} style={{ fontSize: '0.8rem', marginTop: '12px' }}>
+                  {qrNoteClass.includes('warn') ? <AlertTriangle size={16} /> : <Check size={16} />}
+                  <span>{qrNoteText}</span>
                 </div>
               )}
+            </section>
 
-              {/* Dot Size */}
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
-                  <span>Dot Size:</span>
-                  <span style={{ color: 'var(--accent-cyan)' }}>{dotSize}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="35"
-                  max="100"
-                  value={dotSize}
-                  onChange={(e) => setDotSize(parseInt(e.target.value))}
-                  style={{ width: '100%', accentColor: '#e8402c' }}
-                />
-              </div>
-
-              {/* Dot Shape */}
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Dot Shape</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {['square', 'rounded', 'circle'].map(shape => (
-                    <button
-                      key={shape}
-                      type="button"
-                      onClick={() => setDotShape(shape)}
-                      className={`shape-btn ${dotShape === shape ? 'active' : ''}`}
-                    >
-                      {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Corner Style */}
-              <div className="form-group">
-                <label className="form-label" style={{ fontSize: '0.75rem' }}>Corner (Eye) Style</label>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {['square', 'rounded', 'circle'].map(shape => (
-                    <button
-                      key={shape}
-                      type="button"
-                      onClick={() => setCornerShape(shape)}
-                      className={`corner-btn ${cornerShape === shape ? 'active' : ''}`}
-                    >
-                      {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Frame toggle */}
-              <div className="checkbox-row" style={{ marginTop: '4px' }}>
-                <input
-                  type="checkbox"
-                  id="reactFrameToggle"
-                  checked={hasFrame}
-                  onChange={(e) => setHasFrame(e.target.checked)}
-                />
-                <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add frame text below</label>
-              </div>
-
-              {hasFrame && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
-                  <div className="form-group">
-                    <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
-                    <input
-                      type="text"
-                      id="reactFrameText"
-                      className="text-input"
-                      value={frameText}
-                      onChange={(e) => setFrameText(e.target.value)}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
-                    <div className="color-field">
+            {/* Card 3: Price Settings */}
+            <section className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
+                3. Smart Keychain Pricing
+              </h2>
+              <form onSubmit={handleSavePrices} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Personalised Price */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Personalised Tag Prices</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
                       <input
-                        type="color"
-                        value={frameBgColor}
-                        onChange={(e) => setFrameBgColor(e.target.value)}
-                        className="color-picker-input"
+                        type="number"
+                        className="text-input"
+                        required
+                        value={personalisedOriginal}
+                        onChange={(e) => setPersonalisedOriginal(e.target.value)}
                       />
-                      <label className="color-picker-label">Frame Bg</label>
                     </div>
-
-                    <div className="color-field">
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
                       <input
-                        type="color"
-                        value={frameTextColor}
-                        onChange={(e) => setFrameTextColor(e.target.value)}
-                        className="color-picker-input"
+                        type="number"
+                        className="text-input"
+                        required
+                        value={personalisedDiscounted}
+                        onChange={(e) => setPersonalisedDiscounted(e.target.value)}
                       />
-                      <label className="color-picker-label">Frame Text</label>
                     </div>
                   </div>
+                </div>
+
+                {/* Classic Price */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Classic Tag Prices</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={classicOriginal}
+                        onChange={(e) => setClassicOriginal(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={classicDiscounted}
+                        onChange={(e) => setClassicDiscounted(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {pricingSuccess && (
+                  <div className="status-msg status-msg-success" style={{ margin: 0, fontSize: '0.8rem' }}>
+                    <CheckCircle2 size={16} />
+                    <span>{pricingSuccess}</span>
+                  </div>
+                )}
+
+                {pricingError && (
+                  <div className="status-msg status-msg-error" style={{ margin: 0, fontSize: '0.8rem' }}>
+                    <AlertTriangle size={16} />
+                    <span>{pricingError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={savingPrices}
+                  style={{ width: '100%', marginTop: '4px' }}
+                >
+                  {savingPrices ? "Saving..." : "Save Prices to Firestore"}
+                </button>
+              </form>
+            </section>
+          </div>
+
+          {/* Right Column: Previews & Results */}
+          <div className="sticky-column">
+
+            {/* Card 1: Generated ID URL Link output */}
+            <div className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                Generated Link Output
+              </h2>
+              {result ? (
+                <div className="result-container" style={{ margin: 0 }}>
+                  <div className="result-header">
+                    <span className="result-title">Customer Link</span>
+                    <span className="history-url" style={{ opacity: 0.6 }}>ID: {result.id}</span>
+                  </div>
+                  <div className="output-link-box">
+                    <div className="output-link-text">{result.url}</div>
+                    <button
+                      onClick={handleCopyLink}
+                      className="btn-copy"
+                      title="Copy Link"
+                    >
+                      {copied ? <Check size={18} style={{ color: '#10b981' }} /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                  {result.isSavedToDb ? (
+                    <p className="hint" style={{ color: 'var(--accent-emerald)', marginTop: '4px' }}>
+                      ✓ ID stored in Firestore and loaded into the QR input.
+                    </p>
+                  ) : (
+                    <p className="hint" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      ID ready. Will be saved to Firestore when you Copy Link or Download PNG.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+                  <Globe size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '0.9rem' }}>No customer link generated yet.</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "Generate Customer Link" on the left.</p>
                 </div>
               )}
             </div>
 
-            {qrNoteText && (
-              <div className={`status-msg ${qrNoteClass.includes('warn') ? 'status-msg-error' : 'status-msg-success'}`} style={{ fontSize: '0.8rem', marginTop: '12px' }}>
-                {qrNoteClass.includes('warn') ? <AlertTriangle size={16} /> : <Check size={16} />}
-                <span>{qrNoteText}</span>
-              </div>
-            )}
-          </section>
-
-          {/* Card 3: Price Settings */}
-          <section className="glass-panel card-content">
-            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
-              3. Smart Keychain Pricing
-            </h2>
-            <form onSubmit={handleSavePrices} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Personalised Price */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Personalised Tag Prices</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
-                    <input
-                      type="number"
-                      className="text-input"
-                      required
-                      value={personalisedOriginal}
-                      onChange={(e) => setPersonalisedOriginal(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
-                    <input
-                      type="number"
-                      className="text-input"
-                      required
-                      value={personalisedDiscounted}
-                      onChange={(e) => setPersonalisedDiscounted(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Classic Price */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Classic Tag Prices</span>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
-                    <input
-                      type="number"
-                      className="text-input"
-                      required
-                      value={classicOriginal}
-                      onChange={(e) => setClassicOriginal(e.target.value)}
-                    />
-                  </div>
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
-                    <input
-                      type="number"
-                      className="text-input"
-                      required
-                      value={classicDiscounted}
-                      onChange={(e) => setClassicDiscounted(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {pricingSuccess && (
-                <div className="status-msg status-msg-success" style={{ margin: 0, fontSize: '0.8rem' }}>
-                  <CheckCircle2 size={16} />
-                  <span>{pricingSuccess}</span>
-                </div>
-              )}
-
-              {pricingError && (
-                <div className="status-msg status-msg-error" style={{ margin: 0, fontSize: '0.8rem' }}>
-                  <AlertTriangle size={16} />
-                  <span>{pricingError}</span>
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={savingPrices}
-                style={{ width: '100%', marginTop: '4px' }}
-              >
-                {savingPrices ? "Saving..." : "Save Prices to Firestore"}
-              </button>
-            </form>
-          </section>
-        </div>
-
-        {/* Right Column: Previews & Results */}
-        <div className="sticky-column">
-
-          {/* Card 1: Generated ID URL Link output */}
-          <div className="glass-panel card-content">
-            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
-              Generated Link Output
-            </h2>
-            {result ? (
-              <div className="result-container" style={{ margin: 0 }}>
-                <div className="result-header">
-                  <span className="result-title">Customer Link</span>
-                  <span className="history-url" style={{ opacity: 0.6 }}>ID: {result.id}</span>
-                </div>
-                <div className="output-link-box">
-                  <div className="output-link-text">{result.url}</div>
-                  <button
-                    onClick={handleCopyLink}
-                    className="btn-copy"
-                    title="Copy Link"
-                  >
-                    {copied ? <Check size={18} style={{ color: '#10b981' }} /> : <Copy size={18} />}
-                  </button>
-                </div>
-                {result.isSavedToDb ? (
-                  <p className="hint" style={{ color: 'var(--accent-emerald)', marginTop: '4px' }}>
-                    ✓ ID stored in Firestore and loaded into the QR input.
-                  </p>
-                ) : (
-                  <p className="hint" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
-                    ID ready. Will be saved to Firestore when you Copy Link or Download PNG.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
-                <Globe size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <p style={{ fontSize: '0.9rem' }}>No customer link generated yet.</p>
-                <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "Generate Customer Link" on the left.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Card 2: Generated QR Code Image result */}
-          <div className="glass-panel card-content">
-            <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
-              QR Code Preview
-            </h2>
-            {qrImageUrl ? (
-              <div style={{ textAlign: 'center' }}>
-                <img
-                  src={flipPreview ? getBacksidePreviewUrl() : qrImageUrl}
-                  alt={flipPreview ? "Backside Preview" : "Resulting QR Code"}
-                  style={{
-                    width: '100%',
-                    maxWidth: '380px',
-                    aspectRatio: hasFrame ? '640/700' : '1/1',
-                    objectFit: flipPreview ? 'contain' : 'cover',
-                    background: flipPreview ? '#000000' : 'transparent',
-                    borderRadius: '10px',
-                    display: 'block',
-                    margin: '12px auto',
-                    border: '1px solid var(--border-light)',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-                  }}
-                />
-
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => setFlipPreview(prev => !prev)}
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-secondary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    fontSize: '0.85rem',
-                    padding: '12px 16px',
-                    marginBottom: '8px'
-                  }}
-                >
-                  🔄 Flip Tag ({flipPreview ? 'See Front' : 'See Back'})
-                </button>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <button
-                    type="button"
-                    onClick={handleAppendToPdf}
-                    className="btn btn-primary"
+            {/* Card 2: Generated QR Code Image result */}
+            <div className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                QR Code Preview
+              </h2>
+              {qrImageUrl ? (
+                <div style={{ textAlign: 'center' }}>
+                  <img
+                    src={flipPreview ? getBacksidePreviewUrl() : qrImageUrl}
+                    alt={flipPreview ? "Backside Preview" : "Resulting QR Code"}
                     style={{
                       width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px'
+                      maxWidth: '380px',
+                      aspectRatio: hasFrame ? '640/700' : '1/1',
+                      objectFit: flipPreview ? 'contain' : 'cover',
+                      background: flipPreview ? '#000000' : 'transparent',
+                      borderRadius: '10px',
+                      display: 'block',
+                      margin: '12px auto',
+                      border: '1px solid var(--border-light)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
                     }}
-                  >
-                    <Plus size={18} />
-                    APPEND TO PDF SHEET
-                  </button>
-
-                  {appendedQrs.length > 0 && appendedQrs[appendedQrs.length - 1]?.isManual && (
-                    <button
-                      type="button"
-                      onClick={handleRemoveLastQr}
-                      className="btn btn-danger-outline"
-                      style={{
-                        width: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '8px',
-                        borderColor: 'rgba(244, 63, 94, 0.4)',
-                        color: 'var(--accent-rose)',
-                        fontSize: '0.85rem',
-                        padding: '12px 16px',
-                        marginTop: '2px',
-                        marginBottom: '2px'
-                      }}
-                    >
-                      ↩️ UNDO LAST APPEND
-                    </button>
-                  )}
+                  />
 
                   <button
                     type="button"
-                    onClick={handleDownload}
                     className="btn"
+                    onClick={() => setFlipPreview(prev => !prev)}
                     style={{
                       width: '100%',
                       background: 'transparent',
@@ -3070,33 +3009,94 @@ const AdminPanel = ({
                       justifyContent: 'center',
                       gap: '8px',
                       fontSize: '0.85rem',
-                      padding: '12px 16px'
+                      padding: '12px 16px',
+                      marginBottom: '8px'
                     }}
                   >
-                    <Download size={16} />
-                    DOWNLOAD SINGLE PNG
+                    🔄 Flip Tag ({flipPreview ? 'See Front' : 'See Back'})
                   </button>
-                </div>
 
-                {downloadError && (
-                  <p className="hint" style={{ color: 'var(--accent-rose)', marginTop: '8px' }}>{downloadError}</p>
-                )}
-              </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
-                <ImageIcon size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-                <p style={{ fontSize: '0.9rem' }}>No QR Code generated yet.</p>
-                <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "GENERATE QR CODE" on the left.</p>
-              </div>
-            )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handleAppendToPdf}
+                      className="btn btn-primary"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Plus size={18} />
+                      APPEND TO PDF SHEET
+                    </button>
+
+                    {appendedQrs.length > 0 && appendedQrs[appendedQrs.length - 1]?.isManual && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLastQr}
+                        className="btn btn-danger-outline"
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          borderColor: 'rgba(244, 63, 94, 0.4)',
+                          color: 'var(--accent-rose)',
+                          fontSize: '0.85rem',
+                          padding: '12px 16px',
+                          marginTop: '2px',
+                          marginBottom: '2px'
+                        }}
+                      >
+                        ↩️ UNDO LAST APPEND
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      className="btn"
+                      style={{
+                        width: '100%',
+                        background: 'transparent',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '0.85rem',
+                        padding: '12px 16px'
+                      }}
+                    >
+                      <Download size={16} />
+                      DOWNLOAD SINGLE PNG
+                    </button>
+                  </div>
+
+                  {downloadError && (
+                    <p className="hint" style={{ color: 'var(--accent-rose)', marginTop: '8px' }}>{downloadError}</p>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+                  <ImageIcon size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '0.9rem' }}>No QR Code generated yet.</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "GENERATE QR CODE" on the left.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Canvas used for generating the QR code */}
+            <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
+
           </div>
 
-          {/* Hidden Canvas used for generating the QR code */}
-          <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
-
         </div>
-
-      </div>
       )}
 
       {/* ═══════════════════════════════════════════
@@ -3105,65 +3105,65 @@ const AdminPanel = ({
       {activeAdminTab === 'orders' && (
         <div className="orders-tab-layout">
 
-            {/* LEFT: Orders List */}
-            <div className="orders-list-panel">
-              {/* Sub-tab navigation inside Orders */}
-              <div className="orders-subtabs-nav" style={{ display: 'flex', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
-                <button
-                  type="button"
-                  className={`orders-subtab-btn ${ordersSubTab === 'pending_qr' ? 'active' : ''}`}
-                  onClick={() => setOrdersSubTab('pending_qr')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: ordersSubTab === 'pending_qr' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    borderBottom: ordersSubTab === 'pending_qr' ? '2.5px solid var(--accent-indigo)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  📝 Pending QR Generation ({orders.filter(o => o.orderStatus === 'orderplaced').length})
-                </button>
-                <button
-                  type="button"
-                  className={`orders-subtab-btn ${ordersSubTab === 'to_ship' ? 'active' : ''}`}
-                  onClick={() => setOrdersSubTab('to_ship')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: ordersSubTab === 'to_ship' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    borderBottom: ordersSubTab === 'to_ship' ? '2.5px solid var(--accent-indigo)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  🚚 Orders to Ship ({orders.filter(o => o.orderStatus === 'appended').length})
-                </button>
-                <button
-                  type="button"
-                  className={`orders-subtab-btn ${ordersSubTab === 'moved_to_shipment' ? 'active' : ''}`}
-                  onClick={() => setOrdersSubTab('moved_to_shipment')}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: ordersSubTab === 'moved_to_shipment' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
-                    fontWeight: 700,
-                    fontSize: '0.88rem',
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    borderBottom: ordersSubTab === 'moved_to_shipment' ? '2.5px solid var(--accent-indigo)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  🚀 Moved to Shipment ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
-                </button>
-              </div>
+          {/* LEFT: Orders List */}
+          <div className="orders-list-panel">
+            {/* Sub-tab navigation inside Orders */}
+            <div className="orders-subtabs-nav" style={{ display: 'flex', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'pending_qr' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('pending_qr')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'pending_qr' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'pending_qr' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                📝 Pending QR Generation ({orders.filter(o => o.orderStatus === 'orderplaced').length})
+              </button>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'to_ship' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('to_ship')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'to_ship' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'to_ship' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🚚 Orders to Ship ({orders.filter(o => o.orderStatus === 'appended').length})
+              </button>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'moved_to_shipment' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('moved_to_shipment')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'moved_to_shipment' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'moved_to_shipment' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🚀 Moved to Shipment ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
+              </button>
+            </div>
 
             {/* Render subtabs */}
             {ordersSubTab === 'pending_qr' ? (
@@ -3299,7 +3299,7 @@ const AdminPanel = ({
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <div className="order-item-type">
                                       {item.typeofqr === 'personalised' ? '🎨 Personalised' :
-                                       item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
+                                        item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
                                     </div>
                                     <div className="order-item-qty">Qty: <strong>{item.quantity}</strong> × ₹{item.unitPrice}</div>
                                   </div>
@@ -3412,7 +3412,7 @@ const AdminPanel = ({
                   <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <Truck size={18} /> NimbusPost B2B Shipping Rates & Wallet
                   </h3>
-                  
+
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Live Wallet Balance</div>
@@ -3426,7 +3426,7 @@ const AdminPanel = ({
                         )}
                       </div>
                     </div>
-                    
+
                     <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Pending Shipping Cost (Cheapest Courier)</div>
                       <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
@@ -3514,7 +3514,7 @@ const AdminPanel = ({
                       const isSelected = !!selectedToShipOrders[order.id];
                       return (
                         <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
-                          
+
                           {/* Shipping Card Header */}
                           <div className="order-card-header" style={{ paddingBottom: '12px' }}>
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -3805,7 +3805,7 @@ const AdminPanel = ({
                       const isSelected = !!selectedToShipOrders[order.id];
                       return (
                         <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
-                          
+
                           {/* Shipping Card Header */}
                           <div className="order-card-header" style={{ paddingBottom: '12px' }}>
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -3828,7 +3828,7 @@ const AdminPanel = ({
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                              <span className={`shipping-status-badge badge-${order.orderStatus}`} style={{ 
+                              <span className={`shipping-status-badge badge-${order.orderStatus}`} style={{
                                 background: order.orderStatus === 'shipped' ? 'rgba(16, 185, 129, 0.15)' : '',
                                 color: order.orderStatus === 'shipped' ? '#10b981' : ''
                               }}>
@@ -3870,7 +3870,7 @@ const AdminPanel = ({
 
                           {/* Shipping Card Actions */}
                           <div className="order-card-actions" style={{ display: 'flex', padding: '12px', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
-                            
+
                             {order.shippingLabelUrl && (
                               <a
                                 href={order.shippingLabelUrl}
@@ -3946,7 +3946,7 @@ const AdminPanel = ({
                                 type="button"
                                 className="btn"
                                 onClick={async () => {
-                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { 
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), {
                                     orderStatus: 'shipped',
                                     shippedAt: new Date()
                                   });
@@ -4005,10 +4005,10 @@ const AdminPanel = ({
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  
+
                   {/* ACCORDION 1: FRONT SIDE (QR CODES) */}
                   <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
-                    <div 
+                    <div
                       onClick={() => setFrontPreviewOpen(!frontPreviewOpen)}
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: frontPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
                     >
@@ -4048,11 +4048,11 @@ const AdminPanel = ({
                                       <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
                                         {/* Render background underlay */}
                                         {slotEntry?.typeofqr === 'personalised' && (
-                                          <img 
-                                            src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl} 
-                                            alt="bg" 
-                                            className="pdf-preview-image" 
-                                            style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }} 
+                                          <img
+                                            src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl}
+                                            alt="bg"
+                                            className="pdf-preview-image"
+                                            style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }}
                                           />
                                         )}
                                         {slotEntry?.typeofqr === 'classic_black' && (
@@ -4084,7 +4084,7 @@ const AdminPanel = ({
 
                   {/* ACCORDION 2: BACK SIDE (COVERS/LOGOS) */}
                   <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
-                    <div 
+                    <div
                       onClick={() => setBackPreviewOpen(!backPreviewOpen)}
                       style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: backPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
                     >
@@ -4119,13 +4119,13 @@ const AdminPanel = ({
                                   const hasItem = slotIdx < pageItems.length;
                                   if (hasItem) {
                                     const slotEntry = pageItems[slotIdx];
-                                    
+
                                     // Determine image src for backside cover preview
                                     let backImgSrc = '/full logo black.png';
                                     if (slotEntry?.typeofqr === 'personalised' && slotEntry?.version === 2) {
                                       backImgSrc = slotEntry?.imageUrl || '';
                                     }
-                                    
+
                                     return (
                                       <div key={slotIdx} className="pdf-preview-item" style={{ background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {backImgSrc ? (
@@ -4168,14 +4168,14 @@ const AdminPanel = ({
             🎨 Landing Page Keychains Configuration
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px', lineHeight: 1.5 }}>
-            Configure the three hanging keychains that are displayed on the landing page of the website. 
+            Configure the three hanging keychains that are displayed on the landing page of the website.
             For each keychain, upload a background logo/picture, and enter a label. When saved, these will immediately update the homepage.
             Scanning these keychains or clicking them redirects users to the demo profile page (id=preview).
           </p>
 
           <form onSubmit={handleSaveLandingQrs} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-              
+
               {/* Tag 1: Left Tag */}
               <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
@@ -4221,8 +4221,8 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      <img 
-                        src={landingQrs.tag1.base64Image || '/cropped_tag1.png'} 
+                      <img
+                        src={landingQrs.tag1.base64Image || '/cropped_tag1.png'}
                         onError={(e) => {
                           if (e.target.src.endsWith('/cropped_tag1.png')) {
                             e.target.src = '/cropped_tag1.jpg';
@@ -4232,9 +4232,9 @@ const AdminPanel = ({
                             e.target.onerror = null;
                             e.target.src = '';
                           }
-                        }} 
-                        alt="Tag 1" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        }}
+                        alt="Tag 1"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
                     <input
@@ -4396,8 +4396,8 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      <img 
-                        src={landingQrs.tag2.base64Image || '/cropped_tag2.png'} 
+                      <img
+                        src={landingQrs.tag2.base64Image || '/cropped_tag2.png'}
                         onError={(e) => {
                           if (e.target.src.endsWith('/cropped_tag2.png')) {
                             e.target.src = '/cropped_tag2.jpg';
@@ -4407,9 +4407,9 @@ const AdminPanel = ({
                             e.target.onerror = null;
                             e.target.src = '';
                           }
-                        }} 
-                        alt="Tag 2" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        }}
+                        alt="Tag 2"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
                     <input
@@ -4571,8 +4571,8 @@ const AdminPanel = ({
                   <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
-                      <img 
-                        src={landingQrs.tag3.base64Image || '/cropped_tag3.png'} 
+                      <img
+                        src={landingQrs.tag3.base64Image || '/cropped_tag3.png'}
                         onError={(e) => {
                           if (e.target.src.endsWith('/cropped_tag3.png')) {
                             e.target.src = '/cropped_tag3.jpg';
@@ -4582,9 +4582,9 @@ const AdminPanel = ({
                             e.target.onerror = null;
                             e.target.src = '';
                           }
-                        }} 
-                        alt="Tag 3" 
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                        }}
+                        alt="Tag 3"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
                     </div>
                     <input
@@ -4773,7 +4773,7 @@ const AdminPanel = ({
                 >
                   📷 Start Camera Scan
                 </button>
-                
+
                 <button
                   type="button"
                   onClick={() => document.getElementById('qr-file-input').click()}
@@ -4782,7 +4782,7 @@ const AdminPanel = ({
                 >
                   📁 Upload QR Image
                 </button>
-                
+
                 <input
                   type="file"
                   id="qr-file-input"
@@ -4862,9 +4862,9 @@ const AdminPanel = ({
                 <span>Tag Found</span>
                 <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>#{lookupResult.tagId}</span>
               </h3>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                
+
                 {/* 1. Customer Name */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
@@ -4977,31 +4977,31 @@ const AdminPanel = ({
                         const slotEntry = pageItems[slotIdx];
                         const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
                         return (
-                           <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
-                             {/* Render background underlay */}
-                             {slotEntry?.typeofqr === 'personalised' && (
-                               <img 
-                                 src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl} 
-                                 alt="bg" 
-                                 className="pdf-preview-image" 
-                                 style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }} 
-                               />
-                             )}
-                             {slotEntry?.typeofqr === 'classic_black' && (
-                               <div className="pdf-preview-image" style={{ background: '#000000' }} />
-                             )}
-                             {slotEntry?.typeofqr === 'classic_white' && (
-                               <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
-                             )}
-                             {/* Render QR overlay */}
-                             <img
-                               src={slotQrUrl}
-                               alt={`QR Slot ${slotIdx}`}
-                               className="pdf-preview-image"
-                               style={{ zIndex: 2 }}
-                             />
-                             {renderGuideOverlay(pageIdx, slotIdx)}
-                           </div>
+                          <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
+                            {/* Render background underlay */}
+                            {slotEntry?.typeofqr === 'personalised' && (
+                              <img
+                                src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl}
+                                alt="bg"
+                                className="pdf-preview-image"
+                                style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }}
+                              />
+                            )}
+                            {slotEntry?.typeofqr === 'classic_black' && (
+                              <div className="pdf-preview-image" style={{ background: '#000000' }} />
+                            )}
+                            {slotEntry?.typeofqr === 'classic_white' && (
+                              <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
+                            )}
+                            {/* Render QR overlay */}
+                            <img
+                              src={slotQrUrl}
+                              alt={`QR Slot ${slotIdx}`}
+                              className="pdf-preview-image"
+                              style={{ zIndex: 2 }}
+                            />
+                            {renderGuideOverlay(pageIdx, slotIdx)}
+                          </div>
                         );
                       } else {
                         return (
