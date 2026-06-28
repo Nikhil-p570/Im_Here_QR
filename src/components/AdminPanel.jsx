@@ -1418,52 +1418,96 @@ const AdminPanel = ({
   const [cameraActive, setCameraActive] = useState(false);
   const qrScannerRef = useRef(null);
 
+  const cameraIntervalRef = useRef(null);
+  const cameraStreamRef = useRef(null);
+
   const startCamera = async () => {
     setCameraActive(true);
     setLookupError("");
     setLookupResult(null);
     
-    // Give DOM a tick to render the div
+    // Give DOM a tick to render the video element
     setTimeout(async () => {
       try {
-        const html5QrCode = new Html5Qrcode("scanner-reader");
+        const video = document.getElementById("camera-video");
+        if (!video) throw new Error("Video element not found");
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" }
+        });
+        video.srcObject = stream;
+        cameraStreamRef.current = stream;
+
+        const html5QrCode = new Html5Qrcode("qr-file-reader");
         qrScannerRef.current = html5QrCode;
 
-        await html5QrCode.start(
-          { facingMode: "environment" },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 250 }
-          },
-          async (decodedText) => {
-            // Found QR!
-            setLookupId(decodedText);
-            // Stop scanning
-            await stopCamera();
-            // Automatically look up the tag
-            await performLookup(decodedText);
-          },
-          (errorMessage) => {
-            // Ignore verbose error logs
-          }
-        );
+        // Start real-time frame capturing and scanning loop (every 400ms)
+        const scanInterval = setInterval(async () => {
+          if (!video || video.paused || video.ended) return;
+
+          const canvas = document.createElement("canvas");
+          canvas.width = video.videoWidth || 640;
+          canvas.height = video.videoHeight || 480;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(video, 0, 0);
+
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const originalFile = new File([blob], "frame.png", { type: "image/png" });
+            try {
+              // 1. Try scanning original (dark-on-light) frame
+              const decodedText = await html5QrCode.scanFile(originalFile, false);
+              stopCamera();
+              setLookupId(decodedText);
+              await performLookup(decodedText);
+            } catch (err) {
+              // 2. Original failed, try scanning inverted (light-on-dark) frame
+              try {
+                const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imgData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                  data[i]     = 255 - data[i];     // Red
+                  data[i + 1] = 255 - data[i + 1]; // Green
+                  data[i + 2] = 255 - data[i + 2]; // Blue
+                }
+                ctx.putImageData(imgData, 0, 0);
+
+                canvas.toBlob(async (invertedBlob) => {
+                  if (!invertedBlob) return;
+                  const invertedFile = new File([invertedBlob], "inverted_frame.png", { type: "image/png" });
+                  try {
+                    const decodedText = await html5QrCode.scanFile(invertedFile, false);
+                    stopCamera();
+                    setLookupId(decodedText);
+                    await performLookup(decodedText);
+                  } catch (invertErr) {
+                    // Both scan attempts failed for this frame, continue loop
+                  }
+                }, "image/png");
+              } catch (invertProcessErr) {
+                // Inversion process failed, continue loop
+              }
+            }
+          }, "image/png");
+        }, 400);
+
+        cameraIntervalRef.current = scanInterval;
       } catch (err) {
         console.error("Camera startup failed:", err);
-        setLookupError(`Could not access camera: ${err.message}`);
+        setLookupError(`Could not access camera: ${err.message || "Permissions denied"}`);
         setCameraActive(false);
       }
     }, 100);
   };
 
-  const stopCamera = async () => {
-    if (qrScannerRef.current) {
-      try {
-        if (qrScannerRef.current.isScanning) {
-          await qrScannerRef.current.stop();
-        }
-      } catch (err) {
-        console.error("Failed to stop camera:", err);
-      }
+  const stopCamera = () => {
+    if (cameraIntervalRef.current) {
+      clearInterval(cameraIntervalRef.current);
+      cameraIntervalRef.current = null;
+    }
+    if (cameraStreamRef.current) {
+      cameraStreamRef.current.getTracks().forEach(track => track.stop());
+      cameraStreamRef.current = null;
     }
     setCameraActive(false);
     qrScannerRef.current = null;
@@ -1471,8 +1515,11 @@ const AdminPanel = ({
 
   useEffect(() => {
     return () => {
-      if (qrScannerRef.current) {
-        qrScannerRef.current.stop().catch(console.error);
+      if (cameraIntervalRef.current) {
+        clearInterval(cameraIntervalRef.current);
+      }
+      if (cameraStreamRef.current) {
+        cameraStreamRef.current.getTracks().forEach(track => track.stop());
       }
     };
   }, []);
@@ -4661,7 +4708,7 @@ const AdminPanel = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
             {cameraActive ? (
               <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <div id="scanner-reader" style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)' }}></div>
+                <video id="camera-video" autoplay playsinline style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></video>
                 <button
                   type="button"
                   onClick={stopCamera}
