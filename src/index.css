@@ -213,6 +213,17 @@ body {
   cursor: not-allowed;
 }
 
+.btn-secondary {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--accent-indigo);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.15);
+  transform: translateY(-2px);
+}
+
 /* Loader Animation */
 .spinner {
   width: 20px;

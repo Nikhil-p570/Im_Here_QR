@@ -1550,6 +1550,63 @@ const AdminPanel = ({
     await performLookup(lookupId);
   };
 
+  const scanFileWithInversionFallback = async (html5QrCode, file) => {
+    try {
+      // 1. Try scanning the original image first
+      const result = await html5QrCode.scanFile(file, false);
+      return result;
+    } catch (originalErr) {
+      console.log("Original scan failed, attempting color inversion fallback...");
+      
+      // 2. Load file into an Image object to invert pixels
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = async () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+
+              // Invert colors (needed for white dots/corners on dark background images)
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imgData.data;
+              for (let i = 0; i < data.length; i += 4) {
+                data[i]     = 255 - data[i];     // Red
+                data[i + 1] = 255 - data[i + 1]; // Green
+                data[i + 2] = 255 - data[i + 2]; // Blue
+              }
+              ctx.putImageData(imgData, 0, 0);
+
+              canvas.toBlob(async (blob) => {
+                if (!blob) {
+                  reject(new Error("Canvas blob generation failed"));
+                  return;
+                }
+                const invertedFile = new File([blob], "inverted.png", { type: "image/png" });
+                try {
+                  const invertedResult = await html5QrCode.scanFile(invertedFile, false);
+                  resolve(invertedResult);
+                } catch (invertErr) {
+                  reject(new Error("Could not detect any QR code in this image. Make sure the QR is clear and well-lit."));
+                }
+              }, "image/png");
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => reject(new Error("Failed to load image for inversion"));
+          img.src = event.target.result;
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
   const handleUploadQrFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1560,12 +1617,12 @@ const AdminPanel = ({
 
     try {
       const html5QrCode = new Html5Qrcode("qr-file-reader");
-      const decodedText = await html5QrCode.scanFile(file, false);
+      const decodedText = await scanFileWithInversionFallback(html5QrCode, file);
       setLookupId(decodedText);
       await performLookup(decodedText);
     } catch (err) {
       console.error("QR file scan failed:", err);
-      setLookupError("Could not detect any QR code in this image. Make sure the QR is clear and well-lit.");
+      setLookupError(err.message || "Could not detect any QR code in this image. Make sure the QR is clear and well-lit.");
     } finally {
       setLookupLoading(false);
       e.target.value = "";
@@ -4628,8 +4685,8 @@ const AdminPanel = ({
                 <button
                   type="button"
                   onClick={() => document.getElementById('qr-file-input').click()}
-                  className="btn"
-                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border-light)', color: 'white' }}
+                  className="btn btn-secondary"
+                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
                 >
                   📁 Upload QR Image
                 </button>
