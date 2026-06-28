@@ -1455,10 +1455,12 @@ const AdminPanel = ({
           if (!video || video.paused || video.ended) return;
 
           const canvas = document.createElement("canvas");
-          canvas.width = video.videoWidth || 640;
-          canvas.height = video.videoHeight || 480;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(video, 0, 0);
+          const targetWidth = 480;
+          const scale = targetWidth / (video.videoWidth || 640);
+          canvas.width = targetWidth;
+          canvas.height = (video.videoHeight || 480) * scale;
+          const ctx = canvas.getContext("2d", { willReadFrequently: true });
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
           canvas.toBlob(async (blob) => {
             if (!blob) return;
