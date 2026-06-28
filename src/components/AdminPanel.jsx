@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import { jsPDF } from 'jspdf';
+import { Html5Qrcode } from 'html5-qrcode';
 import {
   collection,
   doc,
@@ -1414,9 +1415,70 @@ const AdminPanel = ({
     }
   };
 
-  const handleLookupTag = async (e) => {
-    if (e) e.preventDefault();
-    if (!lookupId.trim()) {
+  const [cameraActive, setCameraActive] = useState(false);
+  const qrScannerRef = useRef(null);
+
+  const startCamera = async () => {
+    setCameraActive(true);
+    setLookupError("");
+    setLookupResult(null);
+    
+    // Give DOM a tick to render the div
+    setTimeout(async () => {
+      try {
+        const html5QrCode = new Html5Qrcode("scanner-reader");
+        qrScannerRef.current = html5QrCode;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
+          },
+          async (decodedText) => {
+            // Found QR!
+            setLookupId(decodedText);
+            // Stop scanning
+            await stopCamera();
+            // Automatically look up the tag
+            await performLookup(decodedText);
+          },
+          (errorMessage) => {
+            // Ignore verbose error logs
+          }
+        );
+      } catch (err) {
+        console.error("Camera startup failed:", err);
+        setLookupError(`Could not access camera: ${err.message}`);
+        setCameraActive(false);
+      }
+    }, 100);
+  };
+
+  const stopCamera = async () => {
+    if (qrScannerRef.current) {
+      try {
+        if (qrScannerRef.current.isScanning) {
+          await qrScannerRef.current.stop();
+        }
+      } catch (err) {
+        console.error("Failed to stop camera:", err);
+      }
+    }
+    setCameraActive(false);
+    qrScannerRef.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (qrScannerRef.current) {
+        qrScannerRef.current.stop().catch(console.error);
+      }
+    };
+  }, []);
+
+  const performLookup = async (idValue) => {
+    if (!idValue.trim()) {
       setLookupError("Please enter a Tag ID or paste a QR link.");
       setLookupResult(null);
       return;
@@ -1427,7 +1489,7 @@ const AdminPanel = ({
     setLookupResult(null);
 
     // Extract 8-character ID if full URL is pasted
-    let tagId = lookupId.trim();
+    let tagId = idValue.trim();
     if (tagId.includes('?=')) {
       tagId = tagId.split('?=')[1];
     } else if (tagId.includes('/')) {
@@ -1460,9 +1522,19 @@ const AdminPanel = ({
         }
       }
 
+      // Calculate total quantity
+      let totalQuantity = 0;
+      if (orderData) {
+        totalQuantity = (orderData.items || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
+      } else {
+        // Fallback to 1 if no order data but manual qr exists
+        totalQuantity = 1;
+      }
+
       setLookupResult({
-        tag: linkData,
-        order: orderData,
+        totalQuantity,
+        orderedPhoneNumber: orderData?.orderedPhoneNumber || linkData.orderedPhoneNumber || 'N/A',
+        orderedEmail: orderData?.orderedEmail || linkData.orderedEmail || 'N/A',
         tagId: tagId
       });
     } catch (err) {
@@ -1471,6 +1543,11 @@ const AdminPanel = ({
     } finally {
       setLookupLoading(false);
     }
+  };
+
+  const handleLookupTag = async (e) => {
+    if (e) e.preventDefault();
+    await performLookup(lookupId);
   };
 
   const renderGuideOverlay = (pageIdx, slotIdx) => {
@@ -4498,15 +4575,41 @@ const AdminPanel = ({
             🔍 Scan Finder & Tag Lookup
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '20px', textAlign: 'left', lineHeight: '1.5' }}>
-            Scan a physical keychain or paste its QR link/Tag ID here. The system will search Firestore and immediately pull up the customer's contact details, shipping address, and order items.
+            Scan a physical keychain using your device camera or type/paste its QR link or Tag ID below to lookup the order details.
           </p>
 
-          <form onSubmit={handleLookupTag} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', maxWidth: '600px', marginBottom: '24px' }}>
+          {/* Camera Scanning Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
+            {cameraActive ? (
+              <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <div id="scanner-reader" style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)' }}></div>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="btn btn-danger-outline"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  Stop Scanning
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={startCamera}
+                className="btn btn-primary"
+                style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
+              >
+                📷 Start Camera Scan
+              </button>
+            )}
+          </div>
+
+          <form onSubmit={handleLookupTag} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
             <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
-              <label className="form-label" style={{ textAlign: 'left' }}>Enter Tag ID or paste Scan Link:</label>
+              <label className="form-label" style={{ textAlign: 'left' }}>Or Enter Tag ID manually:</label>
               <input
                 type="text"
-                placeholder="e.g. a9t4k7s0 or https://im-here-qr.vercel.app/id?=a9t4k7s0"
+                placeholder="e.g. a9t4k7s0 or paste full QR link"
                 value={lookupId}
                 onChange={(e) => setLookupId(e.target.value)}
                 style={{
@@ -4531,133 +4634,61 @@ const AdminPanel = ({
           </form>
 
           {lookupError && (
-            <div className="status-msg status-msg-error" style={{ maxWidth: '600px', marginBottom: '24px' }}>
+            <div className="status-msg status-msg-error" style={{ maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
               <AlertTriangle size={18} style={{ flexShrink: 0 }} />
               <span>{lookupError}</span>
             </div>
           )}
 
           {lookupResult && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.35s ease' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+            <div style={{
+              maxWidth: '500px',
+              margin: '0 auto',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid var(--border-light)',
+              borderRadius: '16px',
+              padding: '24px',
+              textAlign: 'left',
+              animation: 'fadeIn 0.35s ease'
+            }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Tag Found</span>
+                <span style={{ fontFamily: 'monospace', color: 'white' }}>#{lookupResult.tagId}</span>
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 
-                {/* Panel 1: Tag Metadata */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '20px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px' }}>
-                    🏷️ Tag Status
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.88rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Tag ID:</span>
-                      <strong style={{ color: 'white', fontFamily: 'monospace' }}>{lookupResult.tagId}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Registration Status:</span>
-                      <span 
-                        className="order-badge" 
-                        style={{ 
-                          background: lookupResult.tag.status === 'registered' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                          color: lookupResult.tag.status === 'registered' ? '#10b981' : '#f59e0b',
-                          border: lookupResult.tag.status === 'registered' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)'
-                        }}
-                      >
-                        {lookupResult.tag.status === 'registered' ? 'Registered' : 'Unregistered'}
-                      </span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Type of QR:</span>
-                      <span style={{ textTransform: 'capitalize', color: 'white' }}>{lookupResult.tag.typeofqr?.replace('_', ' ')}</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Created Date:</span>
-                      <span style={{ color: 'white' }}>
-                        {lookupResult.tag.createdAt?.toDate ? lookupResult.tag.createdAt.toDate().toLocaleDateString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Unknown'}
-                      </span>
-                    </div>
-                  </div>
+                {/* 1. Total Quantity */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Total Quantity Ordered
+                  </span>
+                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'white' }}>
+                    {lookupResult.totalQuantity} items
+                  </span>
                 </div>
 
-                {/* Panel 2: Customer Contact info */}
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '20px' }}>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--accent-indigo)', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px' }}>
-                    👤 Contact Details
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.88rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Buyer Name:</span>
-                      <strong style={{ color: 'white' }}>{lookupResult.order?.customerName || 'N/A (Manual Creation)'}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Phone Number:</span>
-                      <a href={`tel:${lookupResult.tag.orderedPhoneNumber || lookupResult.order?.orderedPhoneNumber}`} style={{ color: 'var(--accent-cyan)', fontWeight: 600, textDecoration: 'none' }}>
-                        {lookupResult.tag.orderedPhoneNumber || lookupResult.order?.orderedPhoneNumber || 'N/A'}
-                      </a>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Email Address:</span>
-                      <a href={`mailto:${lookupResult.tag.orderedEmail || lookupResult.order?.orderedEmail}`} style={{ color: 'var(--accent-cyan)', fontWeight: 600, textDecoration: 'none' }}>
-                        {lookupResult.tag.orderedEmail || lookupResult.order?.orderedEmail || 'N/A'}
-                      </a>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>Order ID:</span>
-                      <span style={{ color: 'white', fontFamily: 'monospace' }}>{lookupResult.tag.firestoreOrderId || 'Manual Generator'}</span>
-                    </div>
-                  </div>
+                {/* 2. Phone Number */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Ordered Phone Number
+                  </span>
+                  <a href={`tel:${lookupResult.orderedPhoneNumber}`} style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-indigo)', textDecoration: 'none' }}>
+                    {lookupResult.orderedPhoneNumber}
+                  </a>
                 </div>
+
+                {/* 3. Email */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Ordered Email
+                  </span>
+                  <a href={`mailto:${lookupResult.orderedEmail}`} style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-indigo)', textDecoration: 'none', wordBreak: 'break-all' }}>
+                    {lookupResult.orderedEmail}
+                  </a>
+                </div>
+
               </div>
-
-              {/* Panel 3: Full Shipping Address & Order Items */}
-              {lookupResult.order && (
-                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                  
-                  {/* Shipping Address */}
-                  <div>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent-purple)', marginBottom: '12px' }}>
-                      📍 Shipping / Delivery Address
-                    </h4>
-                    <div style={{ background: 'rgba(0,0,0,0.15)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(255,255,255,0.02)', color: 'white', fontSize: '0.88rem', lineHeight: '1.6' }}>
-                      <strong>{lookupResult.order.customerName}</strong><br />
-                      {lookupResult.order.shippingAddress?.fullAddress || lookupResult.order.shippingAddress?.streetAddress}<br />
-                      {lookupResult.order.shippingAddress?.city}, {lookupResult.order.shippingAddress?.state} - {lookupResult.order.shippingAddress?.pincode}<br />
-                      Phone: {lookupResult.order.orderedPhoneNumber}
-                    </div>
-                  </div>
-
-                  {/* Order Items */}
-                  <div>
-                    <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent-purple)', marginBottom: '12px' }}>
-                      📦 Order Items Summary
-                    </h4>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {(lookupResult.order.items || []).map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(0,0,0,0.1)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                          {item.typeofqr === 'personalised' && (item.imageUrl || item.tempBase64Image) ? (
-                            <img 
-                              src={item.imageUrl || item.tempBase64Image} 
-                              alt="Custom Design" 
-                              style={{ width: '50px', height: '50px', borderRadius: '6px', objectFit: 'cover', border: '1px solid var(--border-light)' }} 
-                            />
-                          ) : (
-                            <div style={{ width: '50px', height: '50px', borderRadius: '6px', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>
-                              🏷️
-                            </div>
-                          )}
-                          <div>
-                            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'white' }}>
-                              {item.typeofqr === 'personalised' ? 'Personalised Tag' : 'Classic Tag'}
-                              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 600, marginLeft: '6px' }}>(V{item.version || 1})</span>
-                            </div>
-                            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Qty: {item.quantity || 1}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                </div>
-              )}
-
             </div>
           )}
         </div>

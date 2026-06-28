@@ -12,6 +12,7 @@
   "dependencies": {
     "firebase": "^12.15.0",
     "framer-motion": "^12.42.0",
+    "html5-qrcode": "^2.3.8",
     "jspdf": "^4.2.1",
     "lucide-react": "^1.21.0",
     "react": "^19.2.6",
