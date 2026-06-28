@@ -1438,16 +1438,9 @@ const AdminPanel = ({
         const video = document.getElementById("camera-video");
         if (!video) throw new Error("Video element not found");
 
-        // 2. Select back camera if available
-        const backCamera = devices.find(d => 
-          d.label.toLowerCase().includes('back') || 
-          d.label.toLowerCase().includes('environment')
-        );
-        const targetDeviceId = backCamera ? backCamera.id : devices[0].id;
-
-        // 3. Request video stream using the permitted device ID
+        // 2. Request back camera stream using standard facingMode constraint
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: targetDeviceId } }
+          video: { facingMode: "environment" }
         });
         
         video.srcObject = stream;
