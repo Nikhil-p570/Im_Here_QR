@@ -111,7 +111,8 @@ export const drawLogo = (ctx, logoCanvas, qrSize, offsetY, pct, bColor) => {
 export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerTextColor, offsetY) => {
   const pillH = 40;
   ctx.save();
-  ctx.font = "bold 20px ui-monospace, Menlo, Consolas, monospace";
+  ctx.font = "900 20px ui-monospace, Menlo, Consolas, monospace";
+  ctx.letterSpacing = "1.8px";
   const textMetrics = ctx.measureText(text);
   const textW = textMetrics.width;
 
@@ -132,7 +133,7 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
 
   // Draw pill border
   ctx.strokeStyle = bannerTextColor;
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 4; // Thicker border
   ctx.stroke();
 
   // Draw yellow circle badge
@@ -163,7 +164,8 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   // Draw text next to the yellow badge
   ctx.save();
   ctx.fillStyle = bannerTextColor;
-  ctx.font = "bold 20px ui-monospace, Menlo, Consolas, monospace";
+  ctx.font = "900 20px ui-monospace, Menlo, Consolas, monospace";
+  ctx.letterSpacing = "1.8px";
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText(text, pillX + paddingLeft + badgeSize + gap, pillY + pillH / 2 + 1);
