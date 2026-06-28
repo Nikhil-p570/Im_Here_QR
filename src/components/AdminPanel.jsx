@@ -1428,11 +1428,11 @@ const AdminPanel = ({
       format: "a4"
     });
 
-    const itemsPerPage = 16;
-    const colWidth = 47;
-    const rowHeight = 64;
-    const marginX = 8;
-    const marginY = 14.5;
+    const itemsPerPage = 12;
+    const colWidth = 57;
+    const rowHeight = 57;
+    const marginX = 17.5;
+    const marginY = 28.5;
     const gapX = 2;
     const gapY = 4;
 
@@ -1446,42 +1446,42 @@ const AdminPanel = ({
         pdf.addPage();
       }
 
-      const row = Math.floor(pageIndex / 4);
-      const col = pageIndex % 4;
+      const row = Math.floor(pageIndex / 3);
+      const col = pageIndex % 3;
 
       const x = marginX + col * (colWidth + gapX);
       const y = marginY + row * (rowHeight + gapY);
 
-      // 1. Draw outer grey border (47mm x 64mm)
+      // 1. Draw outer grey border (57mm x 57mm)
       pdf.setDrawColor(209, 213, 219); // light grey (#d1d5db)
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
 
-      // 2. Draw background first (42mm x 59mm) to serve as bleed margin
+      // 2. Draw background first (52mm x 52mm) to serve as bleed margin
       if (entry?.typeofqr === 'personalised') {
         if (entry?.version === 2) {
           // Version 2 (Logo Edition) frontside background is the logo icon
           if (logoIconImage) {
-            pdf.addImage(logoIconImage, "PNG", x + 2.5, y + 2.5, 42, 59);
+            pdf.addImage(logoIconImage, "PNG", x + 2.5, y + 2.5, 52, 52);
           } else {
-            pdf.addImage("/logo icon black.png", "PNG", x + 2.5, y + 2.5, 42, 59);
+            pdf.addImage("/logo icon black.png", "PNG", x + 2.5, y + 2.5, 52, 52);
           }
         } else {
           // Version 1 (Custom Image) frontside background is the custom cropped image
           if (entry.imageUrl) {
-            pdf.addImage(entry.imageUrl, "JPEG", x + 2.5, y + 2.5, 42, 59);
+            pdf.addImage(entry.imageUrl, "JPEG", x + 2.5, y + 2.5, 52, 52);
           }
         }
       } else if (entry?.typeofqr === 'classic_black') {
         pdf.setFillColor(0, 0, 0);
-        pdf.rect(x + 2.5, y + 2.5, 42, 59, "F");
+        pdf.rect(x + 2.5, y + 2.5, 52, 52, "F");
       } else {
         pdf.setFillColor(255, 255, 255);
-        pdf.rect(x + 2.5, y + 2.5, 42, 59, "F");
+        pdf.rect(x + 2.5, y + 2.5, 52, 52, "F");
       }
 
-      // 3. Add QR image centered (40mm x 55mm), leaving 1mm horizontal & 2mm vertical margin inside the 42x59 inner area
-      pdf.addImage(qrUrl, "PNG", x + 3.5, y + 4.5, 40, 55);
+      // 3. Add QR image centered (40mm x 45mm), leaving 6mm horizontal & 3.5mm vertical margin inside the 52x52 inner area
+      pdf.addImage(qrUrl, "PNG", x + 8.5, y + 6.0, 40, 45);
 
       // ---- TEMPORARY VISUAL DIMENSION DRAWINGS ----
       pdf.setDrawColor(255, 0, 0); // Red
@@ -1493,14 +1493,14 @@ const AdminPanel = ({
       pdf.text(`Outer: ${colWidth}x${rowHeight}mm`, x + 1.5, y + 2.1);
 
       pdf.setDrawColor(0, 180, 0); // Green
-      pdf.rect(x + 2.5, y + 2.5, 42, 59); // Green Inner Photo Box
+      pdf.rect(x + 2.5, y + 2.5, 52, 52); // Green Inner Photo Box
       pdf.setTextColor(0, 150, 0);
-      pdf.text(`Photo: 42x59mm`, x + 3.5, y + 6);
+      pdf.text(`Photo: 52x52mm`, x + 3.5, y + 6.0);
 
       pdf.setDrawColor(0, 0, 255); // Blue
-      pdf.rect(x + 3.5, y + 4.5, 40, 55); // Blue QR Box
+      pdf.rect(x + 8.5, y + 6.0, 40, 45); // Blue QR Box
       pdf.setTextColor(0, 0, 255);
-      pdf.text(`QR: 40x55mm`, x + 4.5, y + 9);
+      pdf.text(`QR: 40x45mm`, x + 9.5, y + 9.5);
     });
 
     pdf.save("qr-print-sheet.pdf");
@@ -1517,11 +1517,11 @@ const AdminPanel = ({
       format: "a4"
     });
 
-    const itemsPerPage = 16;
-    const colWidth = 47;
-    const rowHeight = 64;
-    const marginX = 8;
-    const marginY = 14.5;
+    const itemsPerPage = 12;
+    const colWidth = 57;
+    const rowHeight = 57;
+    const marginX = 17.5;
+    const marginY = 28.5;
     const gapX = 2;
     const gapY = 4;
 
@@ -1533,20 +1533,20 @@ const AdminPanel = ({
         pdf.addPage();
       }
 
-      const row = Math.floor(pageIndex / 4);
-      const col = pageIndex % 4;
+      const row = Math.floor(pageIndex / 3);
+      const col = pageIndex % 3;
 
       const x = marginX + col * (colWidth + gapX);
       const y = marginY + row * (rowHeight + gapY);
 
-      // 1. Add appropriate backside cover (fills the entire 42x59 box for sublimation bleed)
+      // 1. Add appropriate backside cover (fills the entire 52x52 box for sublimation bleed)
       if (entry.typeofqr === 'personalised' && entry.version === 2) {
         if (entry.imageUrl) {
           const customCanvas = await loadLogoCanvas(
             entry.imageUrl
           );
           if (customCanvas) {
-            pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 42, 59);
+            pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 52, 52);
           } else {
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(8);
@@ -1559,7 +1559,7 @@ const AdminPanel = ({
         }
       } else {
         if (logoImage) {
-          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 42, 59);
+          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 52, 52);
         } else {
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(10);
@@ -1567,7 +1567,7 @@ const AdminPanel = ({
         }
       }
 
-      // 2. Draw outer grey border (47mm x 64mm) on top of the image
+      // 2. Draw outer grey border (57mm x 57mm) on top of the image
       pdf.setDrawColor(209, 213, 219);
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
@@ -1582,9 +1582,9 @@ const AdminPanel = ({
       pdf.text(`Outer: ${colWidth}x${rowHeight}mm`, x + 1.5, y + 2.1);
 
       pdf.setDrawColor(0, 180, 0); // Green
-      pdf.rect(x + 2.5, y + 2.5, 42, 59); // Green Inner Photo Box
+      pdf.rect(x + 2.5, y + 2.5, 52, 52); // Green Inner Photo Box
       pdf.setTextColor(0, 150, 0);
-      pdf.text(`Photo: 42x59mm`, x + 3.5, y + 6);
+      pdf.text(`Photo: 52x52mm`, x + 3.5, y + 6);
     }
 
     pdf.save("logo-print-sheet.pdf");
@@ -3734,8 +3734,8 @@ const AdminPanel = ({
                       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                         {(() => {
                           const pages = [];
-                          for (let i = 0; i < appendedQrs.length; i += 16) {
-                            pages.push(appendedQrs.slice(i, i + 16));
+                          for (let i = 0; i < appendedQrs.length; i += 12) {
+                            pages.push(appendedQrs.slice(i, i + 12));
                           }
                           return pages.map((pageItems, pageIdx) => (
                             <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -3743,7 +3743,7 @@ const AdminPanel = ({
                                 Page {pageIdx + 1} of {pages.length}
                               </span>
                               <div className="pdf-preview-page">
-                                {Array.from({ length: 16 }).map((_, slotIdx) => {
+                                {Array.from({ length: 12 }).map((_, slotIdx) => {
                                   const hasItem = slotIdx < pageItems.length;
                                   if (hasItem) {
                                     const slotEntry = pageItems[slotIdx];
@@ -3794,8 +3794,8 @@ const AdminPanel = ({
                       <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
                         {(() => {
                           const pages = [];
-                          for (let i = 0; i < appendedQrs.length; i += 16) {
-                            pages.push(appendedQrs.slice(i, i + 16));
+                          for (let i = 0; i < appendedQrs.length; i += 12) {
+                            pages.push(appendedQrs.slice(i, i + 12));
                           }
                           return pages.map((pageItems, pageIdx) => (
                             <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
@@ -3803,7 +3803,7 @@ const AdminPanel = ({
                                 Page {pageIdx + 1} of {pages.length}
                               </span>
                               <div className="pdf-preview-page">
-                                {Array.from({ length: 16 }).map((_, slotIdx) => {
+                                {Array.from({ length: 12 }).map((_, slotIdx) => {
                                   const hasItem = slotIdx < pageItems.length;
                                   if (hasItem) {
                                     const slotEntry = pageItems[slotIdx];
@@ -4435,7 +4435,7 @@ const AdminPanel = ({
               PDF Print Sheet Preview
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Layout: A4 sheet, 4x4 grid (16 tags max per page). Each tag: 47mm x 64mm cutting border, 42mm x 59mm photo background (bleed), 40mm x 55mm QR code centered.
+              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 40mm x 45mm QR code centered.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -4478,8 +4478,8 @@ const AdminPanel = ({
             {/* Split appended QRs into chunks of 16 for pagination */}
             {(() => {
               const pages = [];
-              for (let i = 0; i < appendedQrs.length; i += 16) {
-                pages.push(appendedQrs.slice(i, i + 16));
+              for (let i = 0; i < appendedQrs.length; i += 12) {
+                pages.push(appendedQrs.slice(i, i + 12));
               }
               return pages.map((pageItems, pageIdx) => (
                 <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -4487,7 +4487,7 @@ const AdminPanel = ({
                     Page {pageIdx + 1} of {pages.length}
                   </span>
                   <div className="pdf-preview-page">
-                    {Array.from({ length: 16 }).map((_, slotIdx) => {
+                    {Array.from({ length: 12 }).map((_, slotIdx) => {
                       const hasItem = slotIdx < pageItems.length;
                       if (hasItem) {
                         const slotEntry = pageItems[slotIdx];
