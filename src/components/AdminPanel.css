@@ -418,7 +418,7 @@
   border: 1px solid var(--border-light);
   border-radius: 4px;
   box-sizing: border-box;
-  padding: 34.28px 18.28px; /* Scaled 22.5mm top/bottom, 12mm left/right */
+  padding: 22.1px 12.2px; /* Scaled 14.5mm top/bottom, 8mm left/right */
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(4, 1fr);
@@ -432,17 +432,17 @@
   border: 1px solid #d1d5db; /* Grey border (A4 scaled) */
   background: #fafafa;
   box-sizing: border-box;
-  aspect-ratio: 45 / 60;
+  aspect-ratio: 47 / 64;
 }
 
 .pdf-preview-image {
   position: absolute;
-  top: 4.167%; /* 2.5mm / 60mm */
-  bottom: 4.167%;
-  left: 5.556%; /* 2.5mm / 45mm */
-  right: 5.556%;
-  width: 88.888%; /* 40mm / 45mm */
-  height: 91.667%; /* 55mm / 60mm */
+  top: 3.906%; /* 2.5mm / 64mm */
+  bottom: 3.906%;
+  left: 5.319%; /* 2.5mm / 47mm */
+  right: 5.319%;
+  width: 89.362%; /* 42mm / 47mm */
+  height: 92.188%; /* 59mm / 64mm */
   object-fit: fill; /* Compress vertically & horizontally */
 }
 
@@ -450,7 +450,7 @@
   border: 1px dashed rgba(0, 0, 0, 0.08) !important;
   background: #fdfdfd;
   box-sizing: border-box;
-  aspect-ratio: 45 / 60;
+  aspect-ratio: 47 / 64;
 }
 
 /* ══════════════════════════════════════════════

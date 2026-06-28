@@ -1429,10 +1429,10 @@ const AdminPanel = ({
     });
 
     const itemsPerPage = 16;
-    const colWidth = 45;
-    const rowHeight = 60;
-    const marginX = 12;
-    const marginY = 22.5;
+    const colWidth = 47;
+    const rowHeight = 64;
+    const marginX = 8;
+    const marginY = 14.5;
     const gapX = 2;
     const gapY = 4;
 
@@ -1452,13 +1452,36 @@ const AdminPanel = ({
       const x = marginX + col * (colWidth + gapX);
       const y = marginY + row * (rowHeight + gapY);
 
-      // 1. Draw outer grey border (45mm x 60mm)
+      // 1. Draw outer grey border (47mm x 64mm)
       pdf.setDrawColor(209, 213, 219); // light grey (#d1d5db)
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
 
-      // 2. Add QR image centered (40mm x 55mm), leaving 2.5mm margin on all sides
-      pdf.addImage(qrUrl, "PNG", x + 2.5, y + 2.5, 40, 55);
+      // 2. Draw background first (42mm x 59mm) to serve as bleed margin
+      if (entry?.typeofqr === 'personalised') {
+        if (entry?.version === 2) {
+          // Version 2 (Logo Edition) frontside background is the logo icon
+          if (logoIconImage) {
+            pdf.addImage(logoIconImage, "PNG", x + 2.5, y + 2.5, 42, 59);
+          } else {
+            pdf.addImage("/logo icon black.png", "PNG", x + 2.5, y + 2.5, 42, 59);
+          }
+        } else {
+          // Version 1 (Custom Image) frontside background is the custom cropped image
+          if (entry.imageUrl) {
+            pdf.addImage(entry.imageUrl, "JPEG", x + 2.5, y + 2.5, 42, 59);
+          }
+        }
+      } else if (entry?.typeofqr === 'classic_black') {
+        pdf.setFillColor(0, 0, 0);
+        pdf.rect(x + 2.5, y + 2.5, 42, 59, "F");
+      } else {
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(x + 2.5, y + 2.5, 42, 59, "F");
+      }
+
+      // 3. Add QR image centered (40mm x 55mm), leaving 1mm horizontal & 2mm vertical margin inside the 42x59 inner area
+      pdf.addImage(qrUrl, "PNG", x + 3.5, y + 4.5, 40, 55);
     });
 
     pdf.save("qr-print-sheet.pdf");
@@ -1476,10 +1499,10 @@ const AdminPanel = ({
     });
 
     const itemsPerPage = 16;
-    const colWidth = 45;
-    const rowHeight = 60;
-    const marginX = 12;
-    const marginY = 22.5;
+    const colWidth = 47;
+    const rowHeight = 64;
+    const marginX = 8;
+    const marginY = 14.5;
     const gapX = 2;
     const gapY = 4;
 
@@ -1497,14 +1520,14 @@ const AdminPanel = ({
       const x = marginX + col * (colWidth + gapX);
       const y = marginY + row * (rowHeight + gapY);
 
-      // 1. Add appropriate backside cover (centered at 40x55 size to match front dimensions)
+      // 1. Add appropriate backside cover (fills the entire 42x59 box for sublimation bleed)
       if (entry.typeofqr === 'personalised' && entry.version === 2) {
         if (entry.imageUrl) {
           const customCanvas = await loadLogoCanvas(
             entry.imageUrl
           );
           if (customCanvas) {
-            pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 40, 55);
+            pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 42, 59);
           } else {
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(8);
@@ -1517,7 +1540,7 @@ const AdminPanel = ({
         }
       } else {
         if (logoImage) {
-          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 40, 55);
+          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 42, 59);
         } else {
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(10);
@@ -1525,7 +1548,7 @@ const AdminPanel = ({
         }
       }
 
-      // 2. Draw outer grey border (45mm x 60mm) on top of the image
+      // 2. Draw outer grey border (47mm x 64mm) on top of the image
       pdf.setDrawColor(209, 213, 219);
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
@@ -4379,7 +4402,7 @@ const AdminPanel = ({
               PDF Print Sheet Preview
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Layout: A4 sheet, 4x4 grid (16 tags max per page). Each tag: 45mm x 60mm border, 40mm x 55mm QR code centered (2.5mm margin).
+              Layout: A4 sheet, 4x4 grid (16 tags max per page). Each tag: 47mm x 64mm cutting border, 42mm x 59mm photo background (bleed), 40mm x 55mm QR code centered.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
