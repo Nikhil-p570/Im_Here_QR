@@ -140,7 +140,7 @@ body {
 
 .text-input {
   width: 100%;
-  padding: 16px;
+  padding: 16px 16px 16px 48px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   border-radius: 12px;
@@ -149,6 +149,10 @@ body {
   font-size: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
+}
+
+.text-input.no-icon {
+  padding-left: 16px;
 }
 
 .text-input:focus {
@@ -286,8 +290,12 @@ body {
   }
   
   .text-input {
-    padding: 12px;
+    padding: 12px 12px 12px 42px;
     font-size: 0.9rem;
+  }
+  
+  .text-input.no-icon {
+    padding-left: 12px;
   }
   
   .btn {

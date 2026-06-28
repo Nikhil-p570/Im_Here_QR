@@ -1807,7 +1807,7 @@ const OrderPage = () => {
                     <label>First Name *</label>
                     <input
                       type="text"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       value={checkoutForm.firstName}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, firstName: e.target.value }))}
@@ -1818,7 +1818,7 @@ const OrderPage = () => {
                     <label>Last Name</label>
                     <input
                       type="text"
-                      className="text-input"
+                      className="text-input no-icon"
                       value={checkoutForm.lastName}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, lastName: e.target.value }))}
                       placeholder=""
@@ -1831,7 +1831,7 @@ const OrderPage = () => {
                     <label>Email Address *</label>
                     <input
                       type="email"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       value={checkoutForm.email}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, email: e.target.value }))}
@@ -1842,7 +1842,7 @@ const OrderPage = () => {
                     <label>Phone Number *</label>
                     <input
                       type="tel"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       maxLength={10}
                       pattern="[0-9]{10}"
@@ -1862,7 +1862,7 @@ const OrderPage = () => {
                   <label>Full Address *</label>
                   <input
                     type="text"
-                    className="text-input"
+                    className="text-input no-icon"
                     required
                     value={checkoutForm.address}
                     onChange={(e) => setCheckoutForm(prev => ({ ...prev, address: e.target.value }))}
@@ -1875,7 +1875,7 @@ const OrderPage = () => {
                     <label>City *</label>
                     <input
                       type="text"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       value={checkoutForm.city}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, city: e.target.value }))}
@@ -1886,7 +1886,7 @@ const OrderPage = () => {
                     <label>State *</label>
                     <input
                       type="text"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       value={checkoutForm.state}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, state: e.target.value }))}
@@ -1897,7 +1897,7 @@ const OrderPage = () => {
                     <label>Pincode *</label>
                     <input
                       type="text"
-                      className="text-input"
+                      className="text-input no-icon"
                       required
                       value={checkoutForm.pincode}
                       onChange={(e) => setCheckoutForm(prev => ({ ...prev, pincode: e.target.value }))}
