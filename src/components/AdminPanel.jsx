@@ -2690,7 +2690,8 @@ const AdminPanel = ({
                     width: '100%',
                     maxWidth: '380px',
                     aspectRatio: hasFrame ? '640/700' : '1/1',
-                    objectFit: 'cover',
+                    objectFit: flipPreview ? 'contain' : 'cover',
+                    background: flipPreview ? '#000000' : 'transparent',
                     borderRadius: '10px',
                     display: 'block',
                     margin: '12px auto',
@@ -3817,7 +3818,7 @@ const AdminPanel = ({
                                     return (
                                       <div key={slotIdx} className="pdf-preview-item" style={{ background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {backImgSrc ? (
-                                          <img src={backImgSrc} alt={`Back ${slotIdx}`} className="pdf-preview-image" style={{ objectFit: 'cover' }} />
+                                          <img src={backImgSrc} alt={`Back ${slotIdx}`} className="pdf-preview-image" style={{ objectFit: 'contain', background: '#000000' }} />
                                         ) : (
                                           <span style={{ fontSize: '0.62rem', fontWeight: 'bold', color: '#ef4444' }}>No Image</span>
                                         )}
