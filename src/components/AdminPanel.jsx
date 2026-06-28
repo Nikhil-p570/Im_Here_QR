@@ -5187,26 +5187,27 @@ const AdminPanel = ({
               left: 0,
               right: 0,
               bottom: 0,
-              background: 'rgba(0, 0, 0, 0.85)',
+              background: 'rgba(11, 15, 25, 0.85)',
+              backdropFilter: 'blur(8px)',
               zIndex: 9999,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '20px'
+              padding: '20px',
+              animation: 'fadeIn 0.25s ease'
             }}>
               <div className="glass-panel" style={{
                 width: '100%',
                 maxWidth: '600px',
-                background: '#111827',
-                border: '1px solid var(--border-light)',
-                borderRadius: '16px',
-                padding: '24px',
+                padding: '28px 24px',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '16px'
+                gap: '16px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                border: '1px solid var(--border-light)'
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>📋 Exported Box Information</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>📋 Exported Box Information</h3>
                   <button 
                     type="button" 
                     onClick={() => setShowExportModal(false)}
@@ -5216,7 +5217,7 @@ const AdminPanel = ({
                   </button>
                 </div>
                 
-                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
                   Copy the text below and paste it directly to ChatGPT along with your shipping labels PDF text.
                 </p>
 
@@ -5229,7 +5230,6 @@ const AdminPanel = ({
                         return `BOX ${boxNum}
 Name: ${data.customerName}
 Phone: ${data.orderedPhoneNumber}
-Email: ${data.orderedEmail}
 Address: ${data.address}
 Tags in box: ${data.tags.join(', ')}
 ---------------------------------------------`;
@@ -5239,19 +5239,20 @@ Tags in box: ${data.tags.join(', ')}
                   style={{
                     width: '100%',
                     height: '250px',
-                    background: 'rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '8px',
-                    padding: '12px',
-                    color: '#a5b4fc',
+                    background: 'rgba(0, 0, 0, 0.03)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    color: 'var(--text-primary)',
                     fontFamily: 'monospace',
-                    fontSize: '0.82rem',
+                    fontSize: '0.85rem',
                     resize: 'none',
-                    outline: 'none'
+                    outline: 'none',
+                    lineHeight: '1.5'
                   }}
                 />
 
-                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '4px' }}>
                   <button
                     type="button"
                     onClick={() => {
@@ -5261,7 +5262,6 @@ Tags in box: ${data.tags.join(', ')}
                           return `BOX ${boxNum}
 Name: ${data.customerName}
 Phone: ${data.orderedPhoneNumber}
-Email: ${data.orderedEmail}
 Address: ${data.address}
 Tags in box: ${data.tags.join(', ')}
 ---------------------------------------------`;
@@ -5271,15 +5271,15 @@ Tags in box: ${data.tags.join(', ')}
                       alert("Copied box info to clipboard!");
                     }}
                     className="btn btn-primary"
-                    style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
                   >
                     Copy to Clipboard
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowExportModal(false)}
-                    className="btn btn-secondary"
-                    style={{ padding: '8px 16px', fontSize: '0.85rem', background: 'transparent', border: '1px solid var(--border-light)' }}
+                    className="btn btn-confirm-no"
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
                   >
                     Close
                   </button>
