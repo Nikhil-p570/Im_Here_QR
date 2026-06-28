@@ -166,7 +166,7 @@ export default async function handler(req, res) {
       const requestBody = {
         consignee: {
           name: payload.customerName,
-          address: payload.shippingAddress.address,
+          address: payload.shippingAddress.address + (payload.orderedPhoneNumber ? ` (Mob: ${payload.orderedPhoneNumber})` : ""),
           address_2: "",
           city: payload.shippingAddress.city || 'Delhi',
           state: payload.shippingAddress.state || 'Delhi',
