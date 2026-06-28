@@ -4882,14 +4882,11 @@ const AdminPanel = ({
                   type="button"
                   onClick={() => {
                     if (packingSessionActive) {
-                      const confirmEnd = window.confirm("Are you sure you want to end this packing session? This will reset all assigned boxes.");
+                      const confirmEnd = window.confirm("Are you sure you want to end this packing session? You can still view/copy your box data until you start a new session.");
                       if (confirmEnd) {
                         setPackingSessionActive(false);
-                        setPackingPhoneToBoxMap({});
-                        setMaxBoxNumber(0);
                         setLastAssignedBox(null);
-                        setPackingHistory([]);
-                        setPackingBoxesData({});
+                        stopCamera();
                       }
                     } else {
                       setPackingSessionActive(true);
@@ -4914,7 +4911,7 @@ const AdminPanel = ({
                   {packingSessionActive ? '⏹️ End Packing Session' : '▶️ Start Packing Session'}
                 </button>
 
-                {packingSessionActive && Object.keys(packingBoxesData).length > 0 && (
+                {Object.keys(packingBoxesData).length > 0 && (
                   <button
                     type="button"
                     onClick={() => setShowExportModal(true)}
