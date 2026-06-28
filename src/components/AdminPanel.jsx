@@ -1444,6 +1444,7 @@ const AdminPanel = ({
         });
         
         video.srcObject = stream;
+        await video.play().catch((err) => console.warn("Autoplay was blocked or failed:", err));
         cameraStreamRef.current = stream;
 
         const html5QrCode = new Html5Qrcode("qr-file-reader");
