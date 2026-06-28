@@ -4717,7 +4717,7 @@ const AdminPanel = ({
                   border: '1px solid var(--border-light)',
                   borderRadius: '10px',
                   padding: '14px 16px',
-                  color: 'white',
+                  color: 'var(--text-primary)',
                   fontSize: '0.95rem'
                 }}
               />
@@ -4752,7 +4752,7 @@ const AdminPanel = ({
             }}>
               <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
                 <span>Tag Found</span>
-                <span style={{ fontFamily: 'monospace', color: 'white' }}>#{lookupResult.tagId}</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>#{lookupResult.tagId}</span>
               </h3>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -4762,7 +4762,7 @@ const AdminPanel = ({
                   <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
                     Total Quantity Ordered
                   </span>
-                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'white' }}>
+                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {lookupResult.totalQuantity} items
                   </span>
                 </div>
