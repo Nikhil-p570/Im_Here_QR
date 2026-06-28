@@ -1429,12 +1429,27 @@ const AdminPanel = ({
     // Give DOM a tick to render the video element
     setTimeout(async () => {
       try {
+        // 1. Request standard camera permissions via the official library method
+        const devices = await Html5Qrcode.getCameras();
+        if (!devices || devices.length === 0) {
+          throw new Error("No camera devices found on this device.");
+        }
+
         const video = document.getElementById("camera-video");
         if (!video) throw new Error("Video element not found");
 
+        // 2. Select back camera if available
+        const backCamera = devices.find(d => 
+          d.label.toLowerCase().includes('back') || 
+          d.label.toLowerCase().includes('environment')
+        );
+        const targetDeviceId = backCamera ? backCamera.id : devices[0].id;
+
+        // 3. Request video stream using the permitted device ID
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "environment" }
+          video: { deviceId: { exact: targetDeviceId } }
         });
+        
         video.srcObject = stream;
         cameraStreamRef.current = stream;
 
