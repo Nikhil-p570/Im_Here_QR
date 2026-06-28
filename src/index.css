@@ -140,7 +140,7 @@ body {
 
 .text-input {
   width: 100%;
-  padding: 16px 16px 16px 48px;
+  padding: 16px;
   background: rgba(0, 0, 0, 0.02);
   border: 1px solid var(--border-light);
   border-radius: 12px;
@@ -286,7 +286,7 @@ body {
   }
   
   .text-input {
-    padding: 12px 12px 12px 42px;
+    padding: 12px;
     font-size: 0.9rem;
   }
   
