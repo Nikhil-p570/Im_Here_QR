@@ -1473,8 +1473,8 @@ const AdminPanel = ({
         pdf.rect(x + 2.5, y + 2.5, 52, 52, "F");
       }
 
-      // 3. Add QR image centered (47mm x 47mm), leaving 2.5mm horizontal & 2.5mm vertical margin inside the 52x52 inner area
-      pdf.addImage(qrUrl, "PNG", x + 5.0, y + 5.0, 47, 47);
+      // 3. Add QR image centered (49mm x 49mm), leaving 1.5mm horizontal & 1.5mm vertical margin inside the 52x52 inner area
+      pdf.addImage(qrUrl, "PNG", x + 4.0, y + 4.0, 49, 49);
 
     });
 
@@ -4414,7 +4414,7 @@ const AdminPanel = ({
               PDF Print Sheet Preview
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
-              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 47mm x 47mm QR code centered.
+              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 49mm x 49mm QR code centered.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
