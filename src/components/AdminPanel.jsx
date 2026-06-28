@@ -4716,7 +4716,7 @@ const AdminPanel = ({
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
             {cameraActive ? (
               <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                <video id="camera-video" autoplay playsinline style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></video>
+                <video id="camera-video" autoPlay playsInline muted style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></video>
                 <button
                   type="button"
                   onClick={stopCamera}
