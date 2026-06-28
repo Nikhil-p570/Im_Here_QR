@@ -176,13 +176,13 @@ const AdminPanel = ({
 
   useEffect(() => {
     const img = new Image();
-    img.src = '/full logo.png';
+    img.src = '/full logo black.png';
     img.onload = () => setLogoImage(img);
   }, []);
 
   useEffect(() => {
     const img = new Image();
-    img.src = '/logo icon.png';
+    img.src = '/logo icon black.png';
     img.onload = () => setLogoIconImage(img);
   }, []);
 
@@ -387,7 +387,7 @@ const AdminPanel = ({
         return logoCanvas.toDataURL('image/jpeg', 0.95);
       }
     }
-    return '/full logo.png';
+    return '/full logo black.png';
   };
 
   async function handleGenerateQR(urlOverride) {
@@ -1827,7 +1827,7 @@ const AdminPanel = ({
       <header className="admin-header-wrapper">
         <div className="admin-header-main">
           <h1 style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo icon.png" alt="I'm here" style={{ width: '50px', height: '50px', objectFit: 'contain', marginRight: '14px', borderRadius: '8px' }} />
+            <img src="/logo icon black.png" alt="I'm here" style={{ width: '50px', height: '50px', objectFit: 'contain', marginRight: '14px', borderRadius: '8px' }} />
             I'm here
           </h1>
           <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
@@ -3753,7 +3753,7 @@ const AdminPanel = ({
                                     const slotEntry = pageItems[slotIdx];
                                     
                                     // Determine image src for backside cover preview
-                                    let backImgSrc = '/full logo.png';
+                                    let backImgSrc = '/full logo black.png';
                                     if (slotEntry?.typeofqr === 'personalised' && slotEntry?.version === 2) {
                                       backImgSrc = slotEntry?.imageUrl || '';
                                     }
@@ -3859,7 +3859,7 @@ const AdminPanel = ({
                           if (e.target.src.endsWith('/cropped_tag1.png')) {
                             e.target.src = '/cropped_tag1.jpg';
                           } else if (e.target.src.endsWith('/cropped_tag1.jpg')) {
-                            e.target.src = '/logo icon.png';
+                            e.target.src = '/logo icon black.png';
                           } else {
                             e.target.onerror = null;
                             e.target.src = '';
@@ -4209,7 +4209,7 @@ const AdminPanel = ({
                           if (e.target.src.endsWith('/cropped_tag3.png')) {
                             e.target.src = '/cropped_tag3.jpg';
                           } else if (e.target.src.endsWith('/cropped_tag3.jpg')) {
-                            e.target.src = '/logo icon.png';
+                            e.target.src = '/logo icon black.png';
                           } else {
                             e.target.onerror = null;
                             e.target.src = '';

@@ -201,7 +201,7 @@ const CustomerRegistration = ({
     <div className="app-container" style={{ maxWidth: '520px', alignSelf: 'center' }}>
       <main className="glass-panel card-content" style={{ padding: '36px 28px' }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <img src="/full logo.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+          <img src="/full logo black.png" alt="I'm here" style={{ width: '160px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, background: 'linear-gradient(135deg, var(--text-primary) 30%, var(--accent-indigo) 70%, var(--accent-cyan) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             You're the first one to scan me! Claim me!
           </h2>

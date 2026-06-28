@@ -106,7 +106,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
     if (tagId === 'tag1') {
       loadAttempts.push('/pic1.png');
       if (base64Image && base64Image.trim() !== '') loadAttempts.push(base64Image);
-      loadAttempts.push('/logo icon.png');
+      loadAttempts.push('/logo icon black.png');
     } else if (tagId === 'tag2') {
       loadAttempts.push('/pic2.png');
       if (base64Image && base64Image.trim() !== '') loadAttempts.push(base64Image);
@@ -114,7 +114,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
     } else if (tagId === 'tag3') {
       loadAttempts.push('/pic3.png');
       if (base64Image && base64Image.trim() !== '') loadAttempts.push(base64Image);
-      loadAttempts.push('/logo icon.png');
+      loadAttempts.push('/logo icon black.png');
     }
     let idx = 0;
     const tryNext = () => {
@@ -133,7 +133,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
     let active = true;
     const img = new Image();
     img.onload = () => { if (active) setLogoLoaded(img); };
-    img.src = '/full logo.png';
+    img.src = '/full logo black.png';
     return () => { active = false; };
   }, []);
 
@@ -141,7 +141,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
     let active = true;
     const img = new Image();
     img.onload = () => { if (active) setLogoIconLoaded(img); };
-    img.src = '/logo icon.png';
+    img.src = '/logo icon black.png';
     return () => { active = false; };
   }, []);
 
@@ -329,7 +329,7 @@ const HeroVisual = () => {
           <div className="lp-hero-phone-notch" />
           <div className="lp-hero-phone-screen">
             <div style={{ textAlign: 'center', marginBottom: '12px', marginTop: '16px' }}>
-              <img src="/full logo.png" alt="Logo" style={{ height: '40px', borderRadius: '8px' }} />
+              <img src="/full logo black.png" alt="Logo" style={{ height: '40px', borderRadius: '8px' }} />
             </div>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '0.9rem', fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>Hey there! Looking for me? 👀</h3>
@@ -666,7 +666,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       {/* ── Navbar ── */}
       <nav className={`lp-nav ${scrolled ? 'scrolled' : ''}`}>
         <a href="/" className="lp-nav-logo">
-          <img src="/logo icon.png" alt="I'm Here Logo" />
+          <img src="/logo icon black.png" alt="I'm Here Logo" />
           <span className="lp-nav-logo-text">I'M HERE</span>
         </a>
         <ul className="lp-nav-links">
@@ -905,7 +905,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         <div className="lp-footer-inner">
           <div className="lp-footer-top">
             <div className="lp-footer-brand">
-              <img src="/full logo.png" alt="I'm Here" />
+              <img src="/full logo black.png" alt="I'm Here" />
               <p>Smart QR recovery tags that help reunite lost belongings with their owners. Personalised, privacy-first, and beautifully designed.</p>
             </div>
             <div>

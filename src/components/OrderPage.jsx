@@ -261,13 +261,13 @@ const OrderPage = () => {
 
   useEffect(() => {
     const img = new Image();
-    img.src = '/full logo.png';
+    img.src = '/full logo black.png';
     img.onload = () => setLogoImage(img);
   }, []);
 
   useEffect(() => {
     const img = new Image();
-    img.src = '/logo icon.png';
+    img.src = '/logo icon black.png';
     img.onload = () => setLogoIconImage(img);
   }, []);
 

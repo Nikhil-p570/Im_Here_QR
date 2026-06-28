@@ -309,7 +309,7 @@ const PolicyPage = () => {
     <div className="app-container" style={{ maxWidth: '760px', alignSelf: 'center', padding: '40px 20px' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '20px', marginBottom: '24px' }}>
         <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
-          <img src="/logo icon.png" alt="I'm Here" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '8px' }} />
+          <img src="/logo icon black.png" alt="I'm Here" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '8px' }} />
           <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #0f172a 50%, #4f46e5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             I'm Here
           </span>

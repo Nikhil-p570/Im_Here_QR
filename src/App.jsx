@@ -513,7 +513,7 @@ function App() {
       <div className="app-container" style={{ justifyContent: 'center', minHeight: '80vh', alignSelf: 'center' }}>
         <main className="glass-panel card-content" style={{ maxWidth: '440px', width: '100%', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '12px' }}>
-            <img src="/full logo.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
+            <img src="/full logo black.png" alt="I'm here" style={{ width: '120px', height: 'auto', borderRadius: '12px', marginBottom: '12px' }} />
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Admin Access</h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Enter password to view and generate customer links</p>
           </div>
