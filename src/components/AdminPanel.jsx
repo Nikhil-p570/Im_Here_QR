@@ -1482,6 +1482,25 @@ const AdminPanel = ({
 
       // 3. Add QR image centered (40mm x 55mm), leaving 1mm horizontal & 2mm vertical margin inside the 42x59 inner area
       pdf.addImage(qrUrl, "PNG", x + 3.5, y + 4.5, 40, 55);
+
+      // ---- TEMPORARY VISUAL DIMENSION DRAWINGS ----
+      pdf.setDrawColor(255, 0, 0); // Red
+      pdf.setLineWidth(0.2);
+      pdf.rect(x, y, colWidth, rowHeight); // Outer Red Border
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(5);
+      pdf.setTextColor(255, 0, 0);
+      pdf.text(`Outer: ${colWidth}x${rowHeight}mm`, x + 1.5, y + 2.1);
+
+      pdf.setDrawColor(0, 180, 0); // Green
+      pdf.rect(x + 2.5, y + 2.5, 42, 59); // Green Inner Photo Box
+      pdf.setTextColor(0, 150, 0);
+      pdf.text(`Photo: 42x59mm`, x + 3.5, y + 6);
+
+      pdf.setDrawColor(0, 0, 255); // Blue
+      pdf.rect(x + 3.5, y + 4.5, 40, 55); // Blue QR Box
+      pdf.setTextColor(0, 0, 255);
+      pdf.text(`QR: 40x55mm`, x + 4.5, y + 9);
     });
 
     pdf.save("qr-print-sheet.pdf");
@@ -1552,6 +1571,20 @@ const AdminPanel = ({
       pdf.setDrawColor(209, 213, 219);
       pdf.setLineWidth(0.5);
       pdf.rect(x, y, colWidth, rowHeight);
+
+      // ---- TEMPORARY VISUAL DIMENSION DRAWINGS ----
+      pdf.setDrawColor(255, 0, 0); // Red
+      pdf.setLineWidth(0.2);
+      pdf.rect(x, y, colWidth, rowHeight); // Outer Red Border
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(5);
+      pdf.setTextColor(255, 0, 0);
+      pdf.text(`Outer: ${colWidth}x${rowHeight}mm`, x + 1.5, y + 2.1);
+
+      pdf.setDrawColor(0, 180, 0); // Green
+      pdf.rect(x + 2.5, y + 2.5, 42, 59); // Green Inner Photo Box
+      pdf.setTextColor(0, 150, 0);
+      pdf.text(`Photo: 42x59mm`, x + 3.5, y + 6);
     }
 
     pdf.save("logo-print-sheet.pdf");
