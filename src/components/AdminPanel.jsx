@@ -1400,15 +1400,6 @@ const AdminPanel = ({
     if (appendedQrs.length === 0) return;
     const confirmClear = window.confirm("Are you sure you want to clear all appended QR codes from this sheet?");
     if (confirmClear) {
-      // Delete every unique ID from Firestore
-      if (firestoreDb) {
-        const uniqueIds = [...new Set(appendedQrs.map(e => e?.id).filter(Boolean))];
-        uniqueIds.forEach(id => {
-          deleteDoc(doc(firestoreDb, 'links', id)).catch(err => {
-            console.error("Clear sheet: Firestore delete failed:", err);
-          });
-        });
-      }
       setAppendedQrs([]);
       setUndoneQrs([]);
       localStorage.removeItem('pdfSheet_appendedQrs');
