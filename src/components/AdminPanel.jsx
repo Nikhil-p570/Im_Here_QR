@@ -175,6 +175,7 @@ const AdminPanel = ({
   const [lookupLoading, setLookupLoading] = useState(false);
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
+  const [showAddTagOption, setShowAddTagOption] = useState(null);
 
   const [croppingLandingTag, setCroppingLandingTag] = useState(null); // 'tag1' | 'tag2' | 'tag3' | null
   const [landingCropImage, setLandingCropImage] = useState(null); // Image object being cropped
@@ -1557,6 +1558,7 @@ const AdminPanel = ({
     setLookupLoading(true);
     setLookupError("");
     setLookupResult(null);
+    setShowAddTagOption(null);
 
     // Extract 8-character ID if full URL is pasted
     let tagId = idValue.trim();
@@ -1576,6 +1578,7 @@ const AdminPanel = ({
 
       if (!linkSnap.exists()) {
         setLookupError(`Tag ID "${tagId}" not found in links database.`);
+        setShowAddTagOption(tagId);
         setLookupLoading(false);
         return;
       }
@@ -1611,6 +1614,33 @@ const AdminPanel = ({
     } catch (err) {
       console.error("Lookup error:", err);
       setLookupError(`Error looking up tag: ${err.message}`);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleAddMissingTag = async (tagId) => {
+    if (!firestoreDb) {
+      setLookupError("Database not connected.");
+      return;
+    }
+    setLookupLoading(true);
+    setLookupError("");
+    try {
+      const docRef = doc(firestoreDb, 'links', tagId);
+      await setDoc(docRef, {
+        id: tagId,
+        domain: predefinedDomain,
+        qrCodeUrl: `${predefinedDomain}/id?=${tagId}`,
+        status: 'active',
+        createdAt: new Date()
+      });
+      setShowAddTagOption(null);
+      // Automatically perform lookup now that it exists
+      await performLookup(tagId);
+    } catch (err) {
+      console.error("Failed to add missing tag:", err);
+      setLookupError(`Failed to add tag to database: ${err.message}`);
     } finally {
       setLookupLoading(false);
     }
@@ -4807,6 +4837,22 @@ const AdminPanel = ({
             <div className="status-msg status-msg-error" style={{ maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
               <AlertTriangle size={18} style={{ flexShrink: 0 }} />
               <span>{lookupError}</span>
+            </div>
+          )}
+
+          {showAddTagOption && (
+            <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto 24px auto', padding: '20px', border: '1px dashed var(--accent-indigo)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600, textAlign: 'center' }}>
+                Would you like to register Tag ID <strong style={{ color: 'var(--accent-indigo)' }}>#{showAddTagOption}</strong> into the database?
+              </span>
+              <button
+                type="button"
+                onClick={() => handleAddMissingTag(showAddTagOption)}
+                className="btn btn-primary"
+                style={{ padding: '10px 20px', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
+              >
+                ➕ Add Tag into Database
+              </button>
             </div>
           )}
 
