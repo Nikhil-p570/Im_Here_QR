@@ -4765,10 +4765,10 @@ const AdminPanel = ({
                   onChange={handleUploadQrFile}
                   style={{ display: 'none' }}
                 />
-                <div id="qr-file-reader" style={{ display: 'none' }}></div>
               </div>
             )}
           </div>
+          <div id="qr-file-reader" style={{ display: 'none' }}></div>
 
           <form onSubmit={handleLookupTag} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
             <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
