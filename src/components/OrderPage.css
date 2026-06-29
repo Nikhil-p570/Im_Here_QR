@@ -614,6 +614,9 @@
   display: inline-block;
   cursor: crosshair;
   max-width: 100%;
+  touch-action: none; /* Prevents mobile browser pinch-to-zoom and scrolling while dragging/resizing */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Hide loupe preview on desktop/large screens by default */
