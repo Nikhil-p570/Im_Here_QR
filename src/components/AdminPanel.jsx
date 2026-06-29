@@ -2825,7 +2825,7 @@ const AdminPanel = ({
                           className={`mode-btn ${selectedVersion === 1 ? 'active' : ''}`}
                           style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
                         >
-                          <span style={{ fontWeight: 700 }}>Custom Image (V1)</span>
+                          <span style={{ fontWeight: 700 }}>Photo-Front (V1)</span>
                           <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Photo | Back: Logo</span>
                         </button>
                         <button
@@ -2834,7 +2834,7 @@ const AdminPanel = ({
                           className={`mode-btn ${selectedVersion === 2 ? 'active' : ''}`}
                           style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
                         >
-                          <span style={{ fontWeight: 700 }}>Logo Edition (V2)</span>
+                          <span style={{ fontWeight: 700 }}>Photo-Back (V2)</span>
                           <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Logo | Back: Photo</span>
                         </button>
                       </div>
