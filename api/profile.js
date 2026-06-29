@@ -74,7 +74,7 @@ export default async function handler(req, res) {
       return res.status(429).json({ success: false, error: 'Too many registration or update requests. Please wait 1 minute.' });
     }
   } else if (req.method === 'GET') {
-    if (isRateLimited(ip, 30, 60 * 1000)) {
+    if (isRateLimited(ip, 100, 60 * 1000)) {
       return res.status(429).json({ success: false, error: 'Too many lookup requests. Please wait 1 minute.' });
     }
   }
