@@ -1162,35 +1162,37 @@ const OrderPage = () => {
     <div className="order-page">
 
       {/* ── Hero ── */}
-      <div className="order-hero">
-        <div className="order-hero-container">
-          <div className="order-hero-content">
-            <div className="order-hero-badge">Premium Smart QR Tags</div>
-            <h1>Design a tag that's<br /><span>uniquely yours.</span></h1>
-            <p>
-              Secure your belongings with a beautifully crafted metal or acrylic tag. One scan brings it all back.
-            </p>
-            <div className="hero-trust-row">
-              <div className="trust-pill"><Tag size={13} /> From ₹{prices.classicDiscounted}</div>
-              <div className="trust-pill"><Truck size={13} /> Free Shipping</div>
-              <div className="trust-pill"><Zap size={13} /> Water Resistant</div>
-              <div className="trust-pill"><ShieldCheck size={13} /> No App Required</div>
+      {cartItems.length === 0 && (
+        <div className="order-hero">
+          <div className="order-hero-container">
+            <div className="order-hero-content">
+              <div className="order-hero-badge">Premium Smart QR Tags</div>
+              <h1>Design a tag that's<br /><span>uniquely yours.</span></h1>
+              <p>
+                Secure your belongings with a beautifully crafted metal or acrylic tag. One scan brings it all back.
+              </p>
+              <div className="hero-trust-row">
+                <div className="trust-pill"><Tag size={13} /> From ₹{prices.classicDiscounted}</div>
+                <div className="trust-pill"><Truck size={13} /> Free Shipping</div>
+                <div className="trust-pill"><Zap size={13} /> Water Resistant</div>
+                <div className="trust-pill"><ShieldCheck size={13} /> No App Required</div>
+              </div>
+              <button className="btn-primary-large" onClick={() => {
+                const el = document.getElementById('style-selection');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}>
+                Start Designing
+              </button>
             </div>
-            <button className="btn-primary-large" onClick={() => {
-              const el = document.getElementById('style-selection');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}>
-              Start Designing
-            </button>
-          </div>
-          <div className="order-hero-visual">
-            <div className="floating-hero-render">
-              <div className="hero-mockup personalised-hero-mockup" />
-              <div className="hero-mockup classic-hero-mockup" />
+            <div className="order-hero-visual">
+              <div className="floating-hero-render">
+                <div className="hero-mockup personalised-hero-mockup" />
+                <div className="hero-mockup classic-hero-mockup" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="order-main">
 
