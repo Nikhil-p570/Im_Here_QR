@@ -443,6 +443,10 @@
     grid-template-columns: 1fr;
     gap: 16px;
   }
+  .configurator-preview-sticky {
+    padding: 16px 12px 20px;
+    border-radius: 24px;
+  }
 }
 
 .configurator-controls-column {
