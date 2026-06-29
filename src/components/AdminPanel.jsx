@@ -468,8 +468,12 @@ const AdminPanel = ({
           bgImageMissing = true;
         }
       } else {
-        if (logoCanvas) {
-          ctx.drawImage(logoCanvas, 0, 0, canvas.width, canvas.height);
+        if (uploadedImg) {
+          const s = cropState.scale || 1;
+          const srcX = cropState.x * s;
+          const srcY = cropState.y * s;
+          const srcSize = cropState.size * s;
+          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, canvas.width, canvas.height);
           if (overlayDarkness > 0) {
             ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -861,19 +865,27 @@ const AdminPanel = ({
     return newId;
   };
 
-  // Helper: load customer's image from Storage and create a cropped logoCanvas
-  const loadLogoCanvas = (imageUrl) => {
+  // Helper: load customer's image from Storage/base64 and create a high-res cropped canvas
+  const loadCroppedLogoCanvas = (imageUrl, cropX, cropY, cropSize) => {
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.onload = () => {
         const out = document.createElement('canvas');
-        out.width = 320;
-        out.height = 320;
+        out.width = 640;
+        out.height = 640;
         try {
-          out.getContext('2d').drawImage(img, 0, 0, 320, 320);
+          let cx = cropX;
+          let cy = cropY;
+          let cSize = cropSize;
+          if (cx === undefined || cy === undefined || !cSize) {
+            cSize = Math.min(img.width, img.height);
+            cx = Math.round((img.width - cSize) / 2);
+            cy = Math.round((img.height - cSize) / 2);
+          }
+          out.getContext('2d').drawImage(img, cx, cy, cSize, cSize, 0, 0, 640, 640);
         } catch (e) {
-          console.warn('loadLogoCanvas drawImage failed:', e);
+          console.warn('loadCroppedLogoCanvas drawImage failed:', e);
         }
         resolve(out);
       };
@@ -981,8 +993,11 @@ const AdminPanel = ({
           // Load customer image for personalised QR (fallback to tempBase64Image if not yet uploaded to Cloudinary)
           if (item.typeofqr === 'personalised' && (item.imageUrl || item.tempBase64Image)) {
             setAppendProgress(prev => ({ ...prev, message: `Loading personalised image...` }));
-            logoCanvas = await loadLogoCanvas(
-              item.imageUrl || item.tempBase64Image
+            logoCanvas = await loadCroppedLogoCanvas(
+              item.imageUrl || item.tempBase64Image,
+              item.srcCropX,
+              item.srcCropY,
+              item.srcCropSize
             );
           }
 
@@ -1328,17 +1343,17 @@ const AdminPanel = ({
     // 2. Restore the original QR code with background for screen preview
     await handleGenerateQR(qrUrl.trim(), false);
 
-    const logoCanvas = getLogoCanvas();
+    const s = cropState.scale || 1;
     const entry = {
       qrUrl: transparentQrUrl, // Store transparent version in the PDF entry!
       destUrl: qrUrl.trim(),
       id: result?.id || null,
       typeofqr: uploadedImg ? 'personalised' : (bgColor === '#ffffff' ? 'classic_white' : 'classic_black'),
       version: selectedVersion,
-      imageUrl: logoCanvas ? logoCanvas.toDataURL('image/jpeg', 0.9) : '',
-      srcCropX: cropState.x,
-      srcCropY: cropState.y,
-      srcCropSize: cropState.size,
+      imageUrl: uploadedImg ? uploadedImg.src : '',
+      srcCropX: Math.round(cropState.x * s),
+      srcCropY: Math.round(cropState.y * s),
+      srcCropSize: Math.round(cropState.size * s),
       isManual: true
     };
     setAppendedQrs(prev => [...prev, entry]);
@@ -1830,8 +1845,10 @@ const AdminPanel = ({
     return null;
   };
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (appendedQrs.length === 0) return;
+
+    setShipmentActionProgress({ active: true, message: "Preparing frontside print sheet..." });
 
     const pdf = new jsPDF({
       orientation: "portrait",
@@ -1847,7 +1864,8 @@ const AdminPanel = ({
     const gapX = 2;
     const gapY = 4;
 
-    appendedQrs.forEach((entry, index) => {
+    for (let index = 0; index < appendedQrs.length; index++) {
+      const entry = appendedQrs[index];
       // Support both new {qrUrl, id} objects and legacy plain-string URLs from old localStorage
       const qrUrl = entry?.qrUrl ?? entry;
       const pageIndex = index % itemsPerPage;
@@ -1880,7 +1898,15 @@ const AdminPanel = ({
         } else {
           // Version 1 (Custom Image) frontside background is the custom cropped image
           if (entry.imageUrl) {
-            pdf.addImage(entry.imageUrl, "JPEG", x + 2.5, y + 2.5, 52, 52);
+            const customCanvas = await loadCroppedLogoCanvas(
+              entry.imageUrl,
+              entry.srcCropX,
+              entry.srcCropY,
+              entry.srcCropSize
+            );
+            if (customCanvas) {
+              pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 52, 52);
+            }
           }
         }
       } else if (entry?.typeofqr === 'classic_black') {
@@ -1891,12 +1917,12 @@ const AdminPanel = ({
         pdf.rect(x + 2.5, y + 2.5, 52, 52, "F");
       }
 
-      // 3. Add QR image centered (49mm x 49mm), leaving 1.5mm horizontal & 1.5mm vertical margin inside the 52x52 inner area
+      // 3. Add QR image centered (49mm x 49mm), leaving 1.5mm margin
       pdf.addImage(qrUrl, "PNG", x + 4.0, y + 4.0, 49, 49);
-
-    });
+    }
 
     pdf.save("qr-print-sheet.pdf");
+    setShipmentActionProgress({ active: false, message: "" });
   };
 
   const handleDownloadLogoPdf = async () => {
@@ -1935,8 +1961,11 @@ const AdminPanel = ({
       // 1. Add appropriate backside cover (fills the entire 52x52 box for sublimation bleed)
       if (entry.typeofqr === 'personalised' && entry.version === 2) {
         if (entry.imageUrl) {
-          const customCanvas = await loadLogoCanvas(
-            entry.imageUrl
+          const customCanvas = await loadCroppedLogoCanvas(
+            entry.imageUrl,
+            entry.srcCropX,
+            entry.srcCropY,
+            entry.srcCropSize
           );
           if (customCanvas) {
             pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 52, 52);
