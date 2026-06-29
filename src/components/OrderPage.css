@@ -365,7 +365,7 @@
 }
 
 .premium-card-content h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: #0f172a;
@@ -373,7 +373,7 @@
 }
 
 .emotional-copy {
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   color: #475569;
   line-height: 1.5;
   margin: 0;
@@ -414,11 +414,11 @@
 }
 
 .tag-type-cta {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: #6366f1;
   background: rgba(99, 102, 241, 0.08);
-  padding: 10px 20px;
+  padding: 8px 16px;
   border-radius: 20px;
   transition: all 0.3s ease;
 }
