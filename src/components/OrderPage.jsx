@@ -1559,7 +1559,7 @@ const OrderPage = () => {
                       >
                         <RotateCw size={14} /> Flip Tag
                       </button>
-                      <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
                     </div>
                   </div>
 
@@ -1760,7 +1760,7 @@ const OrderPage = () => {
                     >
                       <RotateCw size={12} /> Flip Tag
                     </button>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
 
                     <div className="classic-preset-name" style={{ color: preset.dotColor }}>
                       {preset.name}
@@ -2138,7 +2138,7 @@ const OrderPage = () => {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', alignItems: 'center', width: '100%' }}>
-              <p style={{ margin: '0', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>60 mm × 45 mm</p>
+              <p style={{ margin: '0', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%' }}>
                 <button
                   onClick={() => setIsModalFlipped(f => !f)}
