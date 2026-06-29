@@ -1587,7 +1587,7 @@ const OrderPage = () => {
                           gap: '4px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>1. Custom Image</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>1. Photo-Front</div>
                         <div style={{ fontSize: '0.72rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
                           <div>Front: QR on custom photo</div>
                           <div>Back: Full logo cover</div>
@@ -1611,7 +1611,7 @@ const OrderPage = () => {
                           gap: '4px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>2. Logo Edition</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>2. Photo-Back</div>
                         <div style={{ fontSize: '0.72rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
                           <div>Front: QR on logo icon</div>
                           <div>Back: Custom photo cover</div>

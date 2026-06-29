@@ -435,13 +435,13 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
           className={`lp-version-toggle-btn ${activeVersion === 1 ? 'active' : ''}`}
           onClick={() => setActiveVersion(1)}
         >
-          Custom Image
+          Photo-Front
         </button>
         <button 
           className={`lp-version-toggle-btn ${activeVersion === 2 ? 'active' : ''}`}
           onClick={() => setActiveVersion(2)}
         >
-          Logo Edition
+          Photo-Back
         </button>
       </div>
     </div>
@@ -819,7 +819,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <p className="lp-section-subtitle" style={{ margin: '0 auto' }}>
               Each tag features your own artwork or photography — fully scannable,
               fully yours. Flip any tag to see both sides. We offer <strong>two customizable styles</strong> — 
-              <span className="shining-gold-text">Custom Image</span> and <span className="shining-gold-text">Logo Edition</span>. Click either below to preview them live!
+              <span className="shining-gold-text">Photo-Front</span> and <span className="shining-gold-text">Photo-Back</span>. Click either below to preview them live!
             </p>
           </div>
 
