@@ -1546,7 +1546,7 @@ html {
 .shining-gold-text {
   font-weight: 800;
   color: #ffd700; /* Bright gold fallback */
-  background: linear-gradient(90deg, #b8860b 0%, #ffd700 35%, #ffffff 50%, #ffd700 65%, #b8860b 100%);
+  background: linear-gradient(90deg, #b8860b 0%, #ffd700 44%, rgba(255, 255, 255, 0.9) 50%, #ffd700 56%, #b8860b 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
