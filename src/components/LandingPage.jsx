@@ -249,15 +249,20 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
 
 
       {!hideUI && (
-        <button className="lp-flip-btn" onClick={() => setIsFlipped(f => !f)}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M17 1l4 4-4 4" />
-            <path d="M3 11V9a4 4 0 014-4h14" />
-            <path d="M7 23l-4-4 4-4" />
-            <path d="M21 13v2a4 4 0 01-4 4H3" />
-          </svg>
-          {isFlipped ? 'See QR Side' : 'Flip to Back'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+          <button className="lp-flip-btn" onClick={() => setIsFlipped(f => !f)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 1l4 4-4 4" />
+              <path d="M3 11V9a4 4 0 014-4h14" />
+              <path d="M7 23l-4-4 4-4" />
+              <path d="M21 13v2a4 4 0 01-4 4H3" />
+            </svg>
+            {isFlipped ? 'See QR Side' : 'Flip to Back'}
+          </button>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8', letterSpacing: '0.03em', fontWeight: 500 }}>
+            50 mm × 50 mm
+          </span>
+        </div>
       )}
     </div>
   );

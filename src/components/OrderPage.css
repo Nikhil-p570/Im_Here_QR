@@ -1385,3 +1385,30 @@
   color: #10b981;
 }
 
+/* 3D card flip animation for all preview keychains */
+.hanging-keychain-wrapper {
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.hanging-keychain-wrapper.flipped {
+  transform: rotateY(180deg);
+}
+
+.hanging-keychain-wrapper .keychain-canvas,
+.hanging-keychain-wrapper .classic-canvas,
+.hanging-keychain-wrapper img,
+.hanging-keychain-wrapper .tag-hole-eyelet {
+  transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+.hanging-keychain-wrapper.flipped .keychain-canvas,
+.hanging-keychain-wrapper.flipped .classic-canvas,
+.hanging-keychain-wrapper.flipped img,
+.hanging-keychain-wrapper.flipped .tag-hole-eyelet {
+  transform: rotateY(180deg);
+}
+
+
