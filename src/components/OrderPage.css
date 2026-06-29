@@ -611,6 +611,80 @@
   max-width: 100%;
 }
 
+/* Hide loupe preview on desktop/large screens by default */
+.mobile-crop-loupe-container {
+  display: none;
+}
+
+/* Show floating magnifier loupe preview on mobile screens when dragging/resizing */
+@media (max-width: 900px) {
+  .mobile-crop-loupe-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: absolute;
+    top: 12px;
+    right: 20px;
+    width: 140px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1.5px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
+    padding: 8px 12px 12px;
+    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.22), 0 4px 8px rgba(15, 23, 42, 0.08);
+    z-index: 1000;
+    pointer-events: none;
+    animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top right;
+  }
+
+  .mobile-crop-loupe-container .keychain-idle-swing {
+    animation: none !important; /* disable swing in floating preview to keep it stable */
+    width: 100%;
+    align-items: flex-end !important;
+  }
+
+  .mobile-crop-loupe-container .hanging-keychain-wrapper {
+    align-items: flex-end !important;
+    width: 100%;
+  }
+
+  .mobile-crop-loupe-container .keychain-canvas {
+    width: 110px !important;
+    height: 120px !important;
+    border-radius: 8px !important;
+  }
+
+  .mobile-crop-loupe-container svg {
+    width: 30px !important;
+    height: 57px !important;
+    margin-bottom: -19px !important;
+    margin-right: 0px !important; /* Shift slightly right to align perfectly */
+  }
+
+  .mobile-crop-loupe-container .tag-hole-eyelet {
+    width: 8px !important;
+    height: 8px !important;
+    border-width: 1.8px !important;
+    top: 5px !important;
+    right: 10px !important;
+  }
+}
+
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+
 .crop-box {
   position: absolute;
   box-sizing: border-box;

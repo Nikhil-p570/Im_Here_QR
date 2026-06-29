@@ -324,7 +324,7 @@ const OrderPage = () => {
   }, []);
 
   /* ── Refs ── */
-  const cropCanvasRef = useRef(null);
+  const mobileLoupeCanvasRef = useRef(null);
   const keychainCanvasRef = useRef(null);
   const midnightCanvasRef = useRef(null);
   const daylightCanvasRef = useRef(null);
@@ -417,13 +417,23 @@ const OrderPage = () => {
   /* ─────────────────────────────────────────────────
      Draw crop editor background
   ───────────────────────────────────────────────── */
+
+
+  /* ─────────────────────────────────────────────────
+     Copy live keychain preview to floating mobile preview
+  ───────────────────────────────────────────────── */
   useEffect(() => {
-    if (!cropCanvasRef.current || !uploadedImg) return;
-    const canvas = cropCanvasRef.current;
-    canvas.width = cropState.dispW;
-    canvas.height = cropState.dispH;
-    canvas.getContext('2d').drawImage(uploadedImg, 0, 0, cropState.dispW, cropState.dispH);
-  }, [cropState.dispW, cropState.dispH, uploadedImg]);
+    if (!mobileLoupeCanvasRef.current || !keychainCanvasRef.current || (!dragging && !resizing)) return;
+    const dest = mobileLoupeCanvasRef.current;
+    const src = keychainCanvasRef.current;
+    dest.width = src.width;
+    dest.height = src.height;
+    const ctx = dest.getContext('2d');
+    ctx.clearRect(0, 0, dest.width, dest.height);
+    ctx.drawImage(src, 0, 0);
+  }, [cropState, dragging, resizing]);
+
+
 
   /* ─────────────────────────────────────────────────
      Draw keychain preview
@@ -719,7 +729,7 @@ const OrderPage = () => {
       const img = new Image();
       img.onload = () => {
         setUploadedImg(img);
-        const maxW = 280;
+        const maxW = 340;
         const scaleDown = Math.min(1, maxW / img.width);
         const dispW = Math.round(img.width * scaleDown);
         const dispH = Math.round(img.height * scaleDown);
@@ -763,7 +773,7 @@ const OrderPage = () => {
     const rotatedImg = new Image();
     rotatedImg.onload = () => {
       setUploadedImg(rotatedImg);
-      const maxW = 280;
+      const maxW = 340;
       const scaleDown = Math.min(1, maxW / rotatedImg.width);
       const dispW = Math.round(rotatedImg.width * scaleDown);
       const dispH = Math.round(rotatedImg.height * scaleDown);
@@ -1374,7 +1384,37 @@ const OrderPage = () => {
                     onPointerCancel={() => clearTimeout(longPressTimer.current)}
                     onPointerMove={() => clearTimeout(longPressTimer.current)}
                   >
-                    <canvas ref={cropCanvasRef} style={{ display: 'block', borderRadius: 8 }} />
+                    <img
+                      src={uploadedImg.src}
+                      alt="To Crop"
+                      style={{ display: 'block', width: '100%', height: '100%', borderRadius: 8, pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+                    />
+
+                    {/* Floating Mobile preview showing the entire keychain in real time while dragging/resizing */}
+                    {(dragging || resizing) && (
+                      <div className="mobile-crop-loupe-container">
+                        <div className="keychain-idle-swing">
+                          <div className="hanging-keychain-wrapper">
+                            <KeyringSvg />
+                            <div style={{ position: 'relative' }}>
+                              <canvas ref={mobileLoupeCanvasRef} className="keychain-canvas premium-canvas-shadow" />
+                              <div className="tag-hole-eyelet" style={{
+                                position: 'absolute',
+                                top: '12px',
+                                right: '22px',
+                                width: '16px',
+                                height: '16px',
+                                borderRadius: '50%',
+                                border: '3.5px solid #cbd5e1',
+                                background: '#0a0a0a',
+                                boxShadow: 'inset 0 1.5px 3px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1)',
+                                zIndex: 6
+                              }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Visual crop box with rule-of-thirds grid, corners and midpoint markers */}
                     <div
