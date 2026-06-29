@@ -1162,7 +1162,7 @@ const OrderPage = () => {
     <div className="order-page">
 
       {/* ── Hero ── */}
-      {cartItems.length === 0 && (
+      {step === 'home' && cartItems.length === 0 && (
         <div className="order-hero">
           <div className="order-hero-container">
             <div className="order-hero-content">
