@@ -1564,7 +1564,10 @@ const OrderPage = () => {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '20px 0', textAlign: 'left', width: '100%' }}>
-                    <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>Select Tag Style Version:</label>
+                    <label style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '2px' }}>Select Tag Style Version:</label>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '-4px 0 6px', lineHeight: 1.4 }}>
+                      We offer two style options. Choose either one, and click <strong>Flip Tag</strong> above to see how the back side looks!
+                    </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                       <button
                         type="button"
