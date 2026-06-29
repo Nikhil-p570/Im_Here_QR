@@ -1568,12 +1568,12 @@ const OrderPage = () => {
                     <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '-4px 0 6px', lineHeight: 1.4 }}>
                       We offer two style options. Choose either one, and click <strong>Flip Tag</strong> above to see how the back side looks!
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '10px', width: '100%' }}>
                       <button
                         type="button"
                         onClick={() => { setSelectedVersion(1); setIsPreviewFlipped(false); }}
                         style={{
-                          width: '100%',
+                          flex: 1,
                           padding: '12px 16px',
                           borderRadius: '12px',
                           border: selectedVersion === 1 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
@@ -1597,7 +1597,7 @@ const OrderPage = () => {
                         type="button"
                         onClick={() => { setSelectedVersion(2); setIsPreviewFlipped(true); }}
                         style={{
-                          width: '100%',
+                          flex: 1,
                           padding: '12px 16px',
                           borderRadius: '12px',
                           border: selectedVersion === 2 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
