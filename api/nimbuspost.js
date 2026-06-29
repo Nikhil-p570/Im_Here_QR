@@ -61,7 +61,14 @@ async function getNimbusToken() {
   return tokenCache.token;
 }
 
+import { isRateLimited } from './utils/rate-limiter.js';
+
 export default async function handler(req, res) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'ip_unknown';
+  if (isRateLimited(ip, 20, 60 * 1000)) {
+    return res.status(429).json({ success: false, error: 'Too many requests to Shipping API. Please wait 1 minute.' });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }

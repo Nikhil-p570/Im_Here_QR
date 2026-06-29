@@ -54,6 +54,8 @@ const hashString = (str, salt) => {
   return crypto.createHmac('sha256', salt).update(str).digest('hex');
 };
 
+import { isRateLimited } from './utils/rate-limiter.js';
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -63,6 +65,18 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Rate Limiting checks
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'ip_unknown';
+  if (req.method === 'POST') {
+    if (isRateLimited(ip, 15, 60 * 1000)) {
+      return res.status(429).json({ success: false, error: 'Too many registration or update requests. Please wait 1 minute.' });
+    }
+  } else if (req.method === 'GET') {
+    if (isRateLimited(ip, 30, 60 * 1000)) {
+      return res.status(429).json({ success: false, error: 'Too many lookup requests. Please wait 1 minute.' });
+    }
   }
 
   try {

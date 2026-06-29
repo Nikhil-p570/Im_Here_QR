@@ -27,7 +27,14 @@ const getEnv = (key) => {
   return '';
 };
 
+import { isRateLimited } from './utils/rate-limiter.js';
+
 export default function handler(req, res) {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'ip_unknown';
+  if (isRateLimited(ip, 10, 60 * 1000)) {
+    return res.status(429).json({ success: false, error: 'Too many login attempts. Please wait 1 minute.' });
+  }
+
   // Allow JSON parsing natively in Vercel handlers
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
