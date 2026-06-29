@@ -1541,3 +1541,26 @@ html {
 .lp-reveal-delay-4 {
   transition-delay: 0.4s;
 }
+
+/* ── Gold Shining Text ── */
+.shining-gold-text {
+  font-weight: 800;
+  color: #ffd700; /* Bright gold fallback */
+  background: linear-gradient(90deg, #b8860b 0%, #ffd700 35%, #ffffff 50%, #ffd700 65%, #b8860b 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shine-gold 3s linear infinite;
+  display: inline-block;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+  font-family: inherit;
+}
+
+@keyframes shine-gold {
+  0% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}

@@ -818,8 +818,8 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <h2 className="lp-section-title">Not just functional. Beautiful.</h2>
             <p className="lp-section-subtitle" style={{ margin: '0 auto' }}>
               Each tag features your own artwork or photography — fully scannable,
-              fully yours. Flip any tag to see both sides. We offer two customizable styles — 
-              Custom Image and Logo Edition. Click either below to preview them live!
+              fully yours. Flip any tag to see both sides. We offer <strong>two customizable styles</strong> — 
+              <span className="shining-gold-text">Custom Image</span> and <span className="shining-gold-text">Logo Edition</span>. Click either below to preview them live!
             </p>
           </div>
 
