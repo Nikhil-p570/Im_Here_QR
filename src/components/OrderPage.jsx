@@ -1160,6 +1160,21 @@ const OrderPage = () => {
      ══════════════════════════════════════════════════ */
   return (
     <div className="order-page">
+      {/* ── Navbar ── */}
+      <nav className="lp-nav scrolled">
+        <a href="/" className="lp-nav-logo">
+          <img src="/logo icon black.png" alt="I'm Here Logo" />
+          <span className="lp-nav-logo-text">I'M HERE</span>
+        </a>
+        <ul className="lp-nav-links">
+          <li><a href="/#how-it-works">How It Works</a></li>
+          <li><a href="/#products">Products</a></li>
+          <li><a href="/#why-us">Why Us</a></li>
+        </ul>
+        <div className="lp-nav-cta">
+          {/* Empty to exclude 'Get Your Tag' button */}
+        </div>
+      </nav>
 
       {/* ── Hero ── */}
       {step === 'home' && cartItems.length === 0 && (
