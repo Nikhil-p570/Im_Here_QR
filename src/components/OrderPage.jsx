@@ -20,7 +20,7 @@ const CLASSIC_PRESETS = [
     name: 'Midnight',
     dotColor: '#ffffff',
     bgColor: '#0a0a0a',
-    cardStyle: { background: '#0a0a0a' },
+    cardStyle: { background: '#ffffff', border: '1px solid #e2e8f0' },
     label: 'White dots · Black background'
   },
   {
@@ -28,7 +28,7 @@ const CLASSIC_PRESETS = [
     name: 'Daylight',
     dotColor: '#111111',
     bgColor: '#ffffff',
-    cardStyle: { background: '#f1f5f9' },
+    cardStyle: { background: '#ffffff', border: '1px solid #e2e8f0' },
     label: 'Black dots · White background'
   }
 ];
@@ -729,7 +729,7 @@ const OrderPage = () => {
       const img = new Image();
       img.onload = () => {
         setUploadedImg(img);
-        const maxW = 340;
+        const maxW = Math.min(340, window.innerWidth - 48);
         const scaleDown = Math.min(1, maxW / img.width);
         const dispW = Math.round(img.width * scaleDown);
         const dispH = Math.round(img.height * scaleDown);
@@ -773,7 +773,7 @@ const OrderPage = () => {
     const rotatedImg = new Image();
     rotatedImg.onload = () => {
       setUploadedImg(rotatedImg);
-      const maxW = 340;
+      const maxW = Math.min(340, window.innerWidth - 48);
       const scaleDown = Math.min(1, maxW / rotatedImg.width);
       const dispW = Math.round(rotatedImg.width * scaleDown);
       const dispH = Math.round(rotatedImg.height * scaleDown);
@@ -1189,7 +1189,6 @@ const OrderPage = () => {
               <div className="hero-trust-row">
                 <div className="trust-pill"><Tag size={13} /> From ₹{prices.classicDiscounted}</div>
                 <div className="trust-pill"><Truck size={13} /> Free Shipping</div>
-                <div className="trust-pill"><Zap size={13} /> Water Resistant</div>
                 <div className="trust-pill"><ShieldCheck size={13} /> No App Required</div>
               </div>
               <button className="btn-primary-large" onClick={() => {
@@ -1228,7 +1227,10 @@ const OrderPage = () => {
                   {/* Personalised */}
                   <div
                     className="tag-type-card personalised"
-                    onClick={() => setStep('personalised')}
+                    onClick={() => {
+                      setStep('personalised');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     role="button"
                     id="btn-choose-personalised"
                   >
@@ -1257,7 +1259,10 @@ const OrderPage = () => {
                   {/* Classic */}
                   <div
                     className="tag-type-card classic"
-                    onClick={() => setStep('classic')}
+                    onClick={() => {
+                      setStep('classic');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                     role="button"
                     id="btn-choose-classic"
                   >
@@ -1375,7 +1380,6 @@ const OrderPage = () => {
                         <ul style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "9px", marginBottom: "22px" }}>
                           <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Drag</strong> the square to choose the best part of your photo.</li>
                           <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Pull the corners</strong> to resize the crop area.</li>
-                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}>The <strong style={{ color: "#0f172a" }}>live preview</strong> is {window.innerWidth <= 900 ? "available below — scroll down to check it." : "on the right — adjust until it looks perfect."}</li>
                           <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Long-press</strong> the image to switch the square colour (white ↔ black) for better visibility.</li>
                         </ul>
                         <button onClick={() => setShowCropHint(false)} style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}>Got it — let me adjust!</button>
@@ -1391,8 +1395,11 @@ const OrderPage = () => {
 
                   <div
                     className="crop-editor-wrap"
-                    style={{ width: cropState.dispW, height: cropState.dispH }}
-                    onPointerDown={() => {
+                    style={{ width: cropState.dispW, height: cropState.dispH, touchAction: 'pan-y' }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    onPointerDown={(e) => {
+                      // Only start long-press timer if touch is NOT on the crop box or handles
+                      // (those elements stop propagation, so if we reach here it's on the image)
                       longPressTimer.current = setTimeout(() => {
                         setCropBoxDark(d => !d);
                       }, 600);
@@ -1404,7 +1411,8 @@ const OrderPage = () => {
                     <img
                       src={uploadedImg.src}
                       alt="To Crop"
-                      style={{ display: 'block', width: '100%', height: '100%', borderRadius: 8, pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{ display: 'block', width: '100%', height: '100%', borderRadius: 8, pointerEvents: 'none', userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}
                     />
 
                     {/* Floating Mobile preview showing the entire keychain in real time while dragging/resizing */}
@@ -1448,7 +1456,7 @@ const OrderPage = () => {
                           ? '0 0 0 2px rgba(99,102,241,0.2)'
                           : cropBoxDark ? '0 0 0 2px rgba(0,0,0,0.15)' : '0 0 0 2px rgba(255,255,255,0.2)'
                       }}
-                      onPointerDown={handleCropBoxDown}
+                      onPointerDown={(e) => { e.stopPropagation(); clearTimeout(longPressTimer.current); handleCropBoxDown(e); }}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}
                       onPointerCancel={handlePointerUp}
@@ -1489,13 +1497,6 @@ const OrderPage = () => {
 
                   {/* Controls below crop editor */}
                   <div className="crop-controls">
-                    <button
-                      className={`lock-btn ${cropLocked ? 'locked' : ''}`}
-                      onClick={() => setCropLocked(l => !l)}
-                      id="btn-lock-crop"
-                    >
-                      {cropLocked ? <><Lock size={14} /> Locked</> : <><Unlock size={14} /> Lock Position</>}
-                    </button>
 
                     <button
                       className="change-photo-btn"
@@ -1542,11 +1543,11 @@ const OrderPage = () => {
                     className="keychain-frame premium-tangible-preview"
                     style={{ ...tiltStyle, transition: 'transform 0.1s ease-out' }}
                   >
-                    <div className={`keychain-idle-swing ${isPreviewFlipped ? 'flipped' : ''}`}>
+                    <div className="keychain-idle-swing">
                       <div
                         className={`hanging-keychain-wrapper ${isPreviewFlipped ? 'flipped' : ''}`}
                         style={{
-                          alignItems: isPreviewFlipped ? 'flex-start' : 'flex-end'
+                          alignItems: 'flex-end'
                         }}
                       >
                         <KeyringSvg />
@@ -1555,8 +1556,7 @@ const OrderPage = () => {
                           <div className="tag-hole-eyelet" style={{
                             position: 'absolute',
                             top: '12px',
-                            right: isPreviewFlipped ? 'auto' : '22px',
-                            left: isPreviewFlipped ? '22px' : 'auto',
+                            right: '22px',
                             width: '16px',
                             height: '16px',
                             borderRadius: '50%',
@@ -1585,13 +1585,13 @@ const OrderPage = () => {
                     <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '-4px 0 6px', lineHeight: 1.4 }}>
                       We offer two style options. Choose either one, and click <strong>Flip Tag</strong> above to see how the back side looks!
                     </p>
-                    <div style={{ display: 'flex', flexDirection: 'row', gap: '10px', width: '100%' }}>
+                    <div style={{ display: 'flex', flexDirection: 'row', gap: '8px', width: '100%' }}>
                       <button
                         type="button"
                         onClick={() => { setSelectedVersion(1); setIsPreviewFlipped(false); }}
                         style={{
                           flex: 1,
-                          padding: '12px 16px',
+                          padding: '10px 10px',
                           borderRadius: '12px',
                           border: selectedVersion === 1 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
                           background: selectedVersion === 1 ? 'var(--accent-indigo)' : 'transparent',
@@ -1601,11 +1601,11 @@ const OrderPage = () => {
                           transition: 'all 0.2s',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '4px'
+                          gap: '3px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>1. Photo-Front</div>
-                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>1. Photo-Front</div>
+                        <div style={{ fontSize: '0.68rem', color: selectedVersion === 1 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.5 }}>
                           <div>Front: QR on custom photo</div>
                           <div>Back: Full logo cover</div>
                         </div>
@@ -1615,7 +1615,7 @@ const OrderPage = () => {
                         onClick={() => { setSelectedVersion(2); setIsPreviewFlipped(true); }}
                         style={{
                           flex: 1,
-                          padding: '12px 16px',
+                          padding: '10px 10px',
                           borderRadius: '12px',
                           border: selectedVersion === 2 ? '2px solid var(--accent-indigo)' : '1px solid var(--border-light)',
                           background: selectedVersion === 2 ? 'var(--accent-indigo)' : 'transparent',
@@ -1625,11 +1625,11 @@ const OrderPage = () => {
                           transition: 'all 0.2s',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '4px'
+                          gap: '3px'
                         }}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>2. Photo-Back</div>
-                        <div style={{ fontSize: '0.72rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>2. Photo-Back</div>
+                        <div style={{ fontSize: '0.68rem', color: selectedVersion === 2 ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)', lineHeight: 1.5 }}>
                           <div>Front: QR on logo icon</div>
                           <div>Back: Custom photo cover</div>
                         </div>
@@ -1716,11 +1716,11 @@ const OrderPage = () => {
                     onClick={() => setClassicPreset(preset.id)}
                     id={`btn-preset-${preset.id}`}
                   >
-                    <div className={`keychain-idle-swing classic-swing ${isFlipped ? 'flipped' : ''}`}>
+                    <div className="keychain-idle-swing classic-swing">
                       <div
                         className={`hanging-keychain-wrapper ${isFlipped ? 'flipped' : ''}`}
                         style={{
-                          alignItems: isFlipped ? 'flex-start' : 'flex-end'
+                          alignItems: 'flex-end'
                         }}
                       >
                         <KeyringSvg width={70} height={133} marginBottom="-43px" marginRight="0px" />
@@ -1732,8 +1732,7 @@ const OrderPage = () => {
                           <div className="tag-hole-eyelet" style={{
                             position: 'absolute',
                             top: '15px',
-                            right: isFlipped ? 'auto' : '25px',
-                            left: isFlipped ? '25px' : 'auto',
+                            right: '25px',
                             width: '20px',
                             height: '20px',
                             borderRadius: '50%',
@@ -1762,9 +1761,9 @@ const OrderPage = () => {
                         marginBottom: '10px',
                         padding: '6px 14px',
                         borderRadius: '20px',
-                        background: preset.id === 'midnight' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.05)',
-                        border: preset.id === 'midnight' ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(0, 0, 0, 0.12)',
-                        color: preset.id === 'midnight' ? '#ffffff' : '#111111',
+                        background: 'rgba(0, 0, 0, 0.04)',
+                        border: '1px solid rgba(0, 0, 0, 0.12)',
+                        color: '#111111',
                         cursor: 'pointer',
                         fontSize: '0.78rem',
                         fontWeight: 600,
@@ -1777,14 +1776,47 @@ const OrderPage = () => {
                     >
                       <RotateCw size={12} /> Flip Tag
                     </button>
-                    <p style={{ margin: '4px 0 0', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
+                    <p style={{ margin: '2px 0 6px', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
 
-                    <div className="classic-preset-name" style={{ color: preset.dotColor }}>
+                    <div className="classic-preset-name" style={{ color: '#0f172a', marginTop: '0' }}>
                       {preset.name}
                     </div>
-                    <div className="classic-preset-label" style={{ color: preset.dotColor, opacity: 0.6 }}>
+                    <div className="classic-preset-label" style={{ color: '#475569', opacity: 0.8, marginBottom: '16px' }}>
                       {preset.label}
                     </div>
+                    
+                    <button 
+                      type="button"
+                      className="btn-select-preset"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setClassicPreset(preset.id);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        fontWeight: 600,
+                        fontSize: '0.9rem',
+                        transition: 'all 0.2s',
+                        cursor: 'pointer',
+                        border: classicPreset === preset.id ? '1px solid #4F46E5' : '1px solid #cbd5e1',
+                        background: classicPreset === preset.id ? '#4F46E5' : '#ffffff',
+                        color: classicPreset === preset.id ? '#ffffff' : '#475569',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      {classicPreset === preset.id ? (
+                        <>Selected <Check size={16} /></>
+                      ) : (
+                        'Select Style'
+                      )}
+                    </button>
+                    
+                    {/* Corner checkmark fallback just in case */}
                     {classicPreset === preset.id && (
                       <div className="classic-check"><Check size={14} /></div>
                     )}
@@ -2121,8 +2153,8 @@ const OrderPage = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className={`keychain-idle-swing zoom-swing ${isModalFlipped ? 'flipped' : ''}`}>
-              <div className={`hanging-keychain-wrapper ${isModalFlipped ? 'flipped' : ''}`} style={{ alignItems: isModalFlipped ? 'flex-start' : 'flex-end' }}>
+            <div className="keychain-idle-swing zoom-swing">
+              <div className={`hanging-keychain-wrapper ${isModalFlipped ? 'flipped' : ''}`} style={{ alignItems: 'flex-end' }}>
                 <KeyringSvg width={69} height={132} marginBottom="-44px" marginRight="0px" />
                 <div style={{ position: 'relative' }}>
                   <img
@@ -2141,8 +2173,7 @@ const OrderPage = () => {
                   <div className="tag-hole-eyelet" style={{
                     position: 'absolute',
                     top: '14px',
-                    right: isModalFlipped ? 'auto' : '25px',
-                    left: isModalFlipped ? '25px' : 'auto',
+                    right: '25px',
                     width: '18px',
                     height: '18px',
                     borderRadius: '50%',
@@ -2237,16 +2268,14 @@ const OrderPage = () => {
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: '56px',
-              height: '56px',
-              borderRadius: '50%',
-              background: 'rgba(99, 102, 241, 0.08)',
-              border: '1.5px solid rgba(99, 102, 241, 0.2)',
-              color: 'var(--accent-indigo)',
-              fontSize: '1.8rem',
+              width: '60px',
+              height: '60px',
+              borderRadius: '18px',
+              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+              boxShadow: '0 8px 24px rgba(99,102,241,0.35)',
               margin: '0 auto 4px'
             }}>
-              ℹ️
+              <Layers size={28} color="#ffffff" strokeWidth={2} />
             </div>
 
             <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>

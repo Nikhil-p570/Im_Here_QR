@@ -182,17 +182,39 @@ html {
 }
 
 /* ══════════════════════════════════════
-   HERO — fits exactly in viewport
+   HERO — content-height, no vh gaps
    ══════════════════════════════════════ */
 .lp-hero-wrapper {
   position: relative;
-  height: 100vh;
-  min-height: 640px;
-  max-height: 1000px;
   display: flex;
   align-items: center;
-  padding-top: 64px;
+  padding-top: 128px;
+  padding-bottom: 80px;
   overflow: hidden;
+}
+
+/* Laptop / true wide screens */
+@media (min-width: 1200px) {
+  .lp-hero-wrapper {
+    padding-top: 140px;
+    padding-bottom: 100px;
+  }
+}
+
+/* Tablet and phone desktop mode (600–1199px) */
+@media (min-width: 600px) and (max-width: 1199px) {
+  .lp-hero-wrapper {
+    padding-top: 104px;
+    padding-bottom: 64px;
+  }
+}
+
+/* Normal mobile (≤599px) */
+@media (max-width: 599px) {
+  .lp-hero-wrapper {
+    padding-top: 88px;
+    padding-bottom: 48px;
+  }
 }
 
 .lp-hero-inner {
@@ -409,7 +431,8 @@ html {
 .lp-usecase-pill {
   padding: 7px 18px;
   background: #fff;
-  border: 1px solid rgba(0, 0, 0, 0.07);
+  border: 1px solid rgba(79, 70, 229, 0.7);
+  /* Stronger violet border */
   border-radius: 100px;
   font-size: 0.82rem;
   font-weight: 600;
@@ -418,7 +441,7 @@ html {
 }
 
 .lp-usecase-pill:hover {
-  border-color: rgba(79, 70, 229, 0.25);
+  border-color: #4F46E5;
   color: #4F46E5;
 }
 
@@ -1295,7 +1318,7 @@ html {
 
   .lp-hero-wrapper {
     height: auto;
-    min-height: 100vh;
+    min-height: unset;
     padding-top: 80px;
     padding-bottom: 20px;
   }
@@ -1545,7 +1568,8 @@ html {
 /* ── Gold Shining Text ── */
 .shining-gold-text {
   font-weight: 800;
-  color: #ffd700; /* Bright gold fallback */
+  color: #ffd700;
+  /* Bright gold fallback */
   background: linear-gradient(90deg, #b8860b 0%, #ffd700 44%, rgba(255, 255, 255, 0.9) 50%, #ffd700 56%, #b8860b 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -1560,7 +1584,24 @@ html {
   0% {
     background-position: 0% center;
   }
+
   100% {
     background-position: 200% center;
   }
-}
+}
+
+/* ══════════════════════════════════════
+   PHONE DESKTOP MODE — remove all 100vh min-heights
+   Applies when viewport is wide but not a real large desktop
+   ══════════════════════════════════════ */
+@media (max-width: 1199px) {
+
+  .lp-problem-wrapper,
+  .lp-hiw-wrapper,
+  .lp-carousel-wrapper,
+  .lp-whyus-wrapper {
+    min-height: unset;
+    height: auto;
+    padding: 60px 0;
+  }
+}

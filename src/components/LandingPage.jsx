@@ -214,7 +214,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div className="lp-keychain-scene">
           <div className={`lp-keychain-card ${isFlipped ? 'is-flipped' : ''}`}>
-            
+
             {/* The keyring is anchored to the card itself, so it flips in 3D with the card */}
             <div style={{ position: 'absolute', top: '-54px', right: '0px', zIndex: 10, transform: 'translateZ(1px)' }}>
               <KeyringSvg />
@@ -271,23 +271,23 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
 // ── Mini QR Grid (decorative) ─────────────────────────────────────
 const MiniQRGrid = () => {
   const pattern = [
-    1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,
-    1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,0,0,1,0,1,1,1,0,1,
-    1,0,1,1,1,0,1,0,1,0,1,0,1,1,1,0,1,
-    1,0,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,0,1,0,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,1,1,0,1,1,0,0,0,0,0,1,1,0,1,0,
-    0,1,0,0,0,1,0,0,1,0,1,0,0,0,1,1,0,
-    1,1,1,0,1,0,0,0,1,0,0,0,0,1,0,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,0,0,1,1,1,0,1,1,1,1,
-    1,0,0,0,0,0,1,0,1,0,0,1,0,0,0,0,1,
-    1,0,1,1,1,0,1,0,0,1,1,0,0,1,1,0,1,
-    1,0,0,0,0,0,1,0,1,1,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,0,1,0,1,0,0,1,1,1,1,
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
+    1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1,
+    1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1,
+    1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1,
+    1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0,
+    0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0,
+    1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1,
+    1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1,
+    1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1,
+    1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1,
+    1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1,
   ];
 
   return (
@@ -342,7 +342,7 @@ const HeroVisual = () => {
                 You just scanned a piece of my physical world. Want to get in touch or return a lost item?
               </p>
             </div>
-            
+
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {/* Owner Name Card */}
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '8px 12px' }}>
@@ -432,17 +432,17 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
   const toggleUI = (
     <div className="lp-version-toggle-container">
       <div className="lp-version-toggle">
-        <div 
-          className="lp-version-toggle-bg" 
-          style={{ transform: `translateX(${activeVersion === 1 ? '0%' : '100%'})` }} 
+        <div
+          className="lp-version-toggle-bg"
+          style={{ transform: `translateX(${activeVersion === 1 ? '0%' : '100%'})` }}
         />
-        <button 
+        <button
           className={`lp-version-toggle-btn ${activeVersion === 1 ? 'active' : ''}`}
           onClick={() => setActiveVersion(1)}
         >
           Photo-Front
         </button>
-        <button 
+        <button
           className={`lp-version-toggle-btn ${activeVersion === 2 ? 'active' : ''}`}
           onClick={() => setActiveVersion(2)}
         >
@@ -466,18 +466,18 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
     }
 
     // Position/style per distance from center (adapted for mobile screen sizes)
-    const xOffsets    = isMobile ? [0, 80, 150] : [0, 155, 278];
-    const zOffsets    = isMobile ? [0, -60, -110] : [0, -90, -160];
-    const scales      = isMobile ? [1, 0.72, 0.54] : [1, 0.80, 0.62];
-    const opacities   = [1, 0.55, 0.28];
-    const rotateYs    = [0, -12, -20];
+    const xOffsets = isMobile ? [0, 80, 150] : [0, 155, 278];
+    const zOffsets = isMobile ? [0, -60, -110] : [0, -90, -160];
+    const scales = isMobile ? [1, 0.72, 0.54] : [1, 0.80, 0.62];
+    const opacities = [1, 0.55, 0.28];
+    const rotateYs = [0, -12, -20];
 
     const sign = diff >= 0 ? 1 : -1;
-    const xOffset  = sign * xOffsets[absDiff];
-    const zOffset  = zOffsets[absDiff];
-    const rotateY  = sign * rotateYs[absDiff];
-    const scale    = scales[absDiff];
-    const opacity  = opacities[absDiff];
+    const xOffset = sign * xOffsets[absDiff];
+    const zOffset = zOffsets[absDiff];
+    const rotateY = sign * rotateYs[absDiff];
+    const scale = scales[absDiff];
+    const opacity = opacities[absDiff];
 
     return {
       transform: `translateX(${xOffset}px) translateZ(${zOffset}px) rotateY(${rotateY}deg) scale(${scale})`,
@@ -492,7 +492,7 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
   return (
     <>
       {toggleUI}
-      <div 
+      <div
         onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
         onTouchEnd={e => {
           if (touchStartX.current === null) return;
@@ -734,7 +734,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
       <section className="lp-usecases-strip">
         <div className="lp-section">
           <div className="lp-usecases-inner">
-            {['Keys', 'Wallets', 'Backpacks', 'Laptops', 'Luggage', 'Pets', 'Bicycles'].map((item, i) => (
+            {['Keys', 'Backpacks', 'Luggage', 'Pets', 'Bicycles'].map((item, i) => (
               <span key={i} className="lp-usecase-pill">{item}</span>
             ))}
           </div>
@@ -799,9 +799,9 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           <div className="lp-hiw-timeline">
             {[
               { n: '01', title: 'Get your tag', desc: 'Order a personalised QR tag. It arrives ready to use — just attach it to whatever matters to you.' },
-              { n: '02', title: 'Register it', desc: 'Claim the tag through a quick registration. Add your contact details, a message, or preferred communication method.' },
+              { n: '02', title: 'Register it', desc: 'Claim the tag through a quick registration. Add your contact details.' },
               { n: '03', title: 'Someone finds it', desc: 'When your item is found, the finder scans the QR with their phone camera. No app install, no signup — it just works.' },
-              { n: '04', title: 'You reconnect', desc: 'Your secure profile appears. The finder contacts you directly. You decide what information to share.' },
+              { n: '04', title: 'You reconnect', desc: 'The finder can contact you directly or share the item\'s location with a single tap.' },
             ].map((step, i) => (
               <div key={i} className={`lp-hiw-step lp-reveal lp-reveal-delay-${i + 1}`}>
                 <div className="lp-hiw-step-number">{step.n}</div>
@@ -823,7 +823,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <h2 className="lp-section-title">Not just functional. Beautiful.</h2>
             <p className="lp-section-subtitle" style={{ margin: '0 auto' }}>
               Each tag features your own artwork or photography — fully scannable,
-              fully yours. Flip any tag to see both sides. We offer <strong>two customizable styles</strong> — 
+              fully yours. Flip any tag to see both sides. We offer <strong>two customizable styles</strong> —
               <span className="shining-gold-text">Photo-Front</span> and <span className="shining-gold-text">Photo-Back</span>. Click either below to preview them live!
             </p>
           </div>
@@ -936,7 +936,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
                 <li><a href="/shipping_policy">Shipping Policy</a></li>
                 <li><a href="/refund_policy">Refund Policy</a></li>
                 <li>
-                  <a 
+                  <a
                     href={isDesktop ? "https://mail.google.com/mail/u/0/?to=nikhil.pabbisetti2006@gmail.com&fs=1&tf=cm" : "mailto:nikhil.pabbisetti2006@gmail.com"}
                     target={isDesktop ? "_blank" : undefined}
                     rel={isDesktop ? "noopener noreferrer" : undefined}
