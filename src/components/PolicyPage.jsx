@@ -308,10 +308,10 @@ const PolicyPage = () => {
   return (
     <div className="app-container" style={{ maxWidth: '760px', alignSelf: 'center', padding: '40px 20px' }}>
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '20px', marginBottom: '24px' }}>
-        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'inherit' }}>
-          <img src="/logo icon black.png" alt="I'm Here" style={{ width: '40px', height: '40px', objectFit: 'contain', borderRadius: '8px' }} />
-          <span style={{ fontSize: '1.25rem', fontWeight: 800, letterSpacing: '-0.02em', background: 'linear-gradient(135deg, #0f172a 50%, #4f46e5 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            I'm Here
+        <a href="/" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}>
+          <img src="/logo icon black.png" alt="I'm Here Logo" style={{ height: '44px', width: 'auto', borderRadius: '12px' }} />
+          <span style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' }}>
+            I'M HERE
           </span>
         </a>
         <a href="/orders" style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--accent-indigo)', textDecoration: 'none' }}>

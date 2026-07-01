@@ -817,8 +817,8 @@ html {
 /* Keychain 3D flip */
 .lp-keychain-scene {
   perspective: 1000px;
-  width: 190px;
-  height: 260px;
+  width: 220px;
+  height: 220px;
   /* Reserve space for the absolute-positioned keyring so it doesn't get clipped on mobile */
   margin-top: 54px;
 }
@@ -1414,12 +1414,11 @@ html {
     padding-left: 12px;
   }
 
-  /* Add vertical timeline line on mobile */
   .lp-hiw-timeline::before {
     display: block;
     content: '';
     position: absolute;
-    left: 40px;
+    left: 50px;
     top: 20px;
     bottom: 20px;
     width: 2px;
@@ -1451,11 +1450,12 @@ html {
 
   .lp-carousel-track-3d {
     width: 240px;
+    left: 30px;
   }
 
   .lp-keychain-scene {
-    width: 150px;
-    height: 210px;
+    width: 180px;
+    height: 180px;
   }
 
   .lp-carousel-stage {

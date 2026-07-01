@@ -1294,9 +1294,20 @@ const OrderPage = () => {
             {/* Cart */}
             {cartItems.length > 0 && (
               <div className="order-section cart-section" ref={cartRef}>
-                <h2 className="order-section-title">
-                  <ShoppingCart size={20} /> Your Order
-                </h2>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <h2 className="order-section-title" style={{ marginBottom: 0 }}>
+                    <ShoppingCart size={20} /> Your Order
+                  </h2>
+                  {showAddMoreOptions ? (
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                      <button className="btn-add-more" onClick={() => { setStep("personalised"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(139, 92, 246, 0.4)", color: "#8b5cf6", background: "rgba(139, 92, 246, 0.05)", padding: '6px 12px' }}><Palette size={16} /> Personalised</button>
+                      <button className="btn-add-more" onClick={() => { setStep("classic"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(6, 182, 212, 0.4)", color: "#06b6d4", background: "rgba(6, 182, 212, 0.05)", padding: '6px 12px' }}><Layers size={16} /> Classic</button>
+                      <button onClick={() => setShowAddMoreOptions(false)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "6px", fontSize: "0.85rem", fontWeight: 600 }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <button className="btn-add-more" id="btn-add-another-tag" onClick={() => setShowAddMoreOptions(true)} style={{ border: '1.5px solid #8b5cf6', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)', padding: '8px 16px' }}><Plus size={16} /> Add Another Tag</button>
+                  )}
+                </div>
 
                 <div className="cart-items-list">
                   {cartItems.map(item => (
@@ -1321,7 +1332,18 @@ const OrderPage = () => {
                         <span style={{ fontWeight: 700, minWidth: 20, textAlign: 'center' }}>{item.qty}</span>
                         <button className="qty-btn-sm" onClick={() => updateCartQty(item.id, 1)}>+</button>
                       </div>
-                      <div className="cart-item-total">₹{item.qty * item.unitPrice}</div>
+                      <div className="cart-item-total">
+                        {item.originalPrice > item.unitPrice ? (
+                          <>
+                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem', marginRight: '6px' }}>
+                              ₹{item.qty * item.originalPrice}
+                            </span>
+                            ₹{item.qty * item.unitPrice}
+                          </>
+                        ) : (
+                          `₹${item.qty * item.unitPrice}`
+                        )}
+                      </div>
                       <button className="cart-item-remove" onClick={() => removeCartItem(item.id)} title="Remove">
                         <Trash2 size={16} />
                       </button>
@@ -1329,6 +1351,15 @@ const OrderPage = () => {
                   ))}
                 </div>
 
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  <span>Packaging Charges</span>
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                  <span>Shipping Charges</span>
+                  <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                </div>
+                
                 {totalSavings > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: '#10b981', fontWeight: 600, marginBottom: '8px' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={14} /> Total Savings</span>
@@ -1342,16 +1373,7 @@ const OrderPage = () => {
                 </div>
 
                 <div className="cart-actions">
-                  {showAddMoreOptions ? (
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
-                      <button className="btn-add-more" onClick={() => { setStep("personalised"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(139, 92, 246, 0.4)", color: "#8b5cf6", background: "rgba(139, 92, 246, 0.05)" }}><Palette size={16} /> Add Personalised Tag</button>
-                      <button className="btn-add-more" onClick={() => { setStep("classic"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(6, 182, 212, 0.4)", color: "#06b6d4", background: "rgba(6, 182, 212, 0.05)" }}><Layers size={16} /> Add Classic Tag</button>
-                      <button onClick={() => setShowAddMoreOptions(false)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "8px 12px", fontSize: "0.85rem", fontWeight: 600 }}>Cancel</button>
-                    </div>
-                  ) : (
-                    <button className="btn-add-more" id="btn-add-another-tag" onClick={() => setShowAddMoreOptions(true)}><Plus size={16} /> Add Another Tag</button>
-                  )}
-                  <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")}>Proceed to Payment →</button>
+                  <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")} style={{ width: '100%', padding: '14px' }}>Proceed to Payment →</button>
                 </div>
               </div>
             )}
@@ -1418,6 +1440,7 @@ const OrderPage = () => {
                     {/* Floating Mobile preview showing the entire keychain in real time while dragging/resizing */}
                     {(dragging || resizing) && (
                       <div className="mobile-crop-loupe-container">
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '6px', letterSpacing: '0.02em', textAlign: 'center', width: '100%' }}>Preview</div>
                         <div className="keychain-idle-swing">
                           <div className="hanging-keychain-wrapper">
                             <KeyringSvg />
@@ -2017,17 +2040,31 @@ const OrderPage = () => {
                   {cartItems.map(item => (
                     <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
                       <span>{item.label} (x{item.qty})</span>
-                      <span>₹{item.qty * item.unitPrice}</span>
+                      <span>
+                        {item.originalPrice > item.unitPrice ? (
+                          <>
+                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem', marginRight: '6px' }}>
+                              ₹{item.qty * item.originalPrice}
+                            </span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>₹{item.qty * item.unitPrice}</span>
+                          </>
+                        ) : (
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>₹{item.qty * item.unitPrice}</span>
+                        )}
+                      </span>
                     </div>
                   ))}
-                  {totalSavings > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: '#10b981', fontWeight: 600, marginTop: '4px' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={14} /> Total Savings</span>
-                      <span>−₹{totalSavings}</span>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    <span>Packaging Charges</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                    <span>Shipping Charges</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  </div>
+
                   <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginTop: '6px' }}>
-                    <span>Total Amount</span>
+                    <span>To Pay</span>
                     <span style={{ color: 'var(--accent-indigo)' }}>₹{total}</span>
                   </div>
                 </div>

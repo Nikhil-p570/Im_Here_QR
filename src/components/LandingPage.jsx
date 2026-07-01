@@ -466,7 +466,7 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
     }
 
     // Position/style per distance from center (adapted for mobile screen sizes)
-    const xOffsets = isMobile ? [0, 80, 150] : [0, 155, 278];
+    const xOffsets = isMobile ? [0, 75, 140] : [0, 155, 278];
     const zOffsets = isMobile ? [0, -60, -110] : [0, -90, -160];
     const scales = isMobile ? [1, 0.72, 0.54] : [1, 0.80, 0.62];
     const opacities = [1, 0.55, 0.28];
@@ -798,10 +798,10 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
 
           <div className="lp-hiw-timeline">
             {[
-              { n: '01', title: 'Get your tag', desc: 'Order a personalised QR tag. It arrives ready to use — just attach it to whatever matters to you.' },
-              { n: '02', title: 'Register it', desc: 'Claim the tag through a quick registration. Add your contact details.' },
-              { n: '03', title: 'Someone finds it', desc: 'When your item is found, the finder scans the QR with their phone camera. No app install, no signup — it just works.' },
-              { n: '04', title: 'You reconnect', desc: 'The finder can contact you directly or share the item\'s location with a single tap.' },
+              { n: '1', title: 'Get your tag', desc: 'Order a personalised QR tag. It arrives ready to use — just attach it to whatever matters to you.' },
+              { n: '2', title: 'Register it', desc: 'Simply scan the QR code and add your contact details.' },
+              { n: '3', title: 'Someone finds it', desc: 'When your item is found, the finder scans the QR with their phone camera. No app install, no signup — it just works.' },
+              { n: '4', title: 'You reconnect', desc: 'The finder can contact you directly or share the item\'s location with a single tap.' },
             ].map((step, i) => (
               <div key={i} className={`lp-hiw-step lp-reveal lp-reveal-delay-${i + 1}`}>
                 <div className="lp-hiw-step-number">{step.n}</div>
