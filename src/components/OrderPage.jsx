@@ -1379,7 +1379,7 @@ const OrderPage = () => {
                 </div>
 
                 <div className="cart-actions">
-                  <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")} style={{ width: '100%', padding: '14px', fontSize: '1.1rem', fontWeight: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")} style={{ width: '100%', padding: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     Proceed to Payment <span style={{ fontWeight: 900, fontSize: '1.3em', marginLeft: '6px', lineHeight: 1 }}>→</span>
                   </button>
                 </div>
