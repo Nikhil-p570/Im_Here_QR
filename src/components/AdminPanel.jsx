@@ -866,14 +866,21 @@ const AdminPanel = ({
   };
 
   // Helper: load customer's image from Storage/base64 and create a high-res cropped canvas
-  const loadCroppedLogoCanvas = (imageUrl, cropX, cropY, cropSize) => {
+  const loadCroppedLogoCanvas = (imageUrl, cropX, cropY, cropSize, applyDarkness = false) => {
     return new Promise((resolve) => {
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      if (imageUrl && !imageUrl.startsWith('data:')) {
+        img.crossOrigin = 'anonymous';
+      }
       img.onload = () => {
         const out = document.createElement('canvas');
         out.width = 640;
         out.height = 640;
+        const ctx = out.getContext('2d');
+        // Ensure white background to prevent transparent-to-black JPEG conversion issues
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 640, 640);
+        
         try {
           let cx = cropX;
           let cy = cropY;
@@ -883,7 +890,14 @@ const AdminPanel = ({
             cx = Math.round((img.width - cSize) / 2);
             cy = Math.round((img.height - cSize) / 2);
           }
-          out.getContext('2d').drawImage(img, cx, cy, cSize, cSize, 0, 0, 640, 640);
+          ctx.drawImage(img, cx, cy, cSize, cSize, 0, 0, 640, 640);
+          
+          if (applyDarkness) {
+            ctx.globalAlpha = 0.4;
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(0, 0, 640, 640);
+            ctx.globalAlpha = 1.0; // reset
+          }
         } catch (e) {
           console.warn('loadCroppedLogoCanvas drawImage failed:', e);
         }
@@ -1902,7 +1916,8 @@ const AdminPanel = ({
               entry.imageUrl,
               entry.srcCropX,
               entry.srcCropY,
-              entry.srcCropSize
+              entry.srcCropSize,
+              true // Apply 40% darkness overlay
             );
             if (customCanvas) {
               pdf.addImage(customCanvas.toDataURL('image/jpeg', 0.95), "JPEG", x + 2.5, y + 2.5, 52, 52);

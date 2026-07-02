@@ -906,7 +906,7 @@ const OrderPage = () => {
         previewUrl,
         backPreviewUrl,
         thumbnailUrl,
-        label: `Personalised Tag (Version ${selectedVersion})`,
+        label: `Personalised Tag (${selectedVersion === 1 ? 'Photo Front' : 'Photo Back'})`,
         qty,
         unitPrice: prices.personalisedDiscounted,
         originalPrice: prices.personalisedOriginal,
@@ -1014,9 +1014,9 @@ const OrderPage = () => {
         version: item.version || 1,
         ...(item.typeofqr === 'personalised' ? {
           tempBase64Image: item.croppedBase64 || '',
-          srcCropX: item._srcCropX || 0,
-          srcCropY: item._srcCropY || 0,
-          srcCropSize: item._srcCropSize || 0,
+          srcCropX: item.srcCropX || 0,
+          srcCropY: item.srcCropY || 0,
+          srcCropSize: item.srcCropSize || 0,
         } : {})
       });
     }
@@ -1154,6 +1154,7 @@ const OrderPage = () => {
 
   const total = cartItems.reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const totalSavings = cartItems.reduce((s, i) => s + i.qty * ((i.originalPrice || i.unitPrice) - i.unitPrice), 0);
+  const struckTotal = cartItems.reduce((s, i) => s + i.qty * (i.originalPrice || i.unitPrice), 0) + 15 + 40;
 
   /* ══════════════════════════════════════════════════
      RENDER
@@ -1353,23 +1354,25 @@ const OrderPage = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Packaging Charges</span>
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  <span>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹15</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Shipping Charges</span>
-                  <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  <span>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹40</span>
+                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                  </span>
                 </div>
                 
-                {totalSavings > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: '#10b981', fontWeight: 600, marginBottom: '8px' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Sparkles size={14} /> Total Savings</span>
-                    <span>−₹{totalSavings}</span>
-                  </div>
-                )}
-
                 <div className="cart-total-row" style={{ marginTop: '4px' }}>
-                  <span>Order Total</span>
-                  <span className="total-amount">₹{total}</span>
+                  <span>To Pay</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 500 }}>₹{struckTotal}</span>
+                    <span className="total-amount">₹{total}</span>
+                  </div>
                 </div>
 
                 <div className="cart-actions">
@@ -2038,34 +2041,43 @@ const OrderPage = () => {
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {cartItems.map(item => (
-                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                      <span>{item.label} (x{item.qty})</span>
-                      <span>
+                    <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginRight: '8px' }}>{item.label} (x{item.qty})</span>
+                      <span style={{ whiteSpace: 'nowrap' }}>
                         {item.originalPrice > item.unitPrice ? (
                           <>
-                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem', marginRight: '6px' }}>
+                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.75rem', marginRight: '6px' }}>
                               ₹{item.qty * item.originalPrice}
                             </span>
-                            <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>₹{item.qty * item.unitPrice}</span>
+                            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>₹{item.qty * item.unitPrice}</span>
                           </>
                         ) : (
-                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>₹{item.qty * item.unitPrice}</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>₹{item.qty * item.unitPrice}</span>
                         )}
                       </span>
                     </div>
                   ))}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Packaging Charges</span>
-                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                    <span>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹15</span>
+                      <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Shipping Charges</span>
-                    <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                    <span>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹40</span>
+                      <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
+                    </span>
                   </div>
 
                   <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginTop: '6px' }}>
                     <span>To Pay</span>
-                    <span style={{ color: 'var(--accent-indigo)' }}>₹{total}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 500 }}>₹{struckTotal}</span>
+                      <span style={{ color: 'var(--accent-indigo)' }}>₹{total}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -2087,11 +2099,11 @@ const OrderPage = () => {
                 >
                   {checkoutLoading ? (
                     <>
-                      <div className="payment-spinner" /> Saving & Redirecting to Cashfree...
+                      <div className="payment-spinner" /> Redirecting to payment...
                     </>
                   ) : (
                     <>
-                      <ShieldCheck size={18} /> Pay ₹{total} via Cashfree
+                      Proceed to Payment <span style={{ fontWeight: 900, fontSize: '1.3em', marginLeft: '4px', lineHeight: 1 }}>→</span>
                     </>
                   )}
                 </button>
