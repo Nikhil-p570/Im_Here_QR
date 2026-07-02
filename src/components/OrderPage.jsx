@@ -1299,6 +1299,15 @@ const OrderPage = () => {
                   <h2 className="order-section-title" style={{ marginBottom: 0 }}>
                     <ShoppingCart size={20} /> Your Order
                   </h2>
+                  {showAddMoreOptions ? (
+                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                      <button className="btn-add-more" onClick={() => { setStep("personalised"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(139, 92, 246, 0.4)", color: "#8b5cf6", background: "rgba(139, 92, 246, 0.05)", padding: '6px 12px', fontSize: '0.8rem' }}><Palette size={14} /> Personalised</button>
+                      <button className="btn-add-more" onClick={() => { setStep("classic"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(6, 182, 212, 0.4)", color: "#06b6d4", background: "rgba(6, 182, 212, 0.05)", padding: '6px 12px', fontSize: '0.8rem' }}><Layers size={14} /> Classic</button>
+                      <button onClick={() => setShowAddMoreOptions(false)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "6px", fontSize: "0.8rem", fontWeight: 600 }}>Cancel</button>
+                    </div>
+                  ) : (
+                    <button className="btn-add-more" id="btn-add-another-tag" onClick={() => setShowAddMoreOptions(true)} style={{ border: '1.2px solid #8b5cf6', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)', padding: '6px 12px', fontSize: '0.85rem' }}><Plus size={14} /> Add Another Tag</button>
+                  )}
                 </div>
 
                 <div className="cart-items-list">
@@ -1343,17 +1352,7 @@ const OrderPage = () => {
                   ))}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', marginTop: '8px' }}>
-                  {showAddMoreOptions ? (
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      <button className="btn-add-more" onClick={() => { setStep("personalised"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(139, 92, 246, 0.4)", color: "#8b5cf6", background: "rgba(139, 92, 246, 0.05)", padding: '6px 12px', fontSize: '0.8rem' }}><Palette size={14} /> Personalised</button>
-                      <button className="btn-add-more" onClick={() => { setStep("classic"); setShowAddMoreOptions(false); }} style={{ border: "1px solid rgba(6, 182, 212, 0.4)", color: "#06b6d4", background: "rgba(6, 182, 212, 0.05)", padding: '6px 12px', fontSize: '0.8rem' }}><Layers size={14} /> Classic</button>
-                      <button onClick={() => setShowAddMoreOptions(false)} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: "6px", fontSize: "0.8rem", fontWeight: 600 }}>Cancel</button>
-                    </div>
-                  ) : (
-                    <button className="btn-add-more" id="btn-add-another-tag" onClick={() => setShowAddMoreOptions(true)} style={{ border: '1.2px solid #8b5cf6', color: '#8b5cf6', background: 'rgba(139, 92, 246, 0.05)', padding: '6px 12px', fontSize: '0.85rem' }}><Plus size={14} /> Add Another Tag</button>
-                  )}
-                </div>
+
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Packaging Charges</span>
