@@ -45,6 +45,25 @@ const getTelLink = (num) => {
 
 function App() {
   const path = window.location.pathname;
+  
+  // Strict route checking (the formal way to handle 404s/invalid paths)
+  const validPaths = [
+    '/',
+    '/admin1226',
+    '/orders',
+    '/terms',
+    '/privacy',
+    '/shipping_policy',
+    '/refund_policy',
+    '/payment-status',
+    '/id'
+  ];
+
+  if (!validPaths.includes(path)) {
+    window.location.replace('/');
+    return null;
+  }
+
   const isMainLanding = path !== '/admin1226';
 
   // Orders page — render standalone, no auth needed

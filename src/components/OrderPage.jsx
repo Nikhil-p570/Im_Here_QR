@@ -1368,7 +1368,7 @@ const OrderPage = () => {
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
-                
+
                 <div className="cart-total-row" style={{ marginTop: '4px' }}>
                   <span>To Pay</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1727,7 +1727,7 @@ const OrderPage = () => {
           <div className="setup-panel">
             <button className="back-btn" onClick={() => setStep('home')}><ArrowLeft size={16} /> Back</button>
 
-            <h2 className="order-section-title">⬛ Classic Tag</h2>
+            <h2 className="order-section-title">Classic Tag</h2>
             <p className="order-section-subtitle">
               Two iconic colour combinations. Both look great on any keychain, bag, or wallet.
             </p>
@@ -1814,8 +1814,8 @@ const OrderPage = () => {
                     <div className="classic-preset-label" style={{ color: '#475569', opacity: 0.8, marginBottom: '16px' }}>
                       {preset.label}
                     </div>
-                    
-                    <button 
+
+                    <button
                       type="button"
                       className="btn-select-preset"
                       onClick={(e) => {
@@ -1845,7 +1845,7 @@ const OrderPage = () => {
                         'Select Style'
                       )}
                     </button>
-                    
+
                     {/* Corner checkmark fallback just in case */}
                     {classicPreset === preset.id && (
                       <div className="classic-check"><Check size={14} /></div>
