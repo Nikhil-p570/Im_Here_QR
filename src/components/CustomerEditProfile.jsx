@@ -346,6 +346,8 @@ const CustomerEditProfile = ({
               <Lock className="input-icon" size={18} />
               <input
                 id="editPasswordInput"
+                name="password"
+                autoComplete="new-password"
                 type={showPassword ? "text" : "password"}
                 className="text-input"
                 placeholder="Password to update details later"

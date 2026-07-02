@@ -70,6 +70,9 @@ const AuthModal = ({
                 <Lock className="input-icon" size={18} />
                 <input
                   type={showPassword ? "text" : "password"}
+                  id="tag-password"
+                  name="password"
+                  autoComplete="current-password"
                   className="text-input"
                   placeholder="Enter password"
                   value={enteredPassword}

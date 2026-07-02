@@ -351,6 +351,8 @@ const CustomerRegistration = ({
               <Lock className="input-icon" size={18} />
               <input
                 id="regPasswordInput"
+                name="password"
+                autoComplete="new-password"
                 type={showPassword ? "text" : "password"}
                 className="text-input"
                 placeholder="Password to update details later"
