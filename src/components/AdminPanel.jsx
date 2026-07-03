@@ -1889,6 +1889,15 @@ const AdminPanel = ({
         pdf.addPage();
       }
 
+      if (pageIndex === 0) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.setTextColor(50, 50, 50);
+        const pageNum = Math.floor(index / itemsPerPage) + 1;
+        const totalPages = Math.ceil(appendedQrs.length / itemsPerPage);
+        pdf.text(`Front PDF - ${appendedQrs.length} QRs (Page ${pageNum} of ${totalPages})`, 105, 15, { align: "center" });
+      }
+
       const row = Math.floor(pageIndex / 3);
       const col = pageIndex % 3;
 
@@ -1965,6 +1974,15 @@ const AdminPanel = ({
 
       if (index > 0 && pageIndex === 0) {
         pdf.addPage();
+      }
+
+      if (pageIndex === 0) {
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(12);
+        pdf.setTextColor(50, 50, 50);
+        const pageNum = Math.floor(index / itemsPerPage) + 1;
+        const totalPages = Math.ceil(appendedQrs.length / itemsPerPage);
+        pdf.text(`Logo PDF - ${appendedQrs.length} QRs (Page ${pageNum} of ${totalPages})`, 105, 15, { align: "center" });
       }
 
       const row = Math.floor(pageIndex / 3);
