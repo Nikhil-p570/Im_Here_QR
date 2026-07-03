@@ -5217,6 +5217,26 @@ const AdminPanel = ({
                   </a>
                 </div>
 
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm(`Are you sure you want to completely erase the database records for Tag #${lookupResult.tagId}? This will allow the tag to be registered again.`)) {
+                      try {
+                        await deleteDoc(doc(firestoreDb, 'qrcodes', lookupResult.tagId));
+                        alert(`Tag #${lookupResult.tagId} successfully deleted! It is now unregistered.`);
+                        setLookupResult(null);
+                      } catch (err) {
+                        alert("Failed to delete: " + err.message);
+                      }
+                    }
+                  }}
+                  style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '14px', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', fontWeight: 700, marginTop: '8px', cursor: 'pointer', transition: 'all 0.2s', width: '100%' }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)' }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)' }}
+                >
+                  🗑️ Delete Tag Data (Make Unregistered)
+                </button>
+
               </div>
             </div>
           )}
