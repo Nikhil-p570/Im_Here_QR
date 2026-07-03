@@ -12,6 +12,7 @@ const AuthModal = ({
   setEnteredSecurityAnswer,
   authModalError,
   setAuthModalError,
+  authModalLoading,
   customerData,
   handlePasswordSubmit,
   handleSecuritySubmit
@@ -111,6 +112,7 @@ const AuthModal = ({
               <button
                 type="button"
                 className="btn btn-confirm-no"
+                disabled={authModalLoading}
                 onClick={() => {
                   setShowAuthModal(false);
                   setEnteredPassword("");
@@ -123,9 +125,17 @@ const AuthModal = ({
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ flex: 1, padding: '12px' }}
+                disabled={authModalLoading || !enteredPassword}
+                style={{ flex: 1, padding: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
-                Submit
+                {authModalLoading ? (
+                  <>
+                    <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                    Checking...
+                  </>
+                ) : (
+                  "Submit"
+                )}
               </button>
             </div>
 
@@ -198,6 +208,7 @@ const AuthModal = ({
               <button
                 type="button"
                 className="btn btn-confirm-no"
+                disabled={authModalLoading}
                 onClick={() => {
                   setShowAuthModal(false);
                   setEnteredSecurityAnswer("");
@@ -210,9 +221,17 @@ const AuthModal = ({
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ flex: 1, padding: '12px' }}
+                disabled={authModalLoading || !enteredSecurityAnswer}
+                style={{ flex: 1, padding: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
               >
-                Verify Answer
+                {authModalLoading ? (
+                  <>
+                    <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                    Verifying...
+                  </>
+                ) : (
+                  "Verify Answer"
+                )}
               </button>
             </div>
 

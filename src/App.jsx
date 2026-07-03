@@ -103,6 +103,7 @@ function App() {
   const [enteredPassword, setEnteredPassword] = useState("");
   const [enteredSecurityAnswer, setEnteredSecurityAnswer] = useState("");
   const [authModalError, setAuthModalError] = useState("");
+  const [authModalLoading, setAuthModalLoading] = useState(false);
 
   // Geolocation States
   const [locLoading, setLocLoading] = useState(false);
@@ -291,6 +292,7 @@ function App() {
       return;
     }
 
+    setAuthModalLoading(true);
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
@@ -315,8 +317,11 @@ function App() {
     } catch (err) {
       console.error(err);
       setAuthModalError("Failed to verify password. Please try again.");
+    } finally {
+      setAuthModalLoading(false);
     }
   };
+
 
   // Submit Security Answer Recovery for Changing Customer Info
   const handleSecuritySubmit = async (e) => {
@@ -328,6 +333,7 @@ function App() {
       return;
     }
 
+    setAuthModalLoading(true);
     try {
       const res = await fetch('/api/profile', {
         method: 'POST',
@@ -352,6 +358,8 @@ function App() {
     } catch (err) {
       console.error(err);
       setAuthModalError("Failed to verify security answer. Please try again.");
+    } finally {
+      setAuthModalLoading(false);
     }
   };
 
@@ -512,6 +520,7 @@ function App() {
                 setEnteredSecurityAnswer={setEnteredSecurityAnswer}
                 authModalError={authModalError}
                 setAuthModalError={setAuthModalError}
+                authModalLoading={authModalLoading}
                 customerData={customerData}
                 handlePasswordSubmit={handlePasswordSubmit}
                 handleSecuritySubmit={handleSecuritySubmit}
