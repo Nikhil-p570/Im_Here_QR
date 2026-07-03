@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
   Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck,
-  Palette, Layers, Zap, ShieldCheck, ArrowLeft
+  Palette, Layers, Zap, ShieldCheck, ArrowLeft, ArrowRight
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import { initializeFirebase } from '../firebase';
@@ -100,6 +100,9 @@ function drawBrandedQr(uploadedImg, cropState, presetOptions) {
   if (bgMode === 'image' && uploadedImg) {
     const yOffset = presetOptions.yOffset || 0;
     try {
+      const renderSize = canvas.height - yOffset - 30;
+      const renderX = (canvas.width - renderSize) / 2;
+
       if (cropState) {
         const s = cropState.scale || 1;
         const srcX = cropState.x * s;
@@ -111,9 +114,9 @@ function drawBrandedQr(uploadedImg, cropState, presetOptions) {
         logoCanvas.height = 320;
         const lCtx = logoCanvas.getContext('2d');
         lCtx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, 320, 320);
-        ctx.drawImage(logoCanvas, 0, yOffset, canvas.width, canvas.height);
+        ctx.drawImage(logoCanvas, renderX, yOffset, renderSize, renderSize);
       } else {
-        ctx.drawImage(uploadedImg, 0, yOffset, canvas.width, canvas.height);
+        ctx.drawImage(uploadedImg, renderX, yOffset, renderSize, renderSize);
       }
       if (overlayDarkness > 0) {
         ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
@@ -188,8 +191,6 @@ const OrderPage = () => {
   const [cropLocked, setCropLocked] = useState(false);
   const [qty, setQty] = useState(1);
   const [showCropHint, setShowCropHint] = useState(false);
-  const [cropBoxDark, setCropBoxDark] = useState(false); // toggle white/black border on long press
-  const longPressTimer = useRef(null);
 
   /* ── Drag (move) crop box ── */
   const [dragging, setDragging] = useState(false);
@@ -252,12 +253,12 @@ const OrderPage = () => {
   const [qrLibLoaded, setQrLibLoaded] = useState(false);
 
   /* ── Flip Preview State ── */
-  const [isPreviewFlipped, setIsPreviewFlipped] = useState(false);
+  const [isPreviewFlipped, setIsPreviewFlipped] = useState(true);
   const [isMidnightFlipped, setIsMidnightFlipped] = useState(false);
   const [isDaylightFlipped, setIsDaylightFlipped] = useState(false);
   const [logoImage, setLogoImage] = useState(null);
   const [logoIconImage, setLogoIconImage] = useState(null);
-  const [selectedVersion, setSelectedVersion] = useState(1);
+  const [selectedVersion, setSelectedVersion] = useState(2);
   const [isStruck, setIsStruck] = useState(false);
 
   /* ── Checkout form states ── */
@@ -401,18 +402,9 @@ const OrderPage = () => {
   /* ─────────────────────────────────────────────────
      Warn user before reloading if cart has items
   ───────────────────────────────────────────────── */
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (isSubmitting.current) return;
-      if (cartItems.length > 0) {
-        e.preventDefault();
-        e.returnValue = 'You have items in your cart. If you reload, your cart will be cleared. Are you sure you want to leave?';
-        return e.returnValue;
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [cartItems]);
+  /* ─────────────────────────────────────────────────
+     Warn user before reloading (Removed - Cart is saved in localStorage)
+  ───────────────────────────────────────────────── */
 
   /* ─────────────────────────────────────────────────
      Draw crop editor background
@@ -524,7 +516,7 @@ const OrderPage = () => {
             frameText: "SCAN ME TO FIND ME",
             frameBgColor: '#000000',
             frameTextColor: '#ffffff',
-            yOffset: 35
+            yOffset: 95
           });
           if (brandedCanvas) {
             ctx.drawImage(brandedCanvas, 0, 0);
@@ -636,7 +628,7 @@ const OrderPage = () => {
           frameText: "SCAN ME TO FIND ME",
           frameBgColor: '#000000',
           frameTextColor: '#ffffff',
-          yOffset: 35
+          yOffset: 95
         });
         if (brandedCanvas) ctx.drawImage(brandedCanvas, 0, 0);
       }
@@ -923,7 +915,8 @@ const OrderPage = () => {
       setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1 });
       setCropLocked(false);
       setQty(1);
-      setSelectedVersion(1);
+      setSelectedVersion(2);
+      setIsPreviewFlipped(true);
 
     } else if (step === 'classic') {
       if (!classicPreset) return;
@@ -1219,6 +1212,7 @@ const OrderPage = () => {
           <>
             {(cartItems.length === 0 || forceShowSelection) && (
               <div className="order-section" id="style-selection">
+                <button className="back-btn" onClick={() => window.location.href = '/'}><ArrowLeft size={16} /> Back</button>
                 <div className="section-header-centered">
                   <h2 className="order-section-title">Choose Your Style</h2>
                   <p className="order-section-subtitle">Select the perfect canvas for your premium recovery tag.</p>
@@ -1295,6 +1289,9 @@ const OrderPage = () => {
             {/* Cart */}
             {cartItems.length > 0 && (
               <div className="order-section cart-section" ref={cartRef}>
+                {(!forceShowSelection) && (
+                  <button className="back-btn" onClick={() => setForceShowSelection(true)}><ArrowLeft size={16} /> Back</button>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <h2 className="order-section-title" style={{ marginBottom: 0 }}>
                     <ShoppingCart size={20} /> Your Order
@@ -1322,7 +1319,7 @@ const OrderPage = () => {
                         className="cart-item-preview-btn"
                         onClick={() => {
                           setActiveCartItem(item);
-                          setIsModalFlipped(false);
+                          setIsModalFlipped(item.type === 'personalised' && item.version === 2);
                         }}
                         title="View Tag Design"
                       >
@@ -1336,7 +1333,7 @@ const OrderPage = () => {
                       <div className="cart-item-total">
                         {item.originalPrice > item.unitPrice ? (
                           <>
-                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem', marginRight: '6px' }}>
+                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.8rem', marginRight: '6px', fontWeight: 800 }}>
                               ₹{item.qty * item.originalPrice}
                             </span>
                             ₹{item.qty * item.unitPrice}
@@ -1357,14 +1354,14 @@ const OrderPage = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Packaging Charges</span>
                   <span>
-                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹15</span>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px', fontWeight: 800 }}>₹15</span>
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Shipping Charges</span>
                   <span>
-                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹40</span>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px', fontWeight: 800 }}>₹40</span>
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
@@ -1372,14 +1369,14 @@ const OrderPage = () => {
                 <div className="cart-total-row" style={{ marginTop: '4px' }}>
                   <span>To Pay</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 500 }}>₹{struckTotal}</span>
+                    <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 800 }}>₹{struckTotal}</span>
                     <span className="total-amount">₹{total}</span>
                   </div>
                 </div>
 
                 <div className="cart-actions">
                   <button className="btn-checkout" id="btn-checkout" onClick={() => setStep("checkout")} style={{ width: '100%', padding: '14px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    Proceed to Payment <span style={{ fontWeight: 900, fontSize: '1.3em', marginLeft: '6px', lineHeight: 1 }}>→</span>
+                    Proceed to Payment <ArrowRight size={22} style={{ marginLeft: '8px', strokeWidth: 2.5 }} />
                   </button>
                 </div>
               </div>
@@ -1409,7 +1406,6 @@ const OrderPage = () => {
                         <ul style={{ paddingLeft: "18px", display: "flex", flexDirection: "column", gap: "9px", marginBottom: "22px" }}>
                           <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Drag</strong> the square to choose the best part of your photo.</li>
                           <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Pull the corners</strong> to resize the crop area.</li>
-                          <li style={{ fontSize: "0.85rem", color: "#475569", lineHeight: 1.6 }}><strong style={{ color: "#0f172a" }}>Long-press</strong> the image to switch the square colour (white ↔ black) for better visibility.</li>
                         </ul>
                         <button onClick={() => setShowCropHint(false)} style={{ width: "100%", padding: "13px", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "#fff", border: "none", borderRadius: "14px", fontSize: "0.95rem", fontWeight: 700, cursor: "pointer" }}>Got it — let me adjust!</button>
                       </div>
@@ -1427,15 +1423,8 @@ const OrderPage = () => {
                     style={{ width: cropState.dispW, height: cropState.dispH, touchAction: 'pan-y' }}
                     onContextMenu={(e) => e.preventDefault()}
                     onPointerDown={(e) => {
-                      // Only start long-press timer if touch is NOT on the crop box or handles
-                      // (those elements stop propagation, so if we reach here it's on the image)
-                      longPressTimer.current = setTimeout(() => {
-                        setCropBoxDark(d => !d);
-                      }, 600);
+                      // Removed long press handler
                     }}
-                    onPointerUp={() => clearTimeout(longPressTimer.current)}
-                    onPointerCancel={() => clearTimeout(longPressTimer.current)}
-                    onPointerMove={() => clearTimeout(longPressTimer.current)}
                   >
                     <img
                       src={uploadedImg.src}
@@ -1479,20 +1468,22 @@ const OrderPage = () => {
                         top: cropState.y,
                         width: cropState.size,
                         height: cropState.size,
-                        borderColor: cropLocked ? '#6366f1' : cropBoxDark ? 'rgba(0,0,0,0.85)' : 'rgba(255,255,255,0.85)',
+                        borderColor: cropLocked ? '#6366f1' : 'rgba(255,255,255,0.9)',
+                        borderWidth: '2px',
+                        borderStyle: 'solid',
                         cursor: cropLocked ? 'default' : dragging ? 'grabbing' : 'grab',
                         touchAction: 'none',
                         boxShadow: cropLocked
                           ? '0 0 0 2px rgba(99,102,241,0.2)'
-                          : cropBoxDark ? '0 0 0 2px rgba(0,0,0,0.15)' : '0 0 0 2px rgba(255,255,255,0.2)'
+                          : '0 0 4px rgba(0,0,0,0.8)'
                       }}
-                      onPointerDown={(e) => { e.stopPropagation(); clearTimeout(longPressTimer.current); handleCropBoxDown(e); }}
+                      onPointerDown={(e) => { e.stopPropagation(); handleCropBoxDown(e); }}
                       onPointerMove={handlePointerMove}
                       onPointerUp={handlePointerUp}
                       onPointerCancel={handlePointerUp}
                     >
                       {/* Custom visual overlay */}
-                      <div className={`crop-box-overlay${cropBoxDark ? ' dark' : ''}`}>
+                      <div className={`crop-box-overlay`}>
                         {/* Grid Lines (Rule of Thirds) */}
                         <div className="crop-grid-line-v v1" />
                         <div className="crop-grid-line-v v2" />
@@ -2050,7 +2041,7 @@ const OrderPage = () => {
                       <span style={{ whiteSpace: 'nowrap' }}>
                         {item.originalPrice > item.unitPrice ? (
                           <>
-                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.75rem', marginRight: '6px' }}>
+                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.75rem', marginRight: '6px', fontWeight: 800 }}>
                               ₹{item.qty * item.originalPrice}
                             </span>
                             <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.85rem' }}>₹{item.qty * item.unitPrice}</span>
@@ -2064,14 +2055,14 @@ const OrderPage = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Packaging Charges</span>
                     <span>
-                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹15</span>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px', fontWeight: 800 }}>₹15</span>
                       <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                     </span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Shipping Charges</span>
                     <span>
-                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px' }}>₹40</span>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', marginRight: '6px', fontWeight: 800 }}>₹40</span>
                       <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                     </span>
                   </div>
@@ -2079,7 +2070,7 @@ const OrderPage = () => {
                   <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginTop: '6px' }}>
                     <span>To Pay</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 500 }}>₹{struckTotal}</span>
+                      <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.95rem', fontWeight: 800 }}>₹{struckTotal}</span>
                       <span style={{ color: 'var(--accent-indigo)' }}>₹{total}</span>
                     </div>
                   </div>
@@ -2107,7 +2098,7 @@ const OrderPage = () => {
                     </>
                   ) : (
                     <>
-                      Proceed to Payment <span style={{ fontWeight: 900, fontSize: '1.3em', marginLeft: '4px', lineHeight: 1 }}>→</span>
+                      Proceed to Payment <ArrowRight size={22} style={{ marginLeft: '8px', strokeWidth: 2.5 }} />
                     </>
                   )}
                 </button>

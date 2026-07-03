@@ -118,12 +118,15 @@ const CustomerProfile = ({
             </div>
           </div>
 
-          {/* Drop Location Card */}
+          {/* Send Location Card */}
           <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '2px' }}>Drop Location</span>
+              <span className="form-label" style={{ fontSize: '0.65rem', display: 'block', marginBottom: '2px' }}>Send Location</span>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                Using "Drop Location" service, you can easily send your current GPS location to the owner via WhatsApp to help them find their lost item.
+                Using "Send Location" service, you can easily send your current GPS location to the owner via WhatsApp to help them find their lost item.
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: '1.5', marginTop: '6px', opacity: 0.75 }}>
+                💡 If you see a <strong style={{ color: 'var(--text-primary)' }}>&quot;Pop-up blocked&quot;</strong> message, tap it and select <strong style={{ color: 'var(--text-primary)' }}>&quot;Always Allow&quot;</strong>. Then in the next screen, tap <strong style={{ color: 'var(--text-primary)' }}>&quot;Continue&quot;</strong> on the browser prompt to share your location.
               </span>
             </div>
 
@@ -169,7 +172,7 @@ const CustomerProfile = ({
               ) : (
                 <>
                   <Globe size={14} />
-                  Drop Location 📍
+                  Send Location 📍
                 </>
               )}
             </button>

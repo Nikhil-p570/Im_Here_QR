@@ -34,7 +34,9 @@ function drawBrandedQr(uploadedImg, presetOptions) {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   if (uploadedImg) {
     try {
-      ctx.drawImage(uploadedImg, 0, yOffset, canvas.width, canvas.height);
+      const renderSize = canvas.height - yOffset - 30;
+      const renderX = (canvas.width - renderSize) / 2;
+      ctx.drawImage(uploadedImg, renderX, yOffset, renderSize, renderSize);
       if (overlayDarkness > 0) {
         ctx.fillStyle = `rgba(0,0,0,${overlayDarkness / 100})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -164,7 +166,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
         dotColor: '#ffffff',
         bgColor: '#000000',
         overlayDarkness: version === 2 ? 40 : 40,
-        yOffset: version === 2 ? 35 : 0,
+        yOffset: version === 2 ? 95 : 0,
       });
       if (qrCanvas) {
         ctx.drawImage(qrCanvas, 0, 0);
@@ -361,11 +363,11 @@ const HeroVisual = () => {
                 </div>
               </div>
 
-              {/* Drop Location Card */}
+              {/* Send Location Card */}
               <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '8px 12px' }}>
-                <div style={{ fontSize: '0.55rem', color: '#64748b', marginBottom: '6px' }}>Drop Location</div>
+                <div style={{ fontSize: '0.55rem', color: '#64748b', marginBottom: '6px' }}>Send Location</div>
                 <div style={{ background: '#059669', color: '#fff', borderRadius: '6px', padding: '8px', fontSize: '0.7rem', fontWeight: 700, textAlign: 'center' }}>
-                  🌐 Drop Location 📍
+                  🌐 Send Location 📍
                 </div>
               </div>
             </div>

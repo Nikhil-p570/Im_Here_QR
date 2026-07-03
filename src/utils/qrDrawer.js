@@ -109,31 +109,31 @@ export const drawLogo = (ctx, logoCanvas, qrSize, offsetY, pct, bColor) => {
 };
 
 export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerTextColor, offsetY) => {
-  const pillH = 40;
+  const pillH = 60;
   ctx.save();
-  ctx.font = "900 20px ui-monospace, Menlo, Consolas, monospace";
-  ctx.letterSpacing = "1.8px";
+  ctx.font = "900 28px ui-monospace, Menlo, Consolas, monospace";
+  ctx.letterSpacing = "2px";
   const textMetrics = ctx.measureText(text);
   const textW = textMetrics.width;
 
   // Calculate layout parameters
-  const badgeSize = 32;
-  const paddingLeft = 14;
-  const gap = 12;
-  const paddingRight = 14;
+  const badgeSize = 42;
+  const paddingLeft = 20;
+  const gap = 16;
+  const paddingRight = 24;
   const pillW = paddingLeft + badgeSize + gap + textW + paddingRight;
 
-  const pillX = 120;
+  const pillX = (qrSize - pillW) / 2;
   const pillY = offsetY + (bannerH - pillH) / 2 + 5;
 
   // Draw pill background
-  roundRectPath(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+  roundRectPath(ctx, pillX, pillY, pillW, pillH, 24);
   ctx.fillStyle = bannerBgColor;
   ctx.fill();
 
   // Draw pill border
   ctx.strokeStyle = bannerTextColor;
-  ctx.lineWidth = 4; // Thicker border
+  ctx.lineWidth = 3; // Thinner border
   ctx.stroke();
 
   // Draw yellow circle badge
@@ -150,7 +150,7 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   const phonePathStr = "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z";
   const phonePath = new Path2D(phonePathStr);
 
-  const iconSize = 15;
+  const iconSize = 22;
   const iconScale = iconSize / 24;
   const iconX = badgeCx - iconSize / 2;
   const iconY = badgeCy - iconSize / 2;
@@ -164,11 +164,16 @@ export const drawBanner = (ctx, qrSize, bannerH, text, bannerBgColor, bannerText
   // Draw text next to the yellow badge
   ctx.save();
   ctx.fillStyle = bannerTextColor;
-  ctx.font = "900 20px ui-monospace, Menlo, Consolas, monospace";
-  ctx.letterSpacing = "1.8px";
+  ctx.strokeStyle = bannerTextColor;
+  ctx.lineWidth = 1; // Stroke to increase boldness
+  ctx.font = "900 28px ui-monospace, Menlo, Consolas, monospace";
+  ctx.letterSpacing = "2px";
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, pillX + paddingLeft + badgeSize + gap, pillY + pillH / 2 + 1);
+  const textX = pillX + paddingLeft + badgeSize + gap;
+  const textY = pillY + pillH / 2 + 2;
+  ctx.fillText(text, textX, textY);
+  ctx.strokeText(text, textX, textY);
   ctx.restore();
 };
 
