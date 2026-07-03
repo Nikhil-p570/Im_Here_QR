@@ -80,8 +80,76 @@ const ScanFinderTab = () => {
   const handleAddMissingTag = () => {
      alert("Add missing tag API not configured yet.");
   };
-  const handleUploadQrFile = () => {
-     alert("Upload file logic to be implemented. Please use Camera for now.");
+  const scanFileWithInversionFallback = async (html5QrCode, file) => {
+    try {
+      return await html5QrCode.scanFile(file, false);
+    } catch (originalErr) {
+      console.log("Original scan failed, attempting color inversion fallback...");
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = async () => {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0);
+
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imgData.data;
+              for (let i = 0; i < data.length; i += 4) {
+                data[i] = 255 - data[i];
+                data[i + 1] = 255 - data[i + 1];
+                data[i + 2] = 255 - data[i + 2];
+              }
+              ctx.putImageData(imgData, 0, 0);
+
+              canvas.toBlob(async (blob) => {
+                if (!blob) return reject(new Error("Canvas blob generation failed"));
+                const invertedFile = new File([blob], "inverted.png", { type: "image/png" });
+                try {
+                  const invertedResult = await html5QrCode.scanFile(invertedFile, false);
+                  resolve(invertedResult);
+                } catch (invertErr) {
+                  reject(new Error("Could not detect any QR code in this image."));
+                }
+              }, "image/png");
+            } catch (err) {
+              reject(err);
+            }
+          };
+          img.onerror = () => reject(new Error("Failed to load image"));
+          img.src = event.target.result;
+        };
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const handleUploadQrFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setLookupLoading(true);
+    setLookupError("");
+    setLookupResult(null);
+
+    try {
+      const html5QrCode = new Html5Qrcode("qr-file-reader");
+      const decodedText = await scanFileWithInversionFallback(html5QrCode, file);
+      
+      setLookupId(decodedText);
+      await handleLookupTag(null, decodedText);
+    } catch (err) {
+      console.error(err);
+      setLookupError(err.message || "Could not scan QR from image.");
+    } finally {
+      setLookupLoading(false);
+      e.target.value = '';
+    }
   };
 
   const [packingSessionActive, setPackingSessionActive] = useState(false);
