@@ -5220,21 +5220,38 @@ const AdminPanel = ({
                 <button
                   type="button"
                   onClick={async () => {
-                    if (window.confirm(`Are you sure you want to completely erase the database records for Tag #${lookupResult.tagId}? This will allow the tag to be registered again.`)) {
+                    if (window.confirm(`Are you sure you want to completely erase the user data for Tag #${lookupResult.tagId}? This will allow the tag to be registered again by a new user.`)) {
                       try {
-                        // Delete the public profile document
-                        await deleteDoc(doc(firestoreDb, 'links', lookupResult.tagId));
-                        // Try deleting the private credentials document (fail silently if it doesn't exist)
+                        // 1. Wipe the user data from the public profile, but KEEP the document so the QR isn't a dead link
+                        await updateDoc(doc(firestoreDb, 'links', lookupResult.tagId), {
+                          status: "unregistered",
+                          customerName: "",
+                          orderedPhoneNumber: "",
+                          orderedEmail: "",
+                          name: "",
+                          number: "",
+                          altNumber: "",
+                          message: "",
+                          rewardEnabled: false,
+                          rewardAmount: "",
+                          socials: [],
+                          vehicleNumber: "",
+                          bloodGroup: "",
+                          emergencyContact1: "",
+                          emergencyContact2: ""
+                        });
+
+                        // 2. Completely delete the private credentials document to clear passwords
                         try {
                           await deleteDoc(doc(firestoreDb, 'links_private', lookupResult.tagId));
                         } catch (privateErr) {
                           console.warn("Private document not found or could not be deleted:", privateErr);
                         }
                         
-                        alert(`Tag #${lookupResult.tagId} successfully deleted! It is now unregistered.`);
+                        alert(`Tag #${lookupResult.tagId} user data successfully erased! It is now an unregistered tag.`);
                         setLookupResult(null);
                       } catch (err) {
-                        alert("Failed to delete: " + err.message);
+                        alert("Failed to delete user data: " + err.message);
                       }
                     }
                   }}
