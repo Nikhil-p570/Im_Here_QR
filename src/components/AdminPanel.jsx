@@ -5222,12 +5222,9 @@ const AdminPanel = ({
                   onClick={async () => {
                     if (window.confirm(`Are you sure you want to completely erase the user data for Tag #${lookupResult.tagId}? This will allow the tag to be registered again by a new user.`)) {
                       try {
-                        // 1. Wipe the user data from the public profile, but KEEP the document so the QR isn't a dead link
+                        // 1. Wipe the user data from the public profile, but KEEP the document and original order metadata
                         await updateDoc(doc(firestoreDb, 'links', lookupResult.tagId), {
                           status: "unregistered",
-                          customerName: "",
-                          orderedPhoneNumber: "",
-                          orderedEmail: "",
                           name: "",
                           number: "",
                           altNumber: "",
