@@ -213,7 +213,7 @@ const ScanFinderTab = () => {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
         {cameraActive ? (
           <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-            <video id="camera-video" autoPlay playsInline muted style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></video>
+            <div id="reader" style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></div>
             <button type="button" onClick={stopCamera} className="btn btn-danger-outline" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Stop Scanning</button>
           </div>
         ) : (
