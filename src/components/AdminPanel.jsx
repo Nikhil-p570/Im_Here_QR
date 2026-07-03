@@ -1,12 +1,6 @@
 /* eslint-disable no-unused-vars, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
-import AdminHeader from './admin/AdminHeader';
-import QRGeneratorTab from './admin/QRGeneratorTab';
-import OrdersTab from './admin/OrdersTab';
-import LandingQRsTab from './admin/LandingQRsTab';
-import ScanFinderTab from './admin/ScanFinderTab';
-
 import { jsPDF } from 'jspdf';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
@@ -182,11 +176,6 @@ const AdminPanel = ({
   const [lookupError, setLookupError] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
   const [showAddTagOption, setShowAddTagOption] = useState(null);
-  // Reset / Delete Tag Data States
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [resetLoading, setResetLoading] = useState(false);
-  const [resetSuccess, setResetSuccess] = useState("");
-  const [resetError, setResetError] = useState("");
 
   const [croppingLandingTag, setCroppingLandingTag] = useState(null); // 'tag1' | 'tag2' | 'tag3' | null
   const [landingCropImage, setLandingCropImage] = useState(null); // Image object being cropped
@@ -1687,16 +1676,9 @@ const AdminPanel = ({
         orderedEmail: orderData?.orderedEmail || linkData.orderedEmail || 'N/A',
         tagId: tagId,
         firestoreOrderId: linkData.firestoreOrderId || 'N/A',
-        shippingAddress: formattedAddress,
-        // Tag registration status — needed to show Delete Data button
-        tagStatus: linkData.status || 'unregistered',
-        tagName: linkData.name || '',
-        tagNumber: linkData.number || ''
+        shippingAddress: formattedAddress
       };
 
-      setShowResetConfirm(false);
-      setResetSuccess("");
-      setResetError("");
       setLookupResult(lookupObj);
 
       if (packingSessionActiveRef.current) {
@@ -1792,49 +1774,6 @@ const AdminPanel = ({
   const handleLookupTag = async (e) => {
     if (e) e.preventDefault();
     await performLookup(lookupId);
-  };
-
-  // Reset / Delete user data from a registered tag
-  const handleResetTagData = async () => {
-    if (!lookupResult || !firestoreDb) return;
-    const tagId = lookupResult.tagId;
-    setResetLoading(true);
-    setResetError("");
-    setResetSuccess("");
-    try {
-      // 1. Reset the public links doc — clear all user-entered fields, keep order metadata
-      const publicRef = doc(firestoreDb, 'links', tagId);
-      await updateDoc(publicRef, {
-        status: 'unregistered',
-        name: '',
-        number: '',
-        altNumber: '',
-        whatsappEnabled: false,
-        message: '',
-        rewardEnabled: false,
-        rewardAmount: '',
-        socials: [],
-        resetAt: new Date().toISOString()
-      });
-      // 2. Delete the private credentials doc (password hash, security answer)
-      const privateRef = doc(firestoreDb, 'links_private', tagId);
-      await deleteDoc(privateRef);
-
-      setResetSuccess("Tag data cleared. QR is now fresh and unregistered.");
-      setShowResetConfirm(false);
-      // Update local lookupResult to reflect new status
-      setLookupResult(prev => ({
-        ...prev,
-        tagStatus: 'unregistered',
-        tagName: '',
-        tagNumber: ''
-      }));
-    } catch (err) {
-      console.error("Reset tag data failed:", err);
-      setResetError(`Failed to clear tag data: ${err.message}`);
-    } finally {
-      setResetLoading(false);
-    }
   };
 
   const scanFileWithInversionFallback = async (html5QrCode, file) => {
@@ -2364,82 +2303,3146 @@ const AdminPanel = ({
 
   return (
     <div className="app-container" style={{ maxWidth: '1100px', alignSelf: 'center' }}>
-      <AdminHeader
-        activeAdminTab={activeAdminTab}
-        setActiveAdminTab={setActiveAdminTab}
-        orders={orders}
-        handleNew={handleNew}
-        showConfirm={showConfirm}
-        setShowConfirm={setShowConfirm}
-        countdown={countdown}
-        setCountdown={setCountdown}
-        clearing={clearing}
-        handleClearDatabase={handleClearDatabase}
-        handleClearOrders={handleClearOrders}
-        onLogout={onLogout}
-        loading={loading}
-      />
+      {/* Header */}
+      <header className="admin-header-wrapper">
+        <div className="admin-header-main">
+          <h1 style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo icon black.png" alt="I'm here" style={{ width: '50px', height: '50px', objectFit: 'contain', marginRight: '14px', borderRadius: '8px' }} />
+            I'm here
+          </h1>
+          <p>Admin Cockpit — Generate customer IDs and design branded QR codes side-by-side</p>
+        </div>
 
+        <div className="admin-header-actions">
+          {/* Tab switcher buttons */}
+          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-light)', borderRadius: '10px', padding: '3px', gap: '2px' }}>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('generator')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'generator' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'generator' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s'
+              }}
+            >
+              QR Generator
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('orders')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'orders' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'orders' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <ShoppingBag size={13} /> Orders
+              {orders.length > 0 && (
+                <span style={{
+                  background: 'var(--accent-rose)',
+                  color: 'white',
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  borderRadius: '50%',
+                  width: '16px',
+                  height: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1
+                }}>{orders.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('landing_qrs')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'landing_qrs' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'landing_qrs' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              🎨 Landing QRs
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAdminTab('finder')}
+              style={{
+                padding: '6px 14px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                background: activeAdminTab === 'finder' ? 'rgba(99,102,241,0.25)' : 'transparent',
+                color: activeAdminTab === 'finder' ? '#a5b4fc' : 'var(--text-secondary)',
+                transition: 'all 0.2s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              🔍 Scan Finder
+            </button>
+          </div>
+
+          {/* New Button */}
+          <button
+            type="button"
+            onClick={handleNew}
+            className="btn"
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+              border: 'none',
+              color: 'white',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Reset Form / New Tag"
+          >
+            <Plus size={14} />
+            New
+          </button>
+
+          {/* Compact Clear DB Control */}
+          {!showConfirm ? (
+            <button
+              type="button"
+              className="btn btn-danger-outline"
+              onClick={() => { setShowConfirm(true); setCountdown(3); }}
+              disabled={loading || clearing}
+              style={{
+                padding: '8px 14px',
+                fontSize: '0.85rem',
+                border: '1px solid rgba(244, 63, 94, 0.2)',
+                color: 'var(--accent-rose)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              title="Clear Database"
+            >
+              <Trash2 size={14} />
+              Clear DB
+            </button>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.2)', padding: '4px 8px', borderRadius: '8px' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent-rose)' }}>Wipe DB?</span>
+              <button
+                type="button"
+                className="btn-confirm-no"
+                onClick={() => { setShowConfirm(false); setCountdown(0); }}
+                disabled={clearing}
+                style={{ padding: '4px 8px', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                No
+              </button>
+              <button
+                type="button"
+                className="btn-confirm-yes"
+                onClick={handleClearDatabase}
+                disabled={clearing || countdown > 0}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: '0.75rem',
+                  borderRadius: '4px',
+                  border: 'none',
+                  background: 'var(--accent-rose)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  opacity: countdown > 0 ? 0.6 : 1,
+                  cursor: countdown > 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {clearing ? '...' : countdown > 0 ? `${countdown}s` : 'Yes'}
+              </button>
+            </div>
+          )}
+
+          {/* Clear Orders Control */}
+          <button
+            type="button"
+            className="btn btn-danger-outline"
+            onClick={handleClearOrders}
+            disabled={loading || clearing}
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              border: '1px solid rgba(244, 63, 94, 0.2)',
+              color: 'var(--accent-rose)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Clear Orders"
+          >
+            <Trash2 size={14} />
+            Clear Orders
+          </button>
+
+          {/* Logout Button */}
+          <button
+            type="button"
+            onClick={onLogout}
+            className="btn"
+            style={{
+              padding: '8px 14px',
+              fontSize: '0.85rem',
+              background: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--border-light)',
+              color: 'var(--text-secondary)',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Logout Admin"
+          >
+            <LogOut size={14} />
+            Logout
+          </button>
+        </div>
+      </header>
+
+      {/* DB Admin Status Messages */}
+      {(adminSuccess || adminError) && (
+        <div style={{ marginBottom: '24px' }}>
+          {adminSuccess && (
+            <div className="status-msg status-msg-success">
+              <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+              <span>{adminSuccess}</span>
+            </div>
+          )}
+          {adminError && (
+            <div className="status-msg status-msg-error">
+              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <span>{adminError}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Two-Column Cockpit Layout */}
       {activeAdminTab === 'generator' && (
-        <QRGeneratorTab
-          predefinedDomain={predefinedDomain} handleGenerateId={handleGenerateId} loading={loading} clearing={clearing}
-          error={error} result={result} copied={copied} handleCopyLink={handleCopyLink}
-          qrUrl={qrUrl} setQrUrl={setQrUrl} handleImageUpload={handleImageUpload} uploadedImg={uploadedImg}
-          setUploadedImg={setUploadedImg} cropState={cropState} setCropState={setCropState} cropCanvasRef={cropCanvasRef}
-          handleCropBoxDown={handleCropBoxDown} handleCropBoxMove={handleCropBoxMove} handleCropBoxUp={handleCropBoxUp}
-          dragging={dragging} handleCropSizeChange={handleCropSizeChange} logoScale={logoScale} setLogoScale={setLogoScale}
-          dotColor={dotColor} setDotColor={setDotColor} bgColor={bgColor} setBgColor={setBgColor} bgMode={bgMode} setBgMode={setBgMode}
-          setShowLogoChip={setShowLogoChip} selectedVersion={selectedVersion} setSelectedVersion={setSelectedVersion}
-          overlayDarkness={overlayDarkness} setOverlayDarkness={setOverlayDarkness} showLogoChip={showLogoChip}
-          dotSize={dotSize} setDotSize={setDotSize} dotShape={dotShape} setDotShape={setDotShape} cornerShape={cornerShape}
-          setCornerShape={setCornerShape} hasFrame={hasFrame} setHasFrame={setHasFrame} frameText={frameText} setFrameText={setFrameText}
-          frameBgColor={frameBgColor} setFrameBgColor={setFrameBgColor} frameTextColor={frameTextColor} setFrameTextColor={setFrameTextColor}
-          qrNoteText={qrNoteText} qrNoteClass={qrNoteClass} handlePresetSelect={handlePresetSelect}
-          handleSavePrices={handleSavePrices} personalisedOriginal={personalisedOriginal} setPersonalisedOriginal={setPersonalisedOriginal}
-          personalisedDiscounted={personalisedDiscounted} setPersonalisedDiscounted={setPersonalisedDiscounted}
-          classicOriginal={classicOriginal} setClassicOriginal={setClassicOriginal} classicDiscounted={classicDiscounted}
-          setClassicDiscounted={setClassicDiscounted} savingPrices={savingPrices} pricingSuccess={pricingSuccess}
-          pricingError={pricingError} qrImageUrl={qrImageUrl} flipPreview={flipPreview} setFlipPreview={setFlipPreview}
-          getBacksidePreviewUrl={getBacksidePreviewUrl} hasBeenGeneratedOnce={hasBeenGeneratedOnce}
-          handleAppendToPdf={handleAppendToPdf} appendedQrs={appendedQrs} handleRemoveLastQr={handleRemoveLastQr}
-          handleDownload={handleDownload} downloadError={downloadError} qrCanvasRef={qrCanvasRef}
-        />
+        <div className="dashboard-grid">
+
+          {/* Left Column: Configuration Forms */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+            {/* Card 1: ID Generator Input */}
+            <main className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                1. Customer ID Generation
+              </h2>
+              <form onSubmit={handleGenerateId} className="form-group">
+                <label htmlFor="domainInput" className="form-label" style={{ fontSize: '0.75rem' }}>
+                  Predefined Host Domain
+                </label>
+                <div className="input-wrapper">
+                  <Globe className="input-icon" size={20} />
+                  <input
+                    id="domainInput"
+                    type="text"
+                    className="text-input"
+                    value={predefinedDomain + "/"}
+                    disabled={true}
+                    style={{ opacity: 0.8, cursor: 'not-allowed' }}
+                  />
+                </div>
+
+                {error && (
+                  <div className="status-msg status-msg-error">
+                    <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || clearing}
+                >
+                  {loading ? (
+                    <>
+                      <div className="spinner"></div>
+                      Checking DB & Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={20} />
+                      Generate Customer Link
+                    </>
+                  )}
+                </button>
+              </form>
+            </main>
+
+            {/* Card 2: QR Designer Inputs */}
+            <section className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                2. Branded QR Code Design
+              </h2>
+
+              {/* QR URL Input */}
+              <div className="form-group">
+                <label htmlFor="qrUrlInput" className="form-label" style={{ fontSize: '0.75rem' }}>
+                  QR Destination URL
+                </label>
+                <div className="input-wrapper">
+                  <Globe className="input-icon" size={20} />
+                  <input
+                    id="qrUrlInput"
+                    type="text"
+                    className="text-input"
+                    placeholder="Generate ID first or type manually..."
+                    value={qrUrl}
+                    onChange={(e) => setQrUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Logo File upload */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <label className="form-label" style={{ fontSize: '0.75rem' }}>Logo / Center graphic (Optional)</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="file"
+                    id="qrImageInput"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    style={{ display: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-danger-outline"
+                    style={{ flex: 1, borderStyle: 'dashed', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                    onClick={() => document.getElementById('qrImageInput').click()}
+                  >
+                    <ImageIcon size={18} />
+                    {uploadedImg ? "Change Logo Image" : "Upload Logo Image"}
+                  </button>
+
+                  {uploadedImg && (
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      title="Remove uploaded image"
+                      style={{ padding: '10px 14px', borderStyle: 'solid', flexShrink: 0 }}
+                      onClick={() => {
+                        setUploadedImg(null);
+                        setCropState({ x: 0, y: 0, size: 120, dispW: 0, dispH: 0, scale: 1, showCropStep: false });
+                        document.getElementById('qrImageInput').value = '';
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Cropper step */}
+                {cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)' }}>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        {/* Custom visual overlay */}
+                        <div className="crop-box-overlay">
+                          {/* Grid Lines (Rule of Thirds) */}
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+
+                          {/* Midpoint Bars */}
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+
+                          {/* Corners (L-brackets) */}
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="hint" style={{ textAlign: 'center', fontSize: '0.75rem' }}>
+                      Drag the dashed square to select the logo.
+                    </p>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '6px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Logo scale on QR:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{logoScale}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="14"
+                        max="30"
+                        value={logoScale}
+                        onChange={(e) => setLogoScale(parseInt(e.target.value))}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Color controls */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '14px' }}>
+                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                  <div className="color-field">
+                    <input
+                      type="color"
+                      value={dotColor}
+                      onChange={(e) => setDotColor(e.target.value)}
+                      className="color-picker-input"
+                    />
+                    <label className="color-picker-label">Dot Color</label>
+                  </div>
+
+                  <div className="color-field">
+                    <input
+                      type="color"
+                      value={bgColor}
+                      onChange={(e) => setBgColor(e.target.value)}
+                      className="color-picker-input"
+                    />
+                    <label className="color-picker-label">Background</label>
+                  </div>
+                </div>
+
+                {/* Color Presets */}
+                <div className="presets">
+                  {PRESETS.map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handlePresetSelect(preset)}
+                      className="preset-btn"
+                      style={{
+                        borderColor: preset.dot,
+                        background: preset.bg,
+                        color: preset.dot,
+                      }}
+                      title={preset.name}
+                    >
+                      Aa
+                    </button>
+                  ))}
+                </div>
+
+                {/* Background Mode */}
+                <div className="form-group" style={{ marginTop: '6px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Mode</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setBgMode("solid"); setShowLogoChip(true); }}
+                      className={`mode-btn ${bgMode === 'solid' ? 'active' : ''}`}
+                    >
+                      Solid Color
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setBgMode("image"); setShowLogoChip(false); }}
+                      className={`mode-btn ${bgMode === 'image' ? 'active' : ''}`}
+                    >
+                      Full Image
+                    </button>
+                  </div>
+                  {!uploadedImg && bgMode === 'image' && (
+                    <p className="hint" style={{ color: 'var(--accent-rose)', fontSize: '0.75rem' }}>Upload an image to enable Full Image background</p>
+                  )}
+                </div>
+
+                {bgMode === 'image' && uploadedImg && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.75rem', fontWeight: 700 }}>Select Tag Style Version</label>
+                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVersion(1)}
+                          className={`mode-btn ${selectedVersion === 1 ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700 }}>Photo-Front (V1)</span>
+                          <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Photo | Back: Logo</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedVersion(2)}
+                          className={`mode-btn ${selectedVersion === 2 ? 'active' : ''}`}
+                          style={{ flex: 1, padding: '10px', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
+                        >
+                          <span style={{ fontWeight: 700 }}>Photo-Back (V2)</span>
+                          <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>Front: Logo | Back: Photo</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Image overlay darkness:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{overlayDarkness}%</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="80"
+                        value={overlayDarkness}
+                        onChange={(e) => setOverlayDarkness(parseInt(e.target.value))}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {bgMode !== 'image' && (
+                  <div className="checkbox-row" style={{ marginTop: '4px' }}>
+                    <input
+                      type="checkbox"
+                      id="reactLogoChipToggle"
+                      checked={showLogoChip}
+                      onChange={(e) => setShowLogoChip(e.target.checked)}
+                    />
+                    <label htmlFor="reactLogoChipToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Show logo chip in center</label>
+                  </div>
+                )}
+
+                {/* Dot Size */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Dot Size:</span>
+                    <span style={{ color: 'var(--accent-cyan)' }}>{dotSize}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    min="35"
+                    max="100"
+                    value={dotSize}
+                    onChange={(e) => setDotSize(parseInt(e.target.value))}
+                    style={{ width: '100%', accentColor: '#e8402c' }}
+                  />
+                </div>
+
+                {/* Dot Shape */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Dot Shape</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {['square', 'rounded', 'circle'].map(shape => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => setDotShape(shape)}
+                        className={`shape-btn ${dotShape === shape ? 'active' : ''}`}
+                      >
+                        {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Corner Style */}
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Corner (Eye) Style</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {['square', 'rounded', 'circle'].map(shape => (
+                      <button
+                        key={shape}
+                        type="button"
+                        onClick={() => setCornerShape(shape)}
+                        className={`corner-btn ${cornerShape === shape ? 'active' : ''}`}
+                      >
+                        {shape === 'square' ? '■ Square' : shape === 'rounded' ? '▢ Rounded' : '● Circle'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Frame toggle */}
+                <div className="checkbox-row" style={{ marginTop: '4px' }}>
+                  <input
+                    type="checkbox"
+                    id="reactFrameToggle"
+                    checked={hasFrame}
+                    onChange={(e) => setHasFrame(e.target.checked)}
+                  />
+                  <label htmlFor="reactFrameToggle" style={{ margin: 0, fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Add frame text below</label>
+                </div>
+
+                {hasFrame && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '4px' }}>
+                    <div className="form-group">
+                      <label htmlFor="reactFrameText" className="form-label" style={{ fontSize: '0.75rem' }}>Banner text</label>
+                      <input
+                        type="text"
+                        id="reactFrameText"
+                        className="text-input"
+                        value={frameText}
+                        onChange={(e) => setFrameText(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                      <div className="color-field">
+                        <input
+                          type="color"
+                          value={frameBgColor}
+                          onChange={(e) => setFrameBgColor(e.target.value)}
+                          className="color-picker-input"
+                        />
+                        <label className="color-picker-label">Frame Bg</label>
+                      </div>
+
+                      <div className="color-field">
+                        <input
+                          type="color"
+                          value={frameTextColor}
+                          onChange={(e) => setFrameTextColor(e.target.value)}
+                          className="color-picker-input"
+                        />
+                        <label className="color-picker-label">Frame Text</label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {qrNoteText && (
+                <div className={`status-msg ${qrNoteClass.includes('warn') ? 'status-msg-error' : 'status-msg-success'}`} style={{ fontSize: '0.8rem', marginTop: '12px' }}>
+                  {qrNoteClass.includes('warn') ? <AlertTriangle size={16} /> : <Check size={16} />}
+                  <span>{qrNoteText}</span>
+                </div>
+              )}
+            </section>
+
+            {/* Card 3: Price Settings */}
+            <section className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
+                3. Smart Keychain Pricing
+              </h2>
+              <form onSubmit={handleSavePrices} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Personalised Price */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Personalised Tag Prices</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={personalisedOriginal}
+                        onChange={(e) => setPersonalisedOriginal(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={personalisedDiscounted}
+                        onChange={(e) => setPersonalisedDiscounted(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Classic Price */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>Classic Tag Prices</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Original Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={classicOriginal}
+                        onChange={(e) => setClassicOriginal(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label style={{ fontSize: '0.7rem' }}>Discounted Price (₹)</label>
+                      <input
+                        type="number"
+                        className="text-input"
+                        required
+                        value={classicDiscounted}
+                        onChange={(e) => setClassicDiscounted(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {pricingSuccess && (
+                  <div className="status-msg status-msg-success" style={{ margin: 0, fontSize: '0.8rem' }}>
+                    <CheckCircle2 size={16} />
+                    <span>{pricingSuccess}</span>
+                  </div>
+                )}
+
+                {pricingError && (
+                  <div className="status-msg status-msg-error" style={{ margin: 0, fontSize: '0.8rem' }}>
+                    <AlertTriangle size={16} />
+                    <span>{pricingError}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={savingPrices}
+                  style={{ width: '100%', marginTop: '4px' }}
+                >
+                  {savingPrices ? "Saving..." : "Save Prices to Firestore"}
+                </button>
+              </form>
+            </section>
+          </div>
+
+          {/* Right Column: Previews & Results */}
+          <div className="sticky-column">
+
+            {/* Card 1: Generated ID URL Link output */}
+            <div className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                Generated Link Output
+              </h2>
+              {result ? (
+                <div className="result-container" style={{ margin: 0 }}>
+                  <div className="result-header">
+                    <span className="result-title">Customer Link</span>
+                    <span className="history-url" style={{ opacity: 0.6 }}>ID: {result.id}</span>
+                  </div>
+                  <div className="output-link-box">
+                    <div className="output-link-text">{result.url}</div>
+                    <button
+                      onClick={handleCopyLink}
+                      className="btn-copy"
+                      title="Copy Link"
+                    >
+                      {copied ? <Check size={18} style={{ color: '#10b981' }} /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                  {result.isSavedToDb ? (
+                    <p className="hint" style={{ color: 'var(--accent-emerald)', marginTop: '4px' }}>
+                      ✓ ID stored in Firestore and loaded into the QR input.
+                    </p>
+                  ) : (
+                    <p className="hint" style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      ID ready. Will be saved to Firestore when you Copy Link or Download PNG.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+                  <Globe size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '0.9rem' }}>No customer link generated yet.</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "Generate Customer Link" on the left.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Card 2: Generated QR Code Image result */}
+            <div className="glass-panel card-content">
+              <h2 className="form-label" style={{ fontSize: '0.9rem', color: 'var(--text-primary)', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '8px' }}>
+                QR Code Preview
+              </h2>
+              {qrImageUrl ? (
+                <div style={{ textAlign: 'center' }}>
+                  <img
+                    src={flipPreview ? getBacksidePreviewUrl() : qrImageUrl}
+                    alt={flipPreview ? "Backside Preview" : "Resulting QR Code"}
+                    style={{
+                      width: '100%',
+                      maxWidth: '380px',
+                      aspectRatio: hasFrame ? '640/700' : '1/1',
+                      objectFit: flipPreview ? 'contain' : 'cover',
+                      background: flipPreview ? '#000000' : 'transparent',
+                      borderRadius: '10px',
+                      display: 'block',
+                      margin: '12px auto',
+                      border: '1px solid var(--border-light)',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => setFlipPreview(prev => !prev)}
+                    style={{
+                      width: '100%',
+                      background: 'transparent',
+                      border: '1px solid var(--border-light)',
+                      color: 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      fontSize: '0.85rem',
+                      padding: '12px 16px',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    🔄 Flip Tag ({flipPreview ? 'See Front' : 'See Back'})
+                  </button>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={handleAppendToPdf}
+                      className="btn btn-primary"
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Plus size={18} />
+                      APPEND TO PDF SHEET
+                    </button>
+
+                    {appendedQrs.length > 0 && appendedQrs[appendedQrs.length - 1]?.isManual && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLastQr}
+                        className="btn btn-danger-outline"
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          borderColor: 'rgba(244, 63, 94, 0.4)',
+                          color: 'var(--accent-rose)',
+                          fontSize: '0.85rem',
+                          padding: '12px 16px',
+                          marginTop: '2px',
+                          marginBottom: '2px'
+                        }}
+                      >
+                        ↩️ UNDO LAST APPEND
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      className="btn"
+                      style={{
+                        width: '100%',
+                        background: 'transparent',
+                        border: '1px solid var(--border-light)',
+                        color: 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        fontSize: '0.85rem',
+                        padding: '12px 16px'
+                      }}
+                    >
+                      <Download size={16} />
+                      DOWNLOAD SINGLE PNG
+                    </button>
+                  </div>
+
+                  {downloadError && (
+                    <p className="hint" style={{ color: 'var(--accent-rose)', marginTop: '8px' }}>{downloadError}</p>
+                  )}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-secondary)' }}>
+                  <ImageIcon size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                  <p style={{ fontSize: '0.9rem' }}>No QR Code generated yet.</p>
+                  <p style={{ fontSize: '0.8rem', opacity: 0.7 }}>Click "GENERATE QR CODE" on the left.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden Canvas used for generating the QR code */}
+            <canvas ref={qrCanvasRef} style={{ display: 'none' }} />
+
+          </div>
+
+        </div>
       )}
 
+      {/* ═══════════════════════════════════════════
+          ORDERS TAB
+      ═══════════════════════════════════════════ */}
       {activeAdminTab === 'orders' && (
-        <OrdersTab
-          orders={orders} ordersLoading={ordersLoading} ordersError={ordersError} ordersSubTab={ordersSubTab}
-          setOrdersSubTab={setOrdersSubTab} appendProgress={appendProgress} handleAppendAllToPdf={handleAppendAllToPdf}
-          expandedOrders={expandedOrders} setExpandedOrders={setExpandedOrders} selectedToShipOrders={selectedToShipOrders}
-          setSelectedToShipOrders={setSelectedToShipOrders} shipmentActionProgress={shipmentActionProgress}
-          handleBulkBookShipments={handleBulkBookShipments} handleBulkMarkAsPacked={handleBulkMarkAsPacked}
-          handleBulkSchedulePickup={handleBulkSchedulePickup} handleMarkSelectedShipped={handleMarkSelectedShipped}
-          handleMarkAllShipped={handleMarkAllShipped} nimbusWallet={nimbusWallet} shippingRates={shippingRates}
-          ratesLoading={ratesLoading} fetchingWallet={fetchingWallet} handleBookShipment={handleBookShipment}
-          handleCallNimbusApi={handleCallNimbusApi} handleCancelShipment={handleCancelShipment} appendedQrs={appendedQrs}
-          handleClearPdfSheet={handleClearPdfSheet} frontPreviewOpen={frontPreviewOpen} setFrontPreviewOpen={setFrontPreviewOpen}
-          backPreviewOpen={backPreviewOpen} setBackPreviewOpen={setBackPreviewOpen} handleDownloadPdf={handleDownloadPdf}
-          handleDownloadLogoPdf={handleDownloadLogoPdf} renderGuideOverlay={renderGuideOverlay} firestoreDb={firestoreDb}
-          doc={doc} updateDoc={updateDoc}
-        />
+        <div className="orders-tab-layout">
+
+          {/* LEFT: Orders List */}
+          <div className="orders-list-panel">
+            {/* Sub-tab navigation inside Orders */}
+            <div className="orders-subtabs-nav" style={{ display: 'flex', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'pending_qr' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('pending_qr')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'pending_qr' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'pending_qr' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                📝 Pending QR Generation ({orders.filter(o => o.orderStatus === 'orderplaced').length})
+              </button>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'to_ship' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('to_ship')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'to_ship' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'to_ship' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🚚 Orders to Ship ({orders.filter(o => o.orderStatus === 'appended').length})
+              </button>
+              <button
+                type="button"
+                className={`orders-subtab-btn ${ordersSubTab === 'moved_to_shipment' ? 'active' : ''}`}
+                onClick={() => setOrdersSubTab('moved_to_shipment')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: ordersSubTab === 'moved_to_shipment' ? 'var(--accent-indigo)' : 'var(--text-secondary)',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  borderBottom: ordersSubTab === 'moved_to_shipment' ? '2.5px solid var(--accent-indigo)' : 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                🚀 Moved to Shipment ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
+              </button>
+            </div>
+
+            {/* Render subtabs */}
+            {ordersSubTab === 'pending_qr' ? (
+              <>
+                <div className="orders-panel-header">
+                  <div>
+                    <h2 className="orders-panel-title">📦 Pending Orders</h2>
+                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {orders.filter(o => o.orderStatus === 'orderplaced').length === 0 ? 'No new orders' : `${orders.filter(o => o.orderStatus === 'orderplaced').length} order${orders.filter(o => o.orderStatus === 'orderplaced').length > 1 ? 's' : ''} waiting to be processed`}
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={handleAppendAllToPdf}
+                      disabled={orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active}
+                      className="btn btn-primary"
+                      style={{
+                        padding: '9px 16px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        opacity: (orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active) ? 0.5 : 1,
+                        cursor: (orders.filter(o => o.orderStatus === 'orderplaced').length === 0 || appendProgress.active) ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      {appendProgress.active ? (
+                        <><div className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} /> Processing...</>
+                      ) : (
+                        <><Zap size={14} /> Append All to PDF</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress Banner */}
+                {(appendProgress.active || appendProgress.message) && (
+                  <div className="append-progress-banner" style={{ marginBottom: '12px' }}>
+                    {appendProgress.active ? (
+                      <>
+                        <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#a5b4fc' }}>
+                            {appendProgress.message}
+                          </div>
+                          {appendProgress.total > 0 && (
+                            <div className="append-progress-bar-track">
+                              <div
+                                className="append-progress-bar-fill"
+                                style={{ width: `${Math.round((appendProgress.done / appendProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, flexShrink: 0 }}>
+                          {appendProgress.done}/{appendProgress.total}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span style={{ fontWeight: 600, fontSize: '0.85rem', color: '#10b981' }}>{appendProgress.message}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ marginBottom: '12px' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading orders...</p>
+                  </div>
+                ) : orders.filter(o => o.orderStatus === 'orderplaced').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No pending orders</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      New orders will appear here when customers place them.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => o.orderStatus === 'orderplaced').map((order) => (
+                      <div key={order.id} className="order-card">
+                        {/* Order Header */}
+                        <div className="order-card-header" style={{ cursor: 'pointer' }} onClick={() => setExpandedOrders(prev => ({ ...prev, [order.id]: !prev[order.id] }))}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="order-card-name">{order.customerName || 'Unknown Customer'}</div>
+                            <div className="order-card-meta">
+                              <span><Phone size={11} /> {order.orderedPhoneNumber || '—'}</span>
+                              <span><Mail size={11} /> {order.orderedEmail || '—'}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                              <span className={`order-badge ${order.paymentMode === 'cod' ? 'badge-cod' : 'badge-online'}`}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>₹{order.totalAmount}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn-toggle-order"
+                              style={{ background: 'transparent', border: 'none', color: '#10b981', cursor: 'pointer', padding: '4px' }}
+                            >
+                              {expandedOrders[order.id] ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Collapsible Content */}
+                        {expandedOrders[order.id] && (
+                          <>
+                            <div className="order-card-items">
+                              {(order.items || []).map((item, iIdx) => (
+                                <div key={iIdx} className="order-item-row">
+                                  {item.thumbnailUrl ? (
+                                    <img src={item.thumbnailUrl} alt={item.typeofqr} className="order-item-thumb" />
+                                  ) : (
+                                    <div className="order-item-thumb-placeholder">
+                                      {item.typeofqr === 'classic_black' ? '⬛' : item.typeofqr === 'classic_white' ? '⬜' : '🎨'}
+                                    </div>
+                                  )}
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div className="order-item-type">
+                                      {item.typeofqr === 'personalised' ? '🎨 Personalised' :
+                                        item.typeofqr === 'classic_black' ? '⬛ Classic Black' : '⬜ Classic White'}
+                                    </div>
+                                    <div className="order-item-qty">Qty: <strong>{item.quantity}</strong> × ₹{item.unitPrice}</div>
+                                  </div>
+                                  <div className="order-item-total">₹{(item.quantity * item.unitPrice)}</div>
+                                </div>
+                              ))}
+                            </div>
+
+                            {order.shippingAddress && (
+                              <div className="order-card-address">
+                                📍 {order.shippingAddress.address}, {order.shippingAddress.city}, {order.shippingAddress.state} - {order.shippingAddress.pincode}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : ordersSubTab === 'to_ship' ? (
+              /* ORDERS TO SHIP TAB (NIMBUSPOST SHIPPING INTEGRATION) */
+              <>
+                <div className="orders-panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h2 className="orders-panel-title">🚚 Shipping Dashboard</h2>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Process shipments, print labels, and schedule courier pickups via NimbusPost
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bulk Actions Bar */}
+                  <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-to-ship"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => o.orderStatus === 'appended').length > 0 &&
+                          orders.filter(o => o.orderStatus === 'appended').every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const toShipList = orders.filter(o => o.orderStatus === 'appended');
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            toShipList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-to-ship" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => o.orderStatus === 'appended').length})
+                      </label>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
+                      Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkBookShipments}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700 }}
+                    >
+                      🚀 Add Selected to NimbusPost
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkMarkAsPacked}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                    >
+                      📦 Mark as Packed
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkSchedulePickup}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                    >
+                      📅 Schedule Pickup
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shipping Action Progress Banner */}
+                {(shipmentActionProgress.active || shipmentActionProgress.message) && (
+                  <div className="append-progress-banner" style={{ margin: '12px 0', background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
+                    {shipmentActionProgress.active ? (
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', marginRight: '8px' }} />
+                    ) : (
+                      <CheckCircle2 size={16} style={{ color: '#10b981', marginRight: '8px' }} />
+                    )}
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: shipmentActionProgress.active ? '#a5b4fc' : '#10b981' }}>
+                      {shipmentActionProgress.message}
+                    </span>
+                  </div>
+                )}
+
+                {/* NimbusPost Rates and Wallet Dashboard */}
+                <div className="nimbus-rates-dashboard glass-panel" style={{ padding: '16px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', marginBottom: '20px' }}>
+                  <h3 style={{ margin: '0 0 12px 0', fontSize: '1rem', color: '#a5b4fc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Truck size={18} /> NimbusPost B2C Shipping Rates & Wallet
+                  </h3>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Live Wallet Balance</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: nimbusWallet !== null && nimbusWallet < 0 ? '#ef4444' : '#10b981', marginTop: '4px' }}>
+                        {fetchingWallet ? (
+                          <span style={{ fontSize: '1.0rem', color: 'var(--text-secondary)' }}>Loading...</span>
+                        ) : nimbusWallet !== null ? (
+                          `₹${nimbusWallet.toFixed(2)}`
+                        ) : (
+                          '—'
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Pending Shipping Cost (Cheapest Courier)</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f59e0b', marginTop: '4px' }}>
+                        ₹{Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Required Refill</div>
+                      <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ef4444', marginTop: '4px' }}>
+                        ₹{Math.max(0, Object.values(shippingRates).reduce((sum, r) => sum + r.charges, 0) - (nimbusWallet || 0)).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ overflowX: 'auto', background: 'rgba(0,0,0,0.15)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', textAlign: 'left' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Order ID</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Recipient</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Destination</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>Cheapest Partner</th>
+                          <th style={{ padding: '8px 12px', color: 'var(--text-secondary)', textAlign: 'right' }}>Charges</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orders.filter(o => o.orderStatus === 'appended').map(order => {
+                          const rate = shippingRates[order.id];
+                          return (
+                            <tr key={order.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                              <td style={{ padding: '8px 12px', fontWeight: 700 }}>{order.id}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.customerName}</td>
+                              <td style={{ padding: '8px 12px' }}>{order.shippingAddress?.city} ({order.shippingAddress?.pincode})</td>
+                              <td style={{ padding: '8px 12px', color: '#a5b4fc', fontWeight: 600 }}>
+                                {ratesLoading && !rate ? (
+                                  <span style={{ fontStyle: 'italic', opacity: 0.5 }}>Calculating...</span>
+                                ) : rate ? (
+                                  `${rate.name}`
+                                ) : (
+                                  'Not Calculated / Pincode Error'
+                                )}
+                              </td>
+                              <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: '#f59e0b' }}>
+                                {rate ? `₹${rate.charges.toFixed(2)}` : '₹0.00'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {orders.filter(o => o.orderStatus === 'appended').length === 0 && (
+                          <tr>
+                            <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                              No pending orders ready for shipment.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ margin: '12px 0' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading shipments...</p>
+                  </div>
+                ) : orders.filter(o => o.orderStatus === 'appended').length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No orders to ship</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      Orders will appear here once their QR PDFs are generated.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => o.orderStatus === 'appended').map((order) => {
+                      const isSelected = !!selectedToShipOrders[order.id];
+                      return (
+                        <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
+
+                          {/* Shipping Card Header */}
+                          <div className="order-card-header" style={{ paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => setSelectedToShipOrders(prev => ({ ...prev, [order.id]: e.target.checked }))}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              />
+                              <div>
+                                <div className="order-card-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                  {order.customerName || 'Unknown Customer'}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>({order.id})</span>
+                                </div>
+                                <div className="order-card-meta">
+                                  <span>📞 {order.orderedPhoneNumber || '—'}</span>
+                                  <span>✉️ {order.orderedEmail || '—'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                              <span className={`shipping-status-badge badge-${order.orderStatus}`}>
+                                {order.orderStatus === 'appended' && '📝 QR Ready'}
+                                {order.orderStatus === 'shipment_created' && '🚚 Shipment Booked'}
+                                {order.orderStatus === 'label_printed' && '🖨️ Label Printed'}
+                                {order.orderStatus === 'packed' && '📦 Packed'}
+                                {order.orderStatus === 'pickup_scheduled' && '📅 Pickup Scheduled'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Address & Products Details */}
+                          <div style={{ fontSize: '0.82rem', padding: '12px', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>📍 Shipping Address:</strong> {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - <strong>{order.shippingAddress?.pincode}</strong>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong>📦 Items ({order.items?.reduce((s, i) => s + (i.quantity || 1), 0)}):</strong>
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} style={{ paddingLeft: '8px', color: 'var(--text-secondary)' }}>
+                                  • {item.typeofqr === 'personalised' ? 'Personalised Tag' : 'Classic Tag'} × {item.quantity}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Shipment details if created */}
+                          {order.awbNumber && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(99,102,241,0.04)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', borderTop: '1px dashed rgba(99,102,241,0.15)' }}>
+                              <div><strong>AWB:</strong> {order.awbNumber}</div>
+                              <div><strong>Courier:</strong> {order.courierPartner || 'NimbusPost'}</div>
+                              {order.nimbuspostOrderId && <div><strong>Nimbus ID:</strong> {order.nimbuspostOrderId}</div>}
+                            </div>
+                          )}
+
+                          {order.orderStatus === 'appended' && shippingRates[order.id] && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(245,158,11,0.04)', display: 'flex', justifyContent: 'space-between', gap: '8px', borderTop: '1px dashed rgba(245,158,11,0.15)', color: '#f59e0b' }}>
+                              <div><strong>Calculated Courier:</strong> {shippingRates[order.id].name}</div>
+                              <div><strong>Rate:</strong> ₹{shippingRates[order.id].charges.toFixed(2)}</div>
+                            </div>
+                          )}
+
+                          {/* Shipping Card Actions */}
+                          <div className="order-card-actions" style={{ display: 'flex', padding: '12px', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
+                            {order.orderStatus === 'appended' && (
+                              <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={() => handleBookShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                🚀 Create Nimbus Shipment
+                              </button>
+                            )}
+
+                            {order.shippingLabelUrl && (
+                              <a
+                                href={order.shippingLabelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                onClick={async () => {
+                                  // Automatically advance status to label_printed if it's shipment_created
+                                  if (order.orderStatus === 'shipment_created') {
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'label_printed'
+                                    });
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(99,102,241,0.15)', border: '1px solid var(--accent-indigo)', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Download size={11} /> Download Shipping Label
+                              </a>
+                            )}
+
+                            {(order.orderStatus === 'shipment_created' || order.orderStatus === 'label_printed') && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { orderStatus: 'packed' });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#10b981', border: 'none', color: '#ffffff' }}
+                              >
+                                ✓ Mark Packed
+                              </button>
+                            )}
+
+                            {order.orderStatus === 'packed' && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  setShipmentActionProgress({ active: true, message: 'Scheduling pickup...' });
+                                  try {
+                                    const res = await handleCallNimbusApi('manifest', { awbNumbers: [order.awbNumber] });
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'pickup_scheduled',
+                                      manifestUrl: res.manifestUrl
+                                    });
+                                    setShipmentActionProgress({ active: false, message: 'Pickup scheduled successfully!' });
+                                    if (res.manifestUrl) window.open(res.manifestUrl, '_blank');
+                                    setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+                                  } catch (err) {
+                                    setShipmentActionProgress({ active: false, message: '' });
+                                    setOrdersError(err.message);
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#f59e0b', border: 'none', color: '#ffffff' }}
+                              >
+                                📅 Schedule Pickup
+                              </button>
+                            )}
+
+                            {order.manifestUrl && (
+                              <a
+                                href={order.manifestUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(245,158,11,0.15)', border: '1px solid #f59e0b', color: '#ffffff' }}
+                              >
+                                📄 View Manifest
+                              </a>
+                            )}
+
+                            {['shipment_created', 'label_printed', 'packed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn btn-danger-outline"
+                                onClick={() => handleCancelShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* MOVED TO SHIPMENT TAB */
+              <>
+                <div className="orders-panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h2 className="orders-panel-title">🚀 Moved to Shipment</h2>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        Manage booked shipments, print labels, download manifests, or mark orders as shipped
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bulk Actions Bar */}
+                  <div className="bulk-actions-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', background: 'rgba(255,255,255,0.02)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-light)', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginRight: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="select-all-shipments"
+                        style={{ cursor: 'pointer', width: '15px', height: '15px' }}
+                        checked={
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length > 0 &&
+                          orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).every(o => !!selectedToShipOrders[o.id])
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          const shipmentsList = orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus));
+                          setSelectedToShipOrders(prev => {
+                            const newSel = { ...prev };
+                            shipmentsList.forEach(o => {
+                              newSel[o.id] = checked;
+                            });
+                            return newSel;
+                          });
+                        }}
+                      />
+                      <label htmlFor="select-all-shipments" style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        Select All ({orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length})
+                      </label>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '8px' }}>
+                      Selected: {Object.values(selectedToShipOrders).filter(Boolean).length}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleMarkSelectedShipped}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}
+                    >
+                      🚚 Mark Selected as Shipped
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleMarkAllShipped}
+                      disabled={orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled'].includes(o.orderStatus)).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)' }}
+                    >
+                      🚚 Mark All as Shipped
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkMarkAsPacked}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)' }}
+                    >
+                      📦 Mark as Packed
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleBulkSchedulePickup}
+                      disabled={Object.values(selectedToShipOrders).filter(Boolean).length === 0 || shipmentActionProgress.active}
+                      style={{ padding: '6px 12px', fontSize: '0.78rem', fontWeight: 700, background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                    >
+                      📅 Schedule Pickup
+                    </button>
+                  </div>
+                </div>
+
+                {/* Shipping Action Progress Banner */}
+                {(shipmentActionProgress.active || shipmentActionProgress.message) && (
+                  <div className="append-progress-banner" style={{ margin: '12px 0', background: 'rgba(99,102,241,0.1)', borderColor: 'rgba(99,102,241,0.2)' }}>
+                    {shipmentActionProgress.active ? (
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2.5px', marginRight: '8px' }} />
+                    ) : (
+                      <CheckCircle2 size={16} style={{ color: '#10b981', marginRight: '8px' }} />
+                    )}
+                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: shipmentActionProgress.active ? '#a5b4fc' : '#10b981' }}>
+                      {shipmentActionProgress.message}
+                    </span>
+                  </div>
+                )}
+
+                {ordersError && (
+                  <div className="status-msg status-msg-error" style={{ margin: '12px 0' }}>
+                    <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+                    <span>{ordersError}</span>
+                  </div>
+                )}
+
+                {ordersLoading ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0' }}>
+                    <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px' }} />
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading shipments...</p>
+                  </div>
+                ) : orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '48px 24px', border: '2px dashed var(--border-light)', borderRadius: '12px' }}>
+                    <Package size={48} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto 12px' }} />
+                    <p style={{ color: 'var(--text-primary)', fontWeight: 600 }}>No shipments booked yet</p>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.83rem', marginTop: '4px' }}>
+                      Once you book shipments from "Orders to Ship", they will appear here.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="orders-cards-list">
+                    {orders.filter(o => ['shipment_created', 'label_printed', 'packed', 'pickup_scheduled', 'shipped'].includes(o.orderStatus)).map((order) => {
+                      const isSelected = !!selectedToShipOrders[order.id];
+                      return (
+                        <div key={order.id} className={`order-card shipping-order-card status-${order.orderStatus}`} style={{ borderLeft: isSelected ? '4px solid var(--accent-indigo)' : '4px solid transparent' }}>
+
+                          {/* Shipping Card Header */}
+                          <div className="order-card-header" style={{ paddingBottom: '12px' }}>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => setSelectedToShipOrders(prev => ({ ...prev, [order.id]: e.target.checked }))}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                              />
+                              <div>
+                                <div className="order-card-name" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                  {order.customerName || 'Unknown Customer'}
+                                  <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>({order.id})</span>
+                                </div>
+                                <div className="order-card-meta">
+                                  <span>📞 {order.orderedPhoneNumber || '—'}</span>
+                                  <span>✉️ {order.orderedEmail || '—'}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                              <span className={`shipping-status-badge badge-${order.orderStatus}`} style={{
+                                background: order.orderStatus === 'shipped' ? 'rgba(16, 185, 129, 0.15)' : '',
+                                color: order.orderStatus === 'shipped' ? '#10b981' : ''
+                              }}>
+                                {order.orderStatus === 'shipment_created' && '🚚 Shipment Booked'}
+                                {order.orderStatus === 'label_printed' && '🖨️ Label Printed'}
+                                {order.orderStatus === 'packed' && '📦 Packed'}
+                                {order.orderStatus === 'pickup_scheduled' && '📅 Pickup Scheduled'}
+                                {order.orderStatus === 'shipped' && '✨ Shipped'}
+                              </span>
+                              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                                {order.paymentMode === 'cod' ? '💵 COD' : '💳 Online'}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Address & Products Details */}
+                          <div style={{ fontSize: '0.82rem', padding: '12px', background: 'rgba(255,255,255,0.01)', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            <div style={{ marginBottom: '8px' }}>
+                              <strong>📍 Shipping Address:</strong> {order.shippingAddress?.address}, {order.shippingAddress?.city}, {order.shippingAddress?.state} - <strong>{order.shippingAddress?.pincode}</strong>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <strong>📦 Items ({order.items?.reduce((s, i) => s + (i.quantity || 1), 0)}):</strong>
+                              {order.items?.map((item, idx) => (
+                                <div key={idx} style={{ paddingLeft: '8px', color: 'var(--text-secondary)' }}>
+                                  • {item.typeofqr === 'personalised' ? 'Personalised Tag' : 'Classic Tag'} × {item.quantity}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Shipment details if created */}
+                          {order.awbNumber && (
+                            <div style={{ fontSize: '0.8rem', padding: '10px 12px', background: 'rgba(99,102,241,0.04)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px', borderTop: '1px dashed rgba(99,102,241,0.15)' }}>
+                              <div><strong>AWB:</strong> {order.awbNumber}</div>
+                              <div><strong>Courier:</strong> {order.courierPartner || 'NimbusPost'}</div>
+                              {order.nimbuspostOrderId && <div><strong>Nimbus ID:</strong> {order.nimbuspostOrderId}</div>}
+                            </div>
+                          )}
+
+                          {/* Shipping Card Actions */}
+                          <div className="order-card-actions" style={{ display: 'flex', padding: '12px', gap: '8px', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.03)', flexWrap: 'wrap' }}>
+
+                            {order.shippingLabelUrl && (
+                              <a
+                                href={order.shippingLabelUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                onClick={async () => {
+                                  if (order.orderStatus === 'shipment_created') {
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'label_printed'
+                                    });
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(99,102,241,0.15)', border: '1px solid var(--accent-indigo)', color: '#ffffff', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              >
+                                <Download size={11} /> Download Shipping Label
+                              </a>
+                            )}
+
+                            {['shipment_created', 'label_printed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), { orderStatus: 'packed' });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#10b981', border: 'none', color: '#ffffff' }}
+                              >
+                                ✓ Mark Packed
+                              </button>
+                            )}
+
+                            {order.orderStatus === 'packed' && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  setShipmentActionProgress({ active: true, message: 'Scheduling pickup...' });
+                                  try {
+                                    const res = await handleCallNimbusApi('manifest', { awbNumbers: [order.awbNumber] });
+                                    await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                      orderStatus: 'pickup_scheduled',
+                                      manifestUrl: res.manifestUrl
+                                    });
+                                    setShipmentActionProgress({ active: false, message: 'Pickup scheduled successfully!' });
+                                    if (res.manifestUrl) window.open(res.manifestUrl, '_blank');
+                                    setTimeout(() => setShipmentActionProgress({ active: false, message: '' }), 3000);
+                                  } catch (err) {
+                                    setShipmentActionProgress({ active: false, message: '' });
+                                    setOrdersError(err.message);
+                                  }
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: '#f59e0b', border: 'none', color: '#ffffff' }}
+                              >
+                                📅 Schedule Pickup
+                              </button>
+                            )}
+
+                            {order.manifestUrl && (
+                              <a
+                                href={order.manifestUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn"
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', textDecoration: 'none', background: 'rgba(245,158,11,0.15)', border: '1px solid #f59e0b', color: '#ffffff' }}
+                              >
+                                📄 View Manifest
+                              </a>
+                            )}
+
+                            {['packed', 'pickup_scheduled'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn"
+                                onClick={async () => {
+                                  await updateDoc(doc(firestoreDb, 'orders', order.id), {
+                                    orderStatus: 'shipped',
+                                    shippedAt: new Date()
+                                  });
+                                }}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', color: '#ffffff' }}
+                              >
+                                🚚 Mark Shipped
+                              </button>
+                            )}
+
+                            {['shipment_created', 'label_printed', 'packed'].includes(order.orderStatus) && (
+                              <button
+                                type="button"
+                                className="btn btn-danger-outline"
+                                onClick={() => handleCancelShipment(order)}
+                                style={{ padding: '6px 12px', fontSize: '0.78rem' }}
+                              >
+                                Cancel Shipment
+                              </button>
+                            )}
+                          </div>
+
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* RIGHT: PDF Previews (collapsible accordions) */}
+          <div className="orders-pdf-panel">
+            <div className="glass-panel card-content" style={{ position: 'sticky', top: '24px', maxHeight: 'calc(100vh - 48px)', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                  📄 PDF Sheets Preview
+                </h3>
+                {appendedQrs.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearPdfSheet}
+                    className="btn btn-danger-outline"
+                    style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    <Trash2 size={10} /> Clear Sheet
+                  </button>
+                )}
+              </div>
+
+              {appendedQrs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 12px', color: 'var(--text-secondary)' }}>
+                  <ImageIcon size={40} style={{ opacity: 0.2, marginBottom: '10px', display: 'block', margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: '0.85rem' }}>No QR codes yet.</p>
+                  <p style={{ fontSize: '0.75rem', opacity: 0.6 }}>Press "Append All to PDF" to generate.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                  {/* ACCORDION 1: FRONT SIDE (QR CODES) */}
+                  <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
+                    <div
+                      onClick={() => setFrontPreviewOpen(!frontPreviewOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: frontPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {frontPreviewOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Front Side (QR Codes)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDownloadPdf(); }}
+                        className="btn btn-primary"
+                        style={{ padding: '5px 10px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      >
+                        <Download size={10} /> Front PDF
+                      </button>
+                    </div>
+
+                    {frontPreviewOpen && (
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        {(() => {
+                          const pages = [];
+                          for (let i = 0; i < appendedQrs.length; i += 12) {
+                            pages.push(appendedQrs.slice(i, i + 12));
+                          }
+                          return pages.map((pageItems, pageIdx) => (
+                            <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                Page {pageIdx + 1} of {pages.length}
+                              </span>
+                              <div className="pdf-preview-page">
+                                {Array.from({ length: 12 }).map((_, slotIdx) => {
+                                  const hasItem = slotIdx < pageItems.length;
+                                  if (hasItem) {
+                                    const slotEntry = pageItems[slotIdx];
+                                    const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
+                                        {/* Render background underlay */}
+                                        {slotEntry?.typeofqr === 'personalised' && (
+                                          <img
+                                            src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl}
+                                            alt="bg"
+                                            className="pdf-preview-image"
+                                            style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }}
+                                          />
+                                        )}
+                                        {slotEntry?.typeofqr === 'classic_black' && (
+                                          <div className="pdf-preview-image" style={{ background: '#000000' }} />
+                                        )}
+                                        {slotEntry?.typeofqr === 'classic_white' && (
+                                          <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
+                                        )}
+                                        {/* Render QR overlay */}
+                                        <img src={slotQrUrl} alt={`QR ${slotIdx}`} className="pdf-preview-image" style={{ zIndex: 2 }} />
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ACCORDION 2: BACK SIDE (COVERS/LOGOS) */}
+                  <div style={{ border: '1px solid var(--border-light)', borderRadius: '12px', overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}>
+                    <div
+                      onClick={() => setBackPreviewOpen(!backPreviewOpen)}
+                      style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'rgba(255,255,255,0.02)', cursor: 'pointer', borderBottom: backPreviewOpen ? '1px solid var(--border-light)' : 'none' }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {backPreviewOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Back Side (Covers/Logos)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDownloadLogoPdf(); }}
+                        className="btn btn-success"
+                        style={{ padding: '5px 10px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none', color: '#ffffff' }}
+                      >
+                        <Download size={10} /> Back PDF
+                      </button>
+                    </div>
+
+                    {backPreviewOpen && (
+                      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                        {(() => {
+                          const pages = [];
+                          for (let i = 0; i < appendedQrs.length; i += 12) {
+                            pages.push(appendedQrs.slice(i, i + 12));
+                          }
+                          return pages.map((pageItems, pageIdx) => (
+                            <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                Page {pageIdx + 1} of {pages.length}
+                              </span>
+                              <div className="pdf-preview-page">
+                                {Array.from({ length: 12 }).map((_, slotIdx) => {
+                                  const hasItem = slotIdx < pageItems.length;
+                                  if (hasItem) {
+                                    const slotEntry = pageItems[slotIdx];
+
+                                    // Determine image src for backside cover preview
+                                    let backImgSrc = '/full logo black.png';
+                                    if (slotEntry?.typeofqr === 'personalised' && slotEntry?.version === 2) {
+                                      backImgSrc = slotEntry?.imageUrl || '';
+                                    }
+
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item" style={{ background: '#1f2937', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {backImgSrc ? (
+                                          <img src={backImgSrc} alt={`Back ${slotIdx}`} className="pdf-preview-image" style={{ objectFit: 'contain', background: '#000000' }} />
+                                        ) : (
+                                          <span style={{ fontSize: '0.62rem', fontWeight: 'bold', color: '#ef4444' }}>No Image</span>
+                                        )}
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div key={slotIdx} className="pdf-preview-item-empty" style={{ position: 'relative' }}>
+                                        {renderGuideOverlay(pageIdx, slotIdx)}
+                                      </div>
+                                    );
+                                  }
+                                })}
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* ═══════════════════════════════════════════
+          LANDING PAGE QRs TAB
+      ═══════════════════════════════════════════ */}
       {activeAdminTab === 'landing_qrs' && (
-        <LandingQRsTab
-          landingQrs={landingQrs} setLandingQrs={setLandingQrs} handleLandingImageUpload={handleLandingImageUpload}
-          croppingLandingTag={croppingLandingTag} cropState={cropState} handleCropBoxDown={handleCropBoxDown}
-          handleCropBoxMove={handleCropBoxMove} handleCropBoxUp={handleCropBoxUp} dragging={dragging}
-          handleCropSizeChange={handleCropSizeChange} handleApplyLandingCrop={handleApplyLandingCrop}
-          setCroppingLandingTag={setCroppingLandingTag} setLandingCropImage={setLandingCropImage} setCropState={setCropState}
-          landingPreviewCanvasRef={landingPreviewCanvasRef} handleSaveLandingQrs={handleSaveLandingQrs}
-          savingLandingQrs={savingLandingQrs} landingSuccess={landingSuccess} landingError={landingError}
-          cropCanvasRef={cropCanvasRef}
-        />
+        <div className="glass-panel card-content" style={{ marginTop: '12px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, var(--text-primary) 30%, var(--accent-indigo) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '20px' }}>
+            🎨 Landing Page Keychains Configuration
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '24px', lineHeight: 1.5 }}>
+            Configure the three hanging keychains that are displayed on the landing page of the website.
+            For each keychain, upload a background logo/picture, and enter a label. When saved, these will immediately update the homepage.
+            Scanning these keychains or clicking them redirects users to the demo profile page (id=preview).
+          </p>
+
+          <form onSubmit={handleSaveLandingQrs} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+
+              {/* Tag 1: Left Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Left Tag (Tag 1)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag1: { ...prev.tag1, visible: !prev.tag1.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag1.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag1.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag1.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag1.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag1: { ...prev.tag1, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Pet"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      <img
+                        src={landingQrs.tag1.base64Image || '/cropped_tag1.png'}
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag1.png')) {
+                            e.target.src = '/cropped_tag1.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag1.jpg')) {
+                            e.target.src = '/logo icon black.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }}
+                        alt="Tag 1"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag1-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag1', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag1-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 1 */}
+                {croppingLandingTag === 'tag1' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag1')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tag 2: Center Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Center Tag (Tag 2)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag2: { ...prev.tag2, visible: !prev.tag2.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag2.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag2.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag2.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag2.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag2: { ...prev.tag2, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Memory"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      <img
+                        src={landingQrs.tag2.base64Image || '/cropped_tag2.png'}
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag2.png')) {
+                            e.target.src = '/cropped_tag2.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag2.jpg')) {
+                            e.target.src = '/customised.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }}
+                        alt="Tag 2"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag2-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag2', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag2-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 2 */}
+                {croppingLandingTag === 'tag2' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag2')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tag 3: Right Tag */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-light)', borderRadius: '14px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '8px', marginBottom: '4px' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                    Right Tag (Tag 3)
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setLandingQrs(prev => ({
+                      ...prev,
+                      tag3: { ...prev.tag3, visible: !prev.tag3.visible }
+                    }))}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: landingQrs.tag3.visible ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '4px',
+                      transition: 'all 0.2s'
+                    }}
+                    title={landingQrs.tag3.visible ? "Visible on landing page" : "Hidden on landing page"}
+                  >
+                    {landingQrs.tag3.visible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  </button>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Tag Label</label>
+                  <input
+                    type="text"
+                    className="text-input"
+                    value={landingQrs.tag3.label}
+                    onChange={(e) => setLandingQrs(prev => ({
+                      ...prev,
+                      tag3: { ...prev.tag3, label: e.target.value }
+                    }))}
+                    placeholder="e.g. Your Art"
+                    required
+                  />
+                </div>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label className="form-label" style={{ fontSize: '0.75rem' }}>Background Image</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '8px', overflow: 'hidden', background: '#0a0a0a', border: '1px solid var(--border-light)', flexShrink: 0 }}>
+                      <img
+                        src={landingQrs.tag3.base64Image || '/cropped_tag3.png'}
+                        onError={(e) => {
+                          if (e.target.src.endsWith('/cropped_tag3.png')) {
+                            e.target.src = '/cropped_tag3.jpg';
+                          } else if (e.target.src.endsWith('/cropped_tag3.jpg')) {
+                            e.target.src = '/logo icon black.png';
+                          } else {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                          }
+                        }}
+                        alt="Tag 3"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    </div>
+                    <input
+                      type="file"
+                      id="landing-tag3-file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleLandingImageUpload('tag3', e.target.files[0])}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-danger-outline"
+                      style={{ flex: 1, padding: '10px', fontSize: '0.8rem' }}
+                      onClick={() => document.getElementById('landing-tag3-file').click()}
+                    >
+                      Upload Image
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cropper Workspace for Tag 3 */}
+                {croppingLandingTag === 'tag3' && cropState.showCropStep && (
+                  <div className="confirmation-box" style={{ margin: '10px 0', border: '1px solid var(--border-light)', background: 'rgba(0,0,0,0.15)', padding: '12px', borderRadius: '8px' }}>
+                    <h4 style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#ffffff', marginBottom: '8px', textAlign: 'center' }}>Adjust Crop Area</h4>
+                    <div
+                      style={{
+                        position: 'relative',
+                        margin: '10px auto',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        width: `${cropState.dispW}px`,
+                        height: `${cropState.dispH}px`,
+                        touchAction: 'none'
+                      }}
+                    >
+                      <canvas ref={cropCanvasRef} style={{ display: 'block' }} />
+                      <div
+                        onPointerDown={handleCropBoxDown}
+                        onPointerMove={handleCropBoxMove}
+                        onPointerUp={handleCropBoxUp}
+                        onPointerCancel={handleCropBoxUp}
+                        style={{
+                          position: 'absolute',
+                          border: '1px solid rgba(255, 255, 255, 0.45)',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          cursor: dragging ? 'grabbing' : 'grab',
+                          borderRadius: '2px',
+                          width: `${cropState.size}px`,
+                          height: `${cropState.size}px`,
+                          left: `${cropState.x}px`,
+                          top: `${cropState.y}px`
+                        }}
+                      >
+                        <div className="crop-box-overlay">
+                          <div className="crop-grid-line-v v1" />
+                          <div className="crop-grid-line-v v2" />
+                          <div className="crop-grid-line-h h1" />
+                          <div className="crop-grid-line-h h2" />
+                          <div className="crop-edge-bar bar-top" />
+                          <div className="crop-edge-bar bar-bottom" />
+                          <div className="crop-edge-bar bar-left" />
+                          <div className="crop-edge-bar bar-right" />
+                          <div className="crop-corner-bracket corner-tl" />
+                          <div className="crop-corner-bracket corner-tr" />
+                          <div className="crop-corner-bracket corner-bl" />
+                          <div className="crop-corner-bracket corner-br" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '10px' }}>
+                      <label className="form-label" style={{ fontSize: '0.7rem', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>Selection crop size:</span>
+                        <span style={{ color: 'var(--accent-cyan)' }}>{cropState.size}px</span>
+                      </label>
+                      <input
+                        type="range"
+                        min="30"
+                        max={Math.min(cropState.dispW, cropState.dispH)}
+                        value={cropState.size}
+                        onChange={handleCropSizeChange}
+                        style={{ width: '100%', accentColor: '#e8402c' }}
+                      />
+                    </div>
+
+                    <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => handleApplyLandingCrop('tag3')}
+                      >
+                        Apply Crop
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-outline"
+                        style={{ flex: 1, padding: '8px', fontSize: '0.8rem' }}
+                        onClick={() => {
+                          setCroppingLandingTag(null);
+                          setLandingCropImage(null);
+                          setCropState(prev => ({ ...prev, showCropStep: false }));
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+
+                    <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Live Tag Preview:</span>
+                      <canvas ref={landingPreviewCanvasRef} style={{ display: 'block', width: '160px', height: '175px', borderRadius: '8px', border: '1px solid var(--border-light)', background: '#000' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Save Status messages */}
+            {landingSuccess && (
+              <div className="status-msg status-msg-success" style={{ margin: 0 }}>
+                <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+                <span>{landingSuccess}</span>
+              </div>
+            )}
+            {landingError && (
+              <div className="status-msg status-msg-error" style={{ margin: 0 }}>
+                <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+                <span>{landingError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={savingLandingQrs}
+              style={{ padding: '14px 24px', fontSize: '0.95rem', fontWeight: 800, alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {savingLandingQrs ? (
+                <>
+                  <div className="spinner" style={{ width: '16px', height: '16px' }}></div>
+                  Saving Keychains...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={18} />
+                  Save Landing Page QRs
+                </>
+              )}
+            </button>
+          </form>
+        </div>
       )}
 
+      {/* Tab Panel: Scan Finder / Tag Lookup */}
       {activeAdminTab === 'finder' && (
-        <ScanFinderTab />
+        <div className="glass-panel card-content" style={{ marginTop: '12px' }}>
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, var(--text-primary) 30%, var(--accent-indigo) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '20px' }}>
+            🔍 Scan Finder & Tag Lookup
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '20px', textAlign: 'left', lineHeight: '1.5' }}>
+            Scan a physical keychain using your device camera or type/paste its QR link or Tag ID below to lookup the order details.
+          </p>
+
+          {/* Packing Helper Session Controls */}
+          <div style={{
+            background: packingSessionActive ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
+            border: packingSessionActive ? '1px solid rgba(99,102,241,0.3)' : '1px solid var(--border-light)',
+            borderRadius: '16px',
+            padding: '20px',
+            maxWidth: '600px',
+            margin: '0 auto 24px auto',
+            textAlign: 'left'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px', color: packingSessionActive ? '#a5b4fc' : 'var(--text-primary)' }}>
+                  📦 Packing Box Helper
+                  {packingSessionActive && <span className="pulse-indicator" style={{ display: 'inline-block', width: '8px', height: '8px', background: '#10b981', borderRadius: '50%' }} />}
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                  {packingSessionActive 
+                    ? `Active packing session: ${Object.keys(packingPhoneToBoxMap).length} orders grouped across ${maxBoxNumber} boxes.`
+                    : 'Sort and group multiple items/tags belonging to the same customer into separate shipping boxes.'
+                  }
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (packingSessionActive) {
+                      const confirmEnd = window.confirm("Are you sure you want to end this packing session? You can still view/copy your box data until you start a new session.");
+                      if (confirmEnd) {
+                        setPackingSessionActive(false);
+                        setLastAssignedBox(null);
+                        stopCamera();
+                      }
+                    } else {
+                      setPackingSessionActive(true);
+                      setPackingPhoneToBoxMap({});
+                      setMaxBoxNumber(0);
+                      setLastAssignedBox(null);
+                      setPackingHistory([]);
+                      setPackingBoxesData({});
+                    }
+                  }}
+                  className={`btn ${packingSessionActive ? 'btn-danger-outline' : 'btn-primary'}`}
+                  style={{
+                    padding: '8px 16px',
+                    fontSize: '0.82rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    border: packingSessionActive ? '1px solid rgba(244, 63, 94, 0.4)' : 'none',
+                    background: packingSessionActive ? 'transparent' : 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+                    color: packingSessionActive ? 'var(--accent-rose)' : '#ffffff'
+                  }}
+                >
+                  {packingSessionActive ? '⏹️ End Packing Session' : '▶️ Start Packing Session'}
+                </button>
+
+                {Object.keys(packingBoxesData).length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowExportModal(true)}
+                    className="btn btn-secondary"
+                    style={{
+                      padding: '8px 16px',
+                      fontSize: '0.82rem',
+                      borderRadius: '8px',
+                      fontWeight: 700,
+                      border: '1px solid var(--border-light)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    📋 Ask for Box Info
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Display Current Box Assignment Prominently */}
+            {packingSessionActive && lastAssignedBox && (
+              <div style={{
+                marginTop: '16px',
+                background: lastAssignedBox.isNew ? 'rgba(16, 185, 129, 0.08)' : 'rgba(99,102,241,0.08)',
+                border: lastAssignedBox.isNew ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid rgba(99,102,241,0.25)',
+                borderRadius: '12px',
+                padding: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                animation: 'fadeIn 0.35s ease'
+              }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600 }}>
+                  Scan Result Assignment
+                </span>
+                
+                <div style={{ fontSize: '1.8rem', fontWeight: 900, color: lastAssignedBox.isNew ? '#10b981' : '#a5b4fc', margin: '8px 0' }}>
+                  PLACE IN BOX #{lastAssignedBox.boxNumber}
+                </div>
+                
+                {lastAssignedBox.isNew && (
+                  <span style={{
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: '#10b981',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.68rem',
+                    fontWeight: 700,
+                    marginBottom: '8px'
+                  }}>
+                    🆕 NEW BOX CREATED
+                  </span>
+                )}
+
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  Tag: <strong style={{ fontFamily: 'monospace' }}>#{lastAssignedBox.tagId}</strong> · Customer: <strong>{lastAssignedBox.customerName}</strong>
+                </div>
+              </div>
+            )}
+
+            {/* Packing History (Last 5 scans) */}
+            {packingSessionActive && packingHistory.length > 0 && (
+              <div style={{ marginTop: '16px', borderTop: '1px dashed rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+                  Session History (Last 5 scans)
+                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '150px', overflowY: 'auto' }}>
+                  {packingHistory.slice(0, 5).map((item, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '0.78rem',
+                      padding: '6px 10px',
+                      background: 'rgba(255,255,255,0.01)',
+                      border: '1px solid rgba(255,255,255,0.03)',
+                      borderRadius: '6px'
+                    }}>
+                      <div>
+                        <span style={{ fontFamily: 'monospace', opacity: 0.8, marginRight: '8px' }}>#{item.tagId}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{item.customerName}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {item.isNew && <span style={{ color: '#10b981', fontSize: '0.65rem', fontWeight: 700 }}>[NEW]</span>}
+                        <span style={{
+                          background: item.isNew ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99,102,241,0.15)',
+                          color: item.isNew ? '#10b981' : '#a5b4fc',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: 700
+                        }}>
+                          Box #{item.boxNumber}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Camera Scanning & File Upload Section */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px', gap: '12px' }}>
+            {cameraActive ? (
+              <div style={{ width: '100%', maxWidth: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                <video id="camera-video" autoPlay playsInline muted style={{ width: '100%', borderRadius: '12px', overflow: 'hidden', border: '2px solid var(--accent-indigo)', background: '#000000' }}></video>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="btn btn-danger-outline"
+                  style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+                >
+                  Stop Scanning
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="btn btn-primary"
+                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
+                >
+                  📷 Start Camera Scan
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('qr-file-input').click()}
+                  className="btn btn-secondary"
+                  style={{ padding: '12px 20px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                >
+                  📁 Upload QR Image
+                </button>
+
+                <input
+                  type="file"
+                  id="qr-file-input"
+                  accept="image/*"
+                  onChange={handleUploadQrFile}
+                  style={{ display: 'none' }}
+                />
+              </div>
+            )}
+          </div>
+          <div id="qr-file-reader" style={{ display: 'none' }}></div>
+
+          <form onSubmit={handleLookupTag} style={{ display: 'flex', gap: '12px', alignItems: 'flex-end', maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
+            <div className="form-group" style={{ flex: 1, marginBottom: 0 }}>
+              <label className="form-label" style={{ textAlign: 'left' }}>Or Enter Tag ID manually:</label>
+              <input
+                type="text"
+                placeholder="e.g. a9t4k7s0 or paste full QR link"
+                value={lookupId}
+                onChange={(e) => setLookupId(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.95rem'
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={lookupLoading}
+              style={{ padding: '14px 24px', fontWeight: 700, borderRadius: '10px', height: '49px' }}
+            >
+              {lookupLoading ? 'Searching...' : 'Search'}
+            </button>
+          </form>
+
+          {lookupError && (
+            <div className="status-msg status-msg-error" style={{ maxWidth: '600px', marginBottom: '24px', marginX: 'auto' }}>
+              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <span>{lookupError}</span>
+            </div>
+          )}
+
+          {showAddTagOption && (
+            <div className="glass-panel" style={{ maxWidth: '600px', margin: '0 auto 24px auto', padding: '20px', border: '1px dashed var(--accent-indigo)', borderRadius: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600, textAlign: 'center' }}>
+                Would you like to register Tag ID <strong style={{ color: 'var(--accent-indigo)' }}>#{showAddTagOption}</strong> into the database?
+              </span>
+              <button
+                type="button"
+                onClick={() => handleAddMissingTag(showAddTagOption)}
+                className="btn btn-primary"
+                style={{ padding: '10px 20px', fontSize: '0.88rem', display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)' }}
+              >
+                ➕ Add Tag into Database
+              </button>
+            </div>
+          )}
+
+          {lookupResult && (
+            <div style={{
+              maxWidth: '500px',
+              margin: '0 auto',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid var(--border-light)',
+              borderRadius: '16px',
+              padding: '24px',
+              textAlign: 'left',
+              animation: 'fadeIn 0.35s ease'
+            }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: '18px', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Tag Found</span>
+                <span style={{ fontFamily: 'monospace', color: 'var(--text-primary)' }}>#{lookupResult.tagId}</span>
+              </h3>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
+                {/* 1. Customer Name */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Customer Name
+                  </span>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {lookupResult.customerName}
+                  </span>
+                </div>
+
+                {/* 2. Total Quantity */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Total Quantity Ordered
+                  </span>
+                  <span style={{ fontSize: '1.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {lookupResult.totalQuantity} items
+                  </span>
+                </div>
+
+                {/* 2. Phone Number */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Ordered Phone Number
+                  </span>
+                  <a href={`tel:${lookupResult.orderedPhoneNumber}`} style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--accent-indigo)', textDecoration: 'none' }}>
+                    {lookupResult.orderedPhoneNumber}
+                  </a>
+                </div>
+
+                {/* 3. Email */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px 18px' }}>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
+                    Ordered Email
+                  </span>
+                  <a href={`mailto:${lookupResult.orderedEmail}`} style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent-indigo)', textDecoration: 'none', wordBreak: 'break-all' }}>
+                    {lookupResult.orderedEmail}
+                  </a>
+                </div>
+
+              </div>
+            </div>
+          )}
+          {/* Modal for Exported Box Information */}
+          {showExportModal && (
+            <div className="modal-overlay" style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(11, 15, 25, 0.85)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 9999,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              animation: 'fadeIn 0.25s ease'
+            }}>
+              <div className="glass-panel" style={{
+                width: '100%',
+                maxWidth: '600px',
+                padding: '28px 24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.4)',
+                border: '1px solid var(--border-light)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>📋 Exported Box Information</h3>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowExportModal(false)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.2rem' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                
+                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                  Copy the text below and paste it directly to ChatGPT along with your shipping labels PDF text.
+                </p>
+
+                <textarea
+                  readOnly
+                  value={
+                    Object.entries(packingBoxesData)
+                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                      .map(([boxNum, data]) => {
+                        return `BOX ${boxNum}
+Name: ${data.customerName}
+Phone: ${data.orderedPhoneNumber}
+Address: ${data.address}
+Tags in box: ${data.tags.join(', ')}
+---------------------------------------------`;
+                      })
+                      .join('\n\n')
+                  }
+                  style={{
+                    width: '100%',
+                    height: '250px',
+                    background: 'rgba(0, 0, 0, 0.03)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    color: 'var(--text-primary)',
+                    fontFamily: 'monospace',
+                    fontSize: '0.85rem',
+                    resize: 'none',
+                    outline: 'none',
+                    lineHeight: '1.5'
+                  }}
+                />
+
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const text = Object.entries(packingBoxesData)
+                        .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                        .map(([boxNum, data]) => {
+                          return `BOX ${boxNum}
+Name: ${data.customerName}
+Phone: ${data.orderedPhoneNumber}
+Address: ${data.address}
+Tags in box: ${data.tags.join(', ')}
+---------------------------------------------`;
+                        })
+                        .join('\n\n');
+                      navigator.clipboard.writeText(text);
+                      alert("Copied box info to clipboard!");
+                    }}
+                    className="btn btn-primary"
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    Copy to Clipboard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowExportModal(false)}
+                    className="btn btn-confirm-no"
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
+
+      {/* PDF Print Sheet Preview Section */}
+      <div className="glass-panel card-content" style={{ marginTop: '32px', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px', marginBottom: '24px' }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, var(--text-primary) 30%, var(--accent-indigo) 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              PDF Print Sheet Preview
+            </h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: '4px' }}>
+              Layout: A4 sheet, 3x4 grid (12 tags max per page). Each tag: 57mm x 57mm cutting border, 52mm x 52mm photo background (bleed), 49mm x 49mm QR code centered.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {appendedQrs.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="btn btn-primary"
+                style={{ padding: '8px 16px', fontSize: '0.85rem', borderRadius: '8px', fontWeight: 700 }}
+              >
+                <Download size={14} />
+                DOWNLOAD PDF ({appendedQrs.length} {appendedQrs.length === 1 ? 'Tag' : 'Tags'})
+              </button>
+            )}
+          </div>
+        </div>
+
+        {appendedQrs.length === 0 ? (
+          <div style={{
+            border: '2px dashed var(--border-light)',
+            borderRadius: '12px',
+            padding: '48px 24px',
+            textAlign: 'center',
+            color: 'var(--text-secondary)'
+          }}>
+            <ImageIcon size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '1rem', color: 'var(--text-primary)', marginBottom: '6px' }}>Print Sheet is Empty</h3>
+            <p style={{ fontSize: '0.85rem', maxWidth: '380px', margin: '0 auto', lineHeight: '1.5' }}>
+              Generate a QR code above and click **"APPEND TO PDF SHEET"** to place it on the print template.
+            </p>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            gap: '32px',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            padding: '16px 0'
+          }}>
+            {/* Split appended QRs into chunks of 16 for pagination */}
+            {(() => {
+              const pages = [];
+              for (let i = 0; i < appendedQrs.length; i += 12) {
+                pages.push(appendedQrs.slice(i, i + 12));
+              }
+              return pages.map((pageItems, pageIdx) => (
+                <div key={pageIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    Page {pageIdx + 1} of {pages.length}
+                  </span>
+                  <div className="pdf-preview-page">
+                    {Array.from({ length: 12 }).map((_, slotIdx) => {
+                      const hasItem = slotIdx < pageItems.length;
+                      if (hasItem) {
+                        const slotEntry = pageItems[slotIdx];
+                        const slotQrUrl = slotEntry?.qrUrl ?? slotEntry;
+                        return (
+                          <div key={slotIdx} className="pdf-preview-item" style={{ background: '#fafafa' }}>
+                            {/* Render background underlay */}
+                            {slotEntry?.typeofqr === 'personalised' && (
+                              <img
+                                src={slotEntry.version === 2 ? '/logo icon black.png' : slotEntry.imageUrl}
+                                alt="bg"
+                                className="pdf-preview-image"
+                                style={{ objectFit: slotEntry.version === 2 ? 'contain' : 'cover', background: '#000000' }}
+                              />
+                            )}
+                            {slotEntry?.typeofqr === 'classic_black' && (
+                              <div className="pdf-preview-image" style={{ background: '#000000' }} />
+                            )}
+                            {slotEntry?.typeofqr === 'classic_white' && (
+                              <div className="pdf-preview-image" style={{ background: '#ffffff' }} />
+                            )}
+                            {/* Render QR overlay */}
+                            <img
+                              src={slotQrUrl}
+                              alt={`QR Slot ${slotIdx}`}
+                              className="pdf-preview-image"
+                              style={{ zIndex: 2 }}
+                            />
+                            {renderGuideOverlay(pageIdx, slotIdx)}
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div
+                            key={slotIdx}
+                            className="pdf-preview-item-empty"
+                            style={{ position: 'relative' }}
+                          >
+                            {renderGuideOverlay(pageIdx, slotIdx)}
+                          </div>
+                        );
+                      }
+                    })}
+                  </div>
+                </div>
+              ));
+            })()}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 };
