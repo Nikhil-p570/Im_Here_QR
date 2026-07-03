@@ -5222,7 +5222,15 @@ const AdminPanel = ({
                   onClick={async () => {
                     if (window.confirm(`Are you sure you want to completely erase the database records for Tag #${lookupResult.tagId}? This will allow the tag to be registered again.`)) {
                       try {
-                        await deleteDoc(doc(firestoreDb, 'qrcodes', lookupResult.tagId));
+                        // Delete the public profile document
+                        await deleteDoc(doc(firestoreDb, 'links', lookupResult.tagId));
+                        // Try deleting the private credentials document (fail silently if it doesn't exist)
+                        try {
+                          await deleteDoc(doc(firestoreDb, 'links_private', lookupResult.tagId));
+                        } catch (privateErr) {
+                          console.warn("Private document not found or could not be deleted:", privateErr);
+                        }
+                        
                         alert(`Tag #${lookupResult.tagId} successfully deleted! It is now unregistered.`);
                         setLookupResult(null);
                       } catch (err) {
