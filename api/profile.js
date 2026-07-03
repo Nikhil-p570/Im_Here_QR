@@ -104,6 +104,17 @@ export default async function handler(req, res) {
       delete data.passwordHash;
       delete data.securityAnswerHash;
 
+      // Fetch securityQuestion from links_private
+      try {
+        const privDocRef = doc(db, 'links_private', id);
+        const privDocSnap = await getDoc(privDocRef);
+        if (privDocSnap.exists()) {
+          data.securityQuestion = privDocSnap.data().securityQuestion;
+        }
+      } catch (err) {
+        console.error("Error fetching private data:", err);
+      }
+
       return res.status(200).json({ success: true, profile: data });
     }
 
