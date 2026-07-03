@@ -1,11 +1,40 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle2, Trash2 } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const ScanFinderTab = () => {
   // Local state for Scan Finder
   const [cameraActive, setCameraActive] = useState(false);
-  const startCamera = () => { alert('Camera logic to be implemented'); };
-  const stopCamera = () => { setCameraActive(false); };
+  const startCamera = () => {
+    setCameraActive(true);
+    setLookupResult(null);
+    setLookupError("");
+    setTimeout(() => {
+      const html5QrCode = new Html5Qrcode("reader");
+      html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          html5QrCode.stop().then(() => setCameraActive(false)).catch(console.error);
+          setLookupId(decodedText);
+          // Wait briefly for state to update, then look up
+          setTimeout(() => handleLookupTag({ preventDefault: () => {} }, decodedText), 50);
+        },
+        (error) => {}
+      ).catch(err => {
+        alert("Camera start failed: " + err);
+        setCameraActive(false);
+      });
+      window.activeQrScanner = html5QrCode;
+    }, 100);
+  };
+  const stopCamera = () => {
+    if (window.activeQrScanner) {
+      window.activeQrScanner.stop().catch(console.error);
+      window.activeQrScanner = null;
+    }
+    setCameraActive(false);
+  };
 
   const [lookupId, setLookupId] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -13,9 +42,47 @@ const ScanFinderTab = () => {
   const [lookupResult, setLookupResult] = useState(null);
   const [showAddTagOption, setShowAddTagOption] = useState(false);
 
-  const handleAddMissingTag = () => {};
-  const handleLookupTag = (e) => { e && e.preventDefault(); };
-  const handleUploadQrFile = () => {};
+  const handleLookupTag = async (e, directId = null) => {
+    if (e) e.preventDefault();
+    const idValue = directId || lookupId;
+    if (!idValue || !idValue.trim()) return;
+
+    let idToLookup = idValue.trim();
+    if (idToLookup.includes('?=')) idToLookup = idToLookup.split('?=')[1];
+    if (idToLookup.includes('?id=')) idToLookup = idToLookup.split('?id=')[1];
+    if (idToLookup.includes('/')) idToLookup = idToLookup.split('/').pop();
+    idToLookup = idToLookup.split('&')[0];
+    
+    setLookupId(idToLookup);
+    setLookupLoading(true);
+    setLookupError('');
+    setLookupResult(null);
+    setShowAddTagOption(false);
+
+    try {
+      const res = await fetch(`/api/profile?id=${encodeURIComponent(idToLookup)}`);
+      const data = await res.json();
+      if (res.ok && data.success && data.profile) {
+        setLookupResult({
+           ...data.profile,
+           tagId: idToLookup
+        });
+      } else {
+        setLookupError(data.error || "Tag not found.");
+      }
+    } catch (err) {
+      setLookupError("Failed to lookup: " + err.message);
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const handleAddMissingTag = () => {
+     alert("Add missing tag API not configured yet.");
+  };
+  const handleUploadQrFile = () => {
+     alert("Upload file logic to be implemented. Please use Camera for now.");
+  };
 
   const [packingSessionActive, setPackingSessionActive] = useState(false);
   const [packingPhoneToBoxMap, setPackingPhoneToBoxMap] = useState({});
