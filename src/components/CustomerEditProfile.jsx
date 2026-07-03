@@ -471,10 +471,10 @@ const CustomerEditProfile = ({
                           left: 0,
                           right: 0,
                           marginTop: '6px',
-                          background: '#0f172a',
+                          background: '#ffffff',
                           border: '1px solid var(--border-light)',
                           borderRadius: '8px',
-                          boxShadow: '0 8px 20px rgba(0,0,0,0.5)',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
                           zIndex: 50,
                           overflow: 'hidden'
                         }}
@@ -489,14 +489,15 @@ const CustomerEditProfile = ({
                             }}
                             style={{
                               padding: '10px 12px',
-                              fontSize: '0.8rem',
+                              fontSize: '0.85rem',
+                              fontWeight: social.type === option ? 600 : 500,
                               cursor: 'pointer',
-                              color: social.type === option ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                              background: social.type === option ? 'rgba(255,255,255,0.04)' : 'transparent',
-                              transition: 'background 0.2s'
+                              color: social.type === option ? 'var(--accent-indigo)' : 'var(--text-primary)',
+                              background: social.type === option ? 'rgba(79, 70, 229, 0.05)' : 'transparent',
+                              transition: 'all 0.2s ease'
                             }}
-                            onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.08)'}
-                            onMouseLeave={(e) => e.target.style.background = social.type === option ? 'rgba(255,255,255,0.04)' : 'transparent'}
+                            onMouseEnter={(e) => e.target.style.background = social.type === option ? 'rgba(79, 70, 229, 0.08)' : 'rgba(0,0,0,0.03)'}
+                            onMouseLeave={(e) => e.target.style.background = social.type === option ? 'rgba(79, 70, 229, 0.05)' : 'transparent'}
                           >
                             {option}
                           </div>
