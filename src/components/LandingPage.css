@@ -671,7 +671,7 @@ html {
   bottom: 4px;
   left: 4px;
   width: calc(50% - 4px);
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 25%, #a5b4fc 50%, #6366f1 75%, #4f46e5 100%);
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 25%, #818cf8 50%, #6366f1 75%, #4f46e5 100%);
   background-size: 200% auto;
   border-radius: 100px;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);

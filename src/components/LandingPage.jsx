@@ -826,7 +826,7 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
             <p className="lp-section-subtitle" style={{ margin: '0 auto' }}>
               Each tag features your own artwork or photography — fully scannable,
               fully yours. Flip any tag to see both sides. We offer <strong>two customizable styles</strong> —
-              <span className="shining-gold-text">Photo-Front</span> and <span className="shining-gold-text">Photo-Back</span>. Click either below to preview them live!
+              <strong style={{ color: '#8b5cf6', fontWeight: 900 }}>Photo-Front</strong> and <strong style={{ color: '#8b5cf6', fontWeight: 900 }}>Photo-Back</strong>. Click either below to preview them live!
             </p>
           </div>
 
