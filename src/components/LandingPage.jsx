@@ -183,16 +183,18 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
           ctx.fillRect(0, 0, W, H);
         }
       } else {
-        if (imgLoaded) {
-          ctx.drawImage(imgLoaded, 0, 0, W, H);
-          ctx.fillStyle = 'rgba(0,0,0,0.45)';
-          ctx.fillRect(0, 0, W, H);
-        } else {
-          ctx.fillStyle = '#0f172a';
-          ctx.fillRect(0, 0, W, H);
-        }
+        // Version 1 Backside: solid black with centered logo
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, W, H);
+        
         if (logoLoaded) {
-          ctx.drawImage(logoLoaded, 0, 0, W, H);
+          // Uniformly scale the logo to fit nicely within 90% of the card
+          const scale = Math.min((W * 0.9) / logoLoaded.width, (H * 0.9) / logoLoaded.height);
+          const targetW = logoLoaded.width * scale;
+          const targetH = logoLoaded.height * scale;
+          const x = (W - targetW) / 2;
+          const y = (H - targetH) / 2;
+          ctx.drawImage(logoLoaded, x, y, targetW, targetH);
         }
       }
     }
@@ -598,7 +600,46 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Firebase init
+  // ── Coupon Scroller ────────────────────────────────────────────────
+const CouponScroller = () => {
+  const coupons = [
+    { text: "FLAT ₹100 OFF", highlight: "ON ALL TAGS" },
+    { text: "BUY 2 GET 1 FREE", highlight: "BEST DEAL" },
+    { text: "BUY 3 GET 2 FREE", highlight: "LIMITED TIME" },
+    { text: "FREE SHIPPING", highlight: "ON ALL ORDERS" }
+  ];
+
+  // We duplicate the list internally to make one long group, 
+  // then we render TWO identical groups for a seamless loop.
+  const groupItems = [...coupons, ...coupons, ...coupons, ...coupons];
+
+  return (
+    <div className="lp-coupon-scroller-wrapper">
+      <div className="lp-coupon-track">
+        <div className="lp-coupon-group">
+          {groupItems.map((c, i) => (
+            <div key={`group1-${i}`} className="lp-coupon-item">
+              <span>{c.text}</span>
+              <span className="lp-coupon-dot">✦</span>
+              <span className="lp-coupon-highlight">{c.highlight}</span>
+            </div>
+          ))}
+        </div>
+        <div className="lp-coupon-group" aria-hidden="true">
+          {groupItems.map((c, i) => (
+            <div key={`group2-${i}`} className="lp-coupon-item">
+              <span>{c.text}</span>
+              <span className="lp-coupon-dot">✦</span>
+              <span className="lp-coupon-highlight">{c.highlight}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Firebase init
   useEffect(() => {
     if (db) return;
     const initDb = async () => {
@@ -732,6 +773,9 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
         </div>
       </section>
 
+      {/* ── Coupon Scroller ── */}
+      <CouponScroller />
+
       {/* ── What It's For ── */}
       <section className="lp-usecases-strip">
         <div className="lp-section">
@@ -833,6 +877,9 @@ const LandingPage = ({ firestoreDb, setFirestoreDb }) => {
           <ProductCarousel landingQrs={landingQrs} fetchingLandingQrs={fetchingLandingQrs} />
         </div>
       </section>
+
+      {/* ── Coupon Scroller ── */}
+      <CouponScroller />
 
       {/* ── Why Us ── */}
       <section id="why-us" className="lp-whyus-wrapper">

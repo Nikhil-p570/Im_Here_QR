@@ -2014,7 +2014,18 @@ const AdminPanel = ({
         }
       } else {
         if (logoImage) {
-          pdf.addImage(logoImage, "PNG", x + 2.5, y + 2.5, 52, 52);
+          // Fill background with black
+          pdf.setFillColor(0, 0, 0);
+          pdf.rect(x + 2.5, y + 2.5, 52, 52, 'F');
+          
+          // Uniformly scale the logo to fit nicely within 90% of the box
+          const scale = Math.min((52 * 0.9) / logoImage.width, (52 * 0.9) / logoImage.height);
+          const targetW = logoImage.width * scale;
+          const targetH = logoImage.height * scale;
+          const px = x + 2.5 + (52 - targetW) / 2;
+          const py = y + 2.5 + (52 - targetH) / 2;
+          
+          pdf.addImage(logoImage, "PNG", px, py, targetW, targetH);
         } else {
           pdf.setFont("helvetica", "bold");
           pdf.setFontSize(10);

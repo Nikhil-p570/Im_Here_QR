@@ -393,27 +393,29 @@
 .premium-card-footer {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  align-items: center;
   margin-top: 16px;
 }
 
 .tag-type-price {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   align-items: flex-start;
 }
 
 .tag-type-price .price-original {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #94a3b8;
   text-decoration: line-through;
+  line-height: 1;
 }
 
 .tag-type-price .price-discounted {
-  font-size: 1.25rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #0f172a;
+  line-height: 1;
 }
 
 .tag-type-cta {
@@ -1436,21 +1438,23 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: #fff;
+  background: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.2);
   font-size: 0.65rem;
   font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   padding: 4px 8px;
-  border-radius: 12px;
-  margin-left: 8px;
-  box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
-  transform: translateY(-2px);
-  animation: badge-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  border-radius: 6px;
+  margin-top: 4px;
+  margin-left: 0;
+  animation: badge-pop 0.4s ease-out forwards;
 }
 
 @keyframes badge-pop {
-  0% { opacity: 0; transform: translateY(4px) scale(0.9); }
-  100% { opacity: 1; transform: translateY(-2px) scale(1); }
+  0% { opacity: 0; transform: translateY(4px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
 /* Coupon Section in Cart */

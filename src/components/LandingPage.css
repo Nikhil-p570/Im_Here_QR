@@ -1613,3 +1613,52 @@ html {
     padding: 60px 0;
   }
 }
+
+/* ── Coupon Scroller ── */
+.lp-coupon-scroller-wrapper {
+  width: 100%;
+  background: #0f172a;
+  color: #fff;
+  padding: 12px 0;
+  overflow: hidden;
+  display: flex;
+  position: relative;
+  z-index: 10;
+}
+
+.lp-coupon-track {
+  display: flex;
+  width: max-content;
+  animation: scroll-coupons 80s linear infinite;
+  will-change: transform;
+}
+
+.lp-coupon-group {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  padding-right: 40px; /* Crucial for seamless loop (equal to gap) */
+  flex-shrink: 0;
+}
+
+.lp-coupon-item {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lp-coupon-dot {
+  color: #4f46e5;
+}
+
+.lp-coupon-highlight {
+  color: #38bdf8;
+}
+
+@keyframes scroll-coupons {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

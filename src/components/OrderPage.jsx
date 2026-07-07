@@ -451,21 +451,15 @@ const OrderPage = () => {
       // 1. Draw appropriate background
       if (isPersonalised && uploadedImg && cropState.dispW > 0) {
         if (selectedVersion === 1) {
-          const s = cropState.scale || 1;
-          const srcX = cropState.x * s;
-          const srcY = cropState.y * s;
-          const srcSize = cropState.size * s;
-          try {
-            ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
-            ctx.fillStyle = "rgba(0,0,0,0.4)"; // overlay darkness
-            ctx.fillRect(0, 0, W, H);
-          } catch (e) {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, W, H);
-          }
-          // Draw brand logo in full cover
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(0, 0, W, H);
           if (logoImage) {
-            ctx.drawImage(logoImage, 0, 0, W, H);
+            const scale = Math.min((W * 0.9) / logoImage.width, (H * 0.9) / logoImage.height);
+            const targetW = logoImage.width * scale;
+            const targetH = logoImage.height * scale;
+            const x = (W - targetW) / 2;
+            const y = (H - targetH) / 2;
+            ctx.drawImage(logoImage, x, y, targetW, targetH);
           }
         } else {
           // Version 2: Back side is custom image only
@@ -481,10 +475,15 @@ const OrderPage = () => {
           }
         }
       } else if (preset) {
-        ctx.fillStyle = preset.bgColor;
+        ctx.fillStyle = '#000000'; // Force back to be black
         ctx.fillRect(0, 0, W, H);
         if (logoImage) {
-          ctx.drawImage(logoImage, 0, 0, W, H);
+          const scale = Math.min((W * 0.9) / logoImage.width, (H * 0.9) / logoImage.height);
+          const targetW = logoImage.width * scale;
+          const targetH = logoImage.height * scale;
+          const x = (W - targetW) / 2;
+          const y = (H - targetH) / 2;
+          ctx.drawImage(logoImage, x, y, targetW, targetH);
         }
       } else {
         ctx.fillStyle = '#000000';
@@ -564,15 +563,16 @@ const OrderPage = () => {
 
     if (isFlipped) {
       // Draw back-side (solid background + logo brand in full cover)
-      ctx.fillStyle = preset.bgColor;
+      ctx.fillStyle = '#000000'; // Force back to be black
       ctx.fillRect(0, 0, W, H);
 
       if (logoImage) {
-        const logoX = 0;
-        const logoY = 0;
-        const logoW = W;
-        const logoH = H;
-        ctx.drawImage(logoImage, logoX, logoY, logoW, logoH);
+        const scale = Math.min((W * 0.9) / logoImage.width, (H * 0.9) / logoImage.height);
+        const targetW = logoImage.width * scale;
+        const targetH = logoImage.height * scale;
+        const x = (W - targetW) / 2;
+        const y = (H - targetH) / 2;
+        ctx.drawImage(logoImage, x, y, targetW, targetH);
       }
     } else {
       // Draw front-side (QR code)
@@ -644,16 +644,16 @@ const OrderPage = () => {
     ctx.clearRect(0, 0, W, H);
     if (isPersonalised && uploadedImg && cropState.dispW > 0) {
       if (selectedVersion === 1) {
-        const s = cropState.scale || 1;
-        const srcX = cropState.x * s;
-        const srcY = cropState.y * s;
-        const srcSize = cropState.size * s;
-        try {
-          ctx.drawImage(uploadedImg, srcX, srcY, srcSize, srcSize, 0, 0, W, H);
-          ctx.fillStyle = "rgba(0,0,0,0.4)";
-          ctx.fillRect(0, 0, W, H);
-        } catch (e) { }
-        if (logoImage) ctx.drawImage(logoImage, 0, 0, W, H);
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, W, H);
+        if (logoImage) {
+          const scale = Math.min((W * 0.9) / logoImage.width, (H * 0.9) / logoImage.height);
+          const targetW = logoImage.width * scale;
+          const targetH = logoImage.height * scale;
+          const x = (W - targetW) / 2;
+          const y = (H - targetH) / 2;
+          ctx.drawImage(logoImage, x, y, targetW, targetH);
+        }
       } else {
         const s = cropState.scale || 1;
         const srcX = cropState.x * s;
@@ -695,10 +695,15 @@ const OrderPage = () => {
 
     // Back
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = preset.bgColor;
+    ctx.fillStyle = '#000000'; // Force back to be black
     ctx.fillRect(0, 0, W, H);
     if (logoImage) {
-      ctx.drawImage(logoImage, 0, 0, W, H);
+      const scale = Math.min((W * 0.9) / logoImage.width, (H * 0.9) / logoImage.height);
+      const targetW = logoImage.width * scale;
+      const targetH = logoImage.height * scale;
+      const x = (W - targetW) / 2;
+      const y = (H - targetH) / 2;
+      ctx.drawImage(logoImage, x, y, targetW, targetH);
     }
     const backUrl = canvas.toDataURL();
 
