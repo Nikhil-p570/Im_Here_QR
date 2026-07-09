@@ -948,7 +948,7 @@ const CouponScroller = () => {
               Order Now
             </a>
             <p className="lp-cta-trust-line">
-              Secure checkout · Ships across India · Easy returns
+              Secure checkout · Ships across India
             </p>
           </div>
         </div>
