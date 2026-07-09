@@ -1714,6 +1714,8 @@ const AdminPanel = ({
             orderedPhoneNumber: lookupObj.orderedPhoneNumber,
             orderedEmail: lookupObj.orderedEmail,
             address: lookupObj.shippingAddress,
+            orderId: lookupObj.firestoreOrderId,
+            orderItems: orderData?.items || [],
             tags: []
           };
           
@@ -1725,7 +1727,9 @@ const AdminPanel = ({
             ...prevBoxes,
             [boxNum]: {
               ...existing,
-              tags: updatedTags
+              tags: updatedTags,
+              orderId: existing.orderId && existing.orderId !== 'N/A' ? existing.orderId : lookupObj.firestoreOrderId,
+              orderItems: (existing.orderItems && existing.orderItems.length > 0) ? existing.orderItems : (orderData?.items || [])
             }
           };
         });
@@ -5330,39 +5334,44 @@ const AdminPanel = ({
                 </div>
                 
                 <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-                  Copy the text below and paste it directly to ChatGPT along with your shipping labels PDF text.
+                  Review the box information and customer images below to verify correct packaging. You can also copy the text data.
                 </p>
 
-                <textarea
-                  readOnly
-                  value={
-                    Object.entries(packingBoxesData)
-                      .sort(([a], [b]) => parseInt(a) - parseInt(b))
-                      .map(([boxNum, data]) => {
-                        return `BOX ${boxNum}
-Name: ${data.customerName}
-Phone: ${data.orderedPhoneNumber}
-Address: ${data.address}
-Tags in box: ${data.tags.join(', ')}
----------------------------------------------`;
-                      })
-                      .join('\n\n')
-                  }
-                  style={{
-                    width: '100%',
-                    height: '250px',
-                    background: 'rgba(0, 0, 0, 0.03)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    color: 'var(--text-primary)',
-                    fontFamily: 'monospace',
-                    fontSize: '0.85rem',
-                    resize: 'none',
-                    outline: 'none',
-                    lineHeight: '1.5'
-                  }}
-                />
+                <div style={{ maxHeight: '55vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '8px' }}>
+                  {Object.entries(packingBoxesData)
+                    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                    .map(([boxNum, data]) => (
+                      <div key={boxNum} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-light)', borderRadius: '12px', padding: '16px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: 'var(--accent-cyan)', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
+                          📦 Box {boxNum}
+                        </h4>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                          <div><strong style={{ color: 'var(--text-secondary)' }}>Order ID:</strong> {data.orderId || 'N/A'}</div>
+                          <div><strong style={{ color: 'var(--text-secondary)' }}>Name:</strong> {data.customerName}</div>
+                          <div><strong style={{ color: 'var(--text-secondary)' }}>Phone:</strong> {data.orderedPhoneNumber}</div>
+                          <div><strong style={{ color: 'var(--text-secondary)' }}>Address:</strong> {data.address}</div>
+                          <div><strong style={{ color: 'var(--text-secondary)' }}>Scanned Tags ({data.tags.length}):</strong> {data.tags.join(', ')}</div>
+                          
+                          {data.orderItems && data.orderItems.length > 0 && (
+                            <div style={{ marginTop: '12px' }}>
+                              <strong style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Customer Uploaded Images:</strong>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                                {data.orderItems.map((item, idx) => {
+                                  const imgSource = item.imageUrl || item.tempBase64Image || item.image || item.productImage;
+                                  return imgSource ? (
+                                    <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                      <img src={imgSource} alt={`Item ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
+                                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0' }}>Qty: {item.quantity || 1}</span>
+                                    </div>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
 
                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '4px' }}>
                   <button
@@ -5372,6 +5381,7 @@ Tags in box: ${data.tags.join(', ')}
                         .sort(([a], [b]) => parseInt(a) - parseInt(b))
                         .map(([boxNum, data]) => {
                           return `BOX ${boxNum}
+Order ID: ${data.orderId || 'N/A'}
 Name: ${data.customerName}
 Phone: ${data.orderedPhoneNumber}
 Address: ${data.address}
