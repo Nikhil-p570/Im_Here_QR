@@ -10,6 +10,7 @@ import {
   collection, addDoc, serverTimestamp, doc, getDoc
 } from 'firebase/firestore';
 import './OrderPage.css';
+import confetti from 'canvas-confetti';
 
 /* ── Constants ─────────────────────────────────────── */
 const DUMMY_URL = 'https://im-here-qr.vercel.app/id?=preview';
@@ -277,7 +278,7 @@ const OrderPage = () => {
   const [isCodLoading, setIsCodLoading] = useState(false);
 
   /* ── Coupon States ── */
-  const [appliedCoupon, setAppliedCoupon] = useState('STARTUP');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [couponMessage, setCouponMessage] = useState(null);
 
@@ -1177,13 +1178,29 @@ const OrderPage = () => {
     }
   }, [personalisedCount, appliedCoupon]);
 
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon('');
+    setCouponInput('');
+    setCouponMessage(null);
+  };
+
   const handleApplyCoupon = (codeToApply) => {
     const code = (codeToApply || couponInput).trim().toUpperCase();
+    
+    const triggerConfetti = () => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    };
+
     if (code === 'STARTUP') {
       if (personalisedCount >= 1) {
         setAppliedCoupon('STARTUP');
         setCouponInput('STARTUP');
         setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.' });
+        triggerConfetti();
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.' });
       }
@@ -1192,6 +1209,7 @@ const OrderPage = () => {
         setAppliedCoupon('BUY2GET1');
         setCouponInput('BUY2GET1');
         setCouponMessage({ type: 'success', text: 'BUY2GET1 applied! You got 1 tag free.' });
+        triggerConfetti();
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 3 personalised tags to use this offer.' });
       }
@@ -1200,6 +1218,7 @@ const OrderPage = () => {
         setAppliedCoupon('BUY3GET2');
         setCouponInput('BUY3GET2');
         setCouponMessage({ type: 'success', text: 'BUY3GET2 applied! You got 2 tags free.' });
+        triggerConfetti();
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 5 personalised tags to use this offer.' });
       }
@@ -1454,7 +1473,12 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹30 Off on every personalised tag</div>
                         </div>
                         {appliedCoupon === 'STARTUP' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14} /> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleApplyCoupon('STARTUP')}
@@ -1471,7 +1495,12 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 2 Get 1 Free on Personalised Tags</div>
                         </div>
                         {appliedCoupon === 'BUY2GET1' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14} /> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleApplyCoupon('BUY2GET1')}
@@ -1488,7 +1517,12 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 3 Get 2 Free on Personalised Tags</div>
                         </div>
                         {appliedCoupon === 'BUY3GET2' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14} /> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
                           <button
                             onClick={() => handleApplyCoupon('BUY3GET2')}
@@ -1502,6 +1536,12 @@ const OrderPage = () => {
                   </div>
                 </div>
 
+                {couponDiscount > 0 && (
+                  <div className="cart-discount-row">
+                    <span>Coupon Discount ({appliedCoupon})</span>
+                    <span>- ₹{couponDiscount}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Packaging Charges</span>
                   <span>
@@ -1516,12 +1556,6 @@ const OrderPage = () => {
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
-                {couponDiscount > 0 && (
-                  <div className="cart-discount-row">
-                    <span>Coupon Discount ({appliedCoupon})</span>
-                    <span>- ₹{couponDiscount}</span>
-                  </div>
-                )}
 
                 <div className="cart-total-row" style={{ marginTop: '4px' }}>
                   <span>To Pay</span>
@@ -2209,6 +2243,12 @@ const OrderPage = () => {
                       </span>
                     </div>
                   ))}
+                  {couponDiscount > 0 && (
+                    <div className="cart-discount-row" style={{ fontSize: '0.82rem', margin: '4px 0' }}>
+                      <span>Coupon Discount ({appliedCoupon})</span>
+                      <span>- ₹{couponDiscount}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Packaging Charges</span>
                     <span>
@@ -2223,12 +2263,6 @@ const OrderPage = () => {
                       <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                     </span>
                   </div>
-                  {couponDiscount > 0 && (
-                    <div className="cart-discount-row" style={{ fontSize: '0.82rem', margin: '4px 0' }}>
-                      <span>Coupon Discount ({appliedCoupon})</span>
-                      <span>- ₹{couponDiscount}</span>
-                    </div>
-                  )}
 
                   <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '1.1rem', color: 'var(--text-primary)', marginTop: '6px' }}>
                     <span>To Pay</span>
