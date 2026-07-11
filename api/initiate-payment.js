@@ -108,14 +108,29 @@ export default async function handler(req, res) {
 
     // Re-calculate the expected total amount securely
     let expectedTotal = 0;
+    let personalisedCount = 0;
     if (Array.isArray(orderData.items)) {
       for (const item of orderData.items) {
         const qty = parseInt(item.quantity) || 0;
         const isPersonalised = item.typeofqr === 'personalised';
         const officialUnitPrice = isPersonalised ? officialPersonalised : officialClassic;
+        if (isPersonalised) personalisedCount += qty;
         expectedTotal += qty * officialUnitPrice;
       }
     }
+
+    // Apply coupon discount securely
+    let couponDiscount = 0;
+    const appliedCoupon = orderData.appliedCoupon || '';
+    if (appliedCoupon === 'BUY2GET1' && personalisedCount >= 3) {
+      couponDiscount = 199;
+    } else if (appliedCoupon === 'BUY3GET2' && personalisedCount >= 5) {
+      couponDiscount = 398;
+    } else if (appliedCoupon === 'STARTUP' && personalisedCount >= 1) {
+      couponDiscount = personalisedCount * 30;
+    }
+
+    expectedTotal -= couponDiscount;
 
     const clientTotal = parseFloat(amount);
     

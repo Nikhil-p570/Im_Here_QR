@@ -1036,6 +1036,7 @@ const OrderPage = () => {
       },
       items: orderItems,
       totalAmount: total,
+      appliedCoupon: appliedCoupon || '',
       paymentMode,
       orderStatus: initialStatus,
       createdAt: serverTimestamp()
@@ -1162,6 +1163,10 @@ const OrderPage = () => {
 
   // Auto-revert coupon if conditions are no longer met
   useEffect(() => {
+    if (appliedCoupon === 'STARTUP' && personalisedCount < 1) {
+      setAppliedCoupon('');
+      setCouponMessage(null);
+    }
     if (appliedCoupon === 'BUY2GET1' && personalisedCount < 3) {
       setAppliedCoupon('');
       setCouponMessage(null);
@@ -1175,7 +1180,13 @@ const OrderPage = () => {
   const handleApplyCoupon = (codeToApply) => {
     const code = (codeToApply || couponInput).trim().toUpperCase();
     if (code === 'STARTUP') {
-      setCouponMessage({ type: 'success', text: 'STARTUP is automatically applied to all tags!' });
+      if (personalisedCount >= 1) {
+        setAppliedCoupon('STARTUP');
+        setCouponInput('STARTUP');
+        setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.' });
+      } else {
+        setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.' });
+      }
     } else if (code === 'BUY2GET1') {
       if (personalisedCount >= 3) {
         setAppliedCoupon('BUY2GET1');
@@ -1202,6 +1213,8 @@ const OrderPage = () => {
     couponDiscount = 199;
   } else if (appliedCoupon === 'BUY3GET2' && personalisedCount >= 5) {
     couponDiscount = 398;
+  } else if (appliedCoupon === 'STARTUP') {
+    couponDiscount = personalisedCount * 30;
   }
   
   const total = baseTotal - couponDiscount;
@@ -1302,7 +1315,6 @@ const OrderPage = () => {
                         <div className="tag-type-price">
                           <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.personalisedOriginal}</span>
                           <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.personalisedDiscounted}</span>
-                          {isStruck && <span className="offer-applied-badge">✨ Offer Applied</span>}
                         </div>
                         <div className="tag-type-cta">Start Designing</div>
                       </div>
@@ -1335,7 +1347,6 @@ const OrderPage = () => {
                         <div className="tag-type-price">
                           <span className={`price-original ${isStruck ? 'struck' : ''}`}>₹{prices.classicOriginal}</span>
                           <span className={`price-discounted ${isStruck ? 'visible' : ''}`}>₹{prices.classicDiscounted}</span>
-                          {isStruck && <span className="offer-applied-badge">✨ Offer Applied</span>}
                         </div>
                         <div className="tag-type-cta">Select Style</div>
                       </div>
@@ -1440,9 +1451,18 @@ const OrderPage = () => {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
                         <div>
                           <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>STARTUP</div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹100 Off on every tag</div>
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹30 Off on every personalised tag</div>
                         </div>
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14}/> APPLIED</span>
+                        {appliedCoupon === 'STARTUP' ? (
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14}/> APPLIED</span>
+                        ) : (
+                          <button 
+                            onClick={() => handleApplyCoupon('STARTUP')}
+                            style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                          >
+                            APPLY
+                          </button>
+                        )}
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
@@ -1496,12 +1516,6 @@ const OrderPage = () => {
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
-                {personalisedCount > 0 && (
-                  <div className="cart-discount-row">
-                    <span>Coupon Discount (STARTUP)</span>
-                    <span>- ₹{personalisedCount * 100}</span>
-                  </div>
-                )}
                 {couponDiscount > 0 && (
                   <div className="cart-discount-row">
                     <span>Coupon Discount ({appliedCoupon})</span>
