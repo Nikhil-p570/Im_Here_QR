@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
   Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck,
-  Palette, Layers, Zap, ShieldCheck, ArrowLeft, ArrowRight
+  Palette, Layers, Zap, ShieldCheck, ArrowLeft, ArrowRight, X, Percent
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import { initializeFirebase } from '../firebase';
@@ -281,6 +281,7 @@ const OrderPage = () => {
   const [appliedCoupon, setAppliedCoupon] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [couponMessage, setCouponMessage] = useState(null);
+  const [showCouponPopup, setShowCouponPopup] = useState(null);
 
   useEffect(() => {
     const img = new Image();
@@ -1201,6 +1202,7 @@ const OrderPage = () => {
         setCouponInput('STARTUP');
         setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.' });
         triggerConfetti();
+        setShowCouponPopup({ code: 'STARTUP', savings: 30 * personalisedCount });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.' });
       }
@@ -1210,6 +1212,7 @@ const OrderPage = () => {
         setCouponInput('BUY2GET1');
         setCouponMessage({ type: 'success', text: 'BUY2GET1 applied! You got 1 tag free.' });
         triggerConfetti();
+        setShowCouponPopup({ code: 'BUY2GET1', savings: 199 });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 3 personalised tags to use this offer.' });
       }
@@ -1219,6 +1222,7 @@ const OrderPage = () => {
         setCouponInput('BUY3GET2');
         setCouponMessage({ type: 'success', text: 'BUY3GET2 applied! You got 2 tags free.' });
         triggerConfetti();
+        setShowCouponPopup({ code: 'BUY3GET2', savings: 398 });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 5 personalised tags to use this offer.' });
       }
@@ -2550,6 +2554,82 @@ const OrderPage = () => {
               }}
             >
               Got It, Thanks!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Coupon Success Popup */}
+      {showCouponPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 999999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#e2e8f0',
+            borderRadius: '24px',
+            padding: '36px 24px 24px',
+            width: '100%',
+            maxWidth: '340px',
+            textAlign: 'center',
+            position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}>
+            <button 
+              onClick={() => setShowCouponPopup(null)}
+              style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(0,0,0,0.1)', color: '#475569',
+                border: 'none', borderRadius: '50%',
+                width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={18} />
+            </button>
+            <div style={{
+              position: 'absolute', top: '-24px', left: '50%', transform: 'translateX(-50%)',
+              background: '#0f766e', color: '#fff',
+              width: '48px', height: '48px', borderRadius: '12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transformOrigin: 'center', rotate: '45deg',
+              boxShadow: '0 10px 15px -3px rgba(15, 118, 110, 0.3)'
+            }}>
+              <Percent size={28} style={{ rotate: '-45deg' }} />
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '12px', fontWeight: 500 }}>
+              '{showCouponPopup.code}' applied
+            </div>
+            <h2 style={{ fontSize: '1.5rem', color: '#1e293b', fontWeight: 900, margin: '12px 0 8px', lineHeight: 1.2 }}>
+              ₹{showCouponPopup.savings} savings with this coupon.
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '24px' }}>
+              {showCouponPopup.code} and save every time you order
+            </p>
+            <button
+              onClick={() => setShowCouponPopup(null)}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+                color: '#fff',
+                border: 'none',
+                padding: '14px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)'
+              }}
+            >
+              YAY!
             </button>
           </div>
         </div>
