@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Upload, Lock, Unlock, ShoppingCart, Plus, Minus, Trash2,
   Image as ImageIcon, Check, Sparkles, Tag, Eye, RotateCw, Truck,
-  Palette, Layers, Zap, ShieldCheck, ArrowLeft, ArrowRight
+  Palette, Layers, Zap, ShieldCheck, ArrowLeft, ArrowRight, X, Percent
 } from 'lucide-react';
 import { ensureQrLib, makeQR, drawDot, drawFinder, drawBanner, roundRectPath } from '../utils/qrDrawer';
 import { initializeFirebase } from '../firebase';
@@ -10,6 +10,7 @@ import {
   collection, addDoc, serverTimestamp, doc, getDoc
 } from 'firebase/firestore';
 import './OrderPage.css';
+import confetti from 'canvas-confetti';
 
 /* ── Constants ─────────────────────────────────────── */
 const DUMMY_URL = 'https://im-here-qr.vercel.app/id?=preview';
@@ -277,9 +278,10 @@ const OrderPage = () => {
   const [isCodLoading, setIsCodLoading] = useState(false);
 
   /* ── Coupon States ── */
-  const [appliedCoupon, setAppliedCoupon] = useState('STARTUP');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [couponMessage, setCouponMessage] = useState(null);
+  const [showCouponPopup, setShowCouponPopup] = useState(null);
 
   useEffect(() => {
     const img = new Image();
@@ -1158,7 +1160,7 @@ const OrderPage = () => {
 
   const baseTotal = cartItems.reduce((s, i) => s + i.qty * i.unitPrice, 0);
   const struckTotal = cartItems.reduce((s, i) => s + i.qty * (i.originalPrice || i.unitPrice), 0) + 15 + 40;
-  
+
   const personalisedCount = cartItems.filter(i => i.type === 'personalised').reduce((s, i) => s + i.qty, 0);
 
   // Auto-revert coupon if conditions are no longer met
@@ -1177,13 +1179,30 @@ const OrderPage = () => {
     }
   }, [personalisedCount, appliedCoupon]);
 
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon('');
+    setCouponInput('');
+    setCouponMessage(null);
+  };
+
   const handleApplyCoupon = (codeToApply) => {
     const code = (codeToApply || couponInput).trim().toUpperCase();
+    
+    const triggerConfetti = () => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    };
+
     if (code === 'STARTUP') {
       if (personalisedCount >= 1) {
         setAppliedCoupon('STARTUP');
         setCouponInput('STARTUP');
         setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.' });
+        triggerConfetti();
+        setShowCouponPopup({ code: 'STARTUP', savings: 30 * personalisedCount });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.' });
       }
@@ -1192,6 +1211,8 @@ const OrderPage = () => {
         setAppliedCoupon('BUY2GET1');
         setCouponInput('BUY2GET1');
         setCouponMessage({ type: 'success', text: 'BUY2GET1 applied! You got 1 tag free.' });
+        triggerConfetti();
+        setShowCouponPopup({ code: 'BUY2GET1', savings: 199 });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 3 personalised tags to use this offer.' });
       }
@@ -1200,6 +1221,8 @@ const OrderPage = () => {
         setAppliedCoupon('BUY3GET2');
         setCouponInput('BUY3GET2');
         setCouponMessage({ type: 'success', text: 'BUY3GET2 applied! You got 2 tags free.' });
+        triggerConfetti();
+        setShowCouponPopup({ code: 'BUY3GET2', savings: 398 });
       } else {
         setCouponMessage({ type: 'error', text: 'Add at least 5 personalised tags to use this offer.' });
       }
@@ -1216,7 +1239,7 @@ const OrderPage = () => {
   } else if (appliedCoupon === 'STARTUP') {
     couponDiscount = personalisedCount * 30;
   }
-  
+
   const total = baseTotal - couponDiscount;
 
   /* ══════════════════════════════════════════════════
@@ -1423,15 +1446,15 @@ const OrderPage = () => {
 
                 <div className="coupon-section">
                   <div className="coupon-input-group">
-                    <input 
-                      type="text" 
-                      className="coupon-input" 
-                      placeholder="Enter Coupon Code" 
+                    <input
+                      type="text"
+                      className="coupon-input"
+                      placeholder="Enter Coupon Code"
                       value={couponInput}
                       onChange={(e) => setCouponInput(e.target.value)}
                     />
-                    <button 
-                      className="coupon-btn" 
+                    <button
+                      className="coupon-btn"
                       onClick={() => handleApplyCoupon()}
                       disabled={!couponInput.trim()}
                     >
@@ -1446,7 +1469,7 @@ const OrderPage = () => {
 
                   <div className="available-coupons-list" style={{ marginTop: '12px', borderTop: '1px solid #e2e8f0', paddingTop: '12px' }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Available Offers</div>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
                         <div>
@@ -1454,9 +1477,14 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹30 Off on every personalised tag</div>
                         </div>
                         {appliedCoupon === 'STARTUP' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14}/> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
-                          <button 
+                          <button
                             onClick={() => handleApplyCoupon('STARTUP')}
                             style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
                           >
@@ -1471,9 +1499,14 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 2 Get 1 Free on Personalised Tags</div>
                         </div>
                         {appliedCoupon === 'BUY2GET1' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14}/> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
-                          <button 
+                          <button
                             onClick={() => handleApplyCoupon('BUY2GET1')}
                             style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
                           >
@@ -1488,9 +1521,14 @@ const OrderPage = () => {
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 3 Get 2 Free on Personalised Tags</div>
                         </div>
                         {appliedCoupon === 'BUY3GET2' ? (
-                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}><Check size={14}/> APPLIED</span>
+                          <button
+                            onClick={handleRemoveCoupon}
+                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <Check size={14} /> APPLIED
+                          </button>
                         ) : (
-                          <button 
+                          <button
                             onClick={() => handleApplyCoupon('BUY3GET2')}
                             style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
                           >
@@ -1502,6 +1540,12 @@ const OrderPage = () => {
                   </div>
                 </div>
 
+                {couponDiscount > 0 && (
+                  <div className="cart-discount-row">
+                    <span>Coupon Discount ({appliedCoupon})</span>
+                    <span>- ₹{couponDiscount}</span>
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
                   <span>Packaging Charges</span>
                   <span>
@@ -1516,12 +1560,6 @@ const OrderPage = () => {
                     <span style={{ color: '#10b981', fontWeight: 600 }}>Free</span>
                   </span>
                 </div>
-                {couponDiscount > 0 && (
-                  <div className="cart-discount-row">
-                    <span>Coupon Discount ({appliedCoupon})</span>
-                    <span>- ₹{couponDiscount}</span>
-                  </div>
-                )}
 
                 <div className="cart-total-row" style={{ marginTop: '4px' }}>
                   <span>To Pay</span>
@@ -2209,6 +2247,12 @@ const OrderPage = () => {
                       </span>
                     </div>
                   ))}
+                  {couponDiscount > 0 && (
+                    <div className="cart-discount-row" style={{ fontSize: '0.82rem', margin: '4px 0' }}>
+                      <span>Coupon Discount ({appliedCoupon})</span>
+                      <span>- ₹{couponDiscount}</span>
+                    </div>
+                  )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
                     <span>Packaging Charges</span>
                     <span>
@@ -2510,6 +2554,82 @@ const OrderPage = () => {
               }}
             >
               Got It, Thanks!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Coupon Success Popup */}
+      {showCouponPopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 999999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#e2e8f0',
+            borderRadius: '24px',
+            padding: '36px 24px 24px',
+            width: '100%',
+            maxWidth: '340px',
+            textAlign: 'center',
+            position: 'relative',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+          }}>
+            <button 
+              onClick={() => setShowCouponPopup(null)}
+              style={{
+                position: 'absolute', top: '16px', right: '16px',
+                background: 'rgba(0,0,0,0.1)', color: '#475569',
+                border: 'none', borderRadius: '50%',
+                width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={18} />
+            </button>
+            <div style={{
+              position: 'absolute', top: '-24px', left: '50%', transform: 'translateX(-50%)',
+              background: '#0f766e', color: '#fff',
+              width: '48px', height: '48px', borderRadius: '12px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transformOrigin: 'center', rotate: '45deg',
+              boxShadow: '0 10px 15px -3px rgba(15, 118, 110, 0.3)'
+            }}>
+              <Percent size={28} style={{ rotate: '-45deg' }} />
+            </div>
+            <div style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '12px', fontWeight: 500 }}>
+              '{showCouponPopup.code}' applied
+            </div>
+            <h2 style={{ fontSize: '1.5rem', color: '#1e293b', fontWeight: 900, margin: '12px 0 8px', lineHeight: 1.2 }}>
+              ₹{showCouponPopup.savings} savings with this coupon.
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '24px' }}>
+              {showCouponPopup.code} and save every time you order
+            </p>
+            <button
+              onClick={() => setShowCouponPopup(null)}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-purple) 100%)',
+                color: '#fff',
+                border: 'none',
+                padding: '14px',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textTransform: 'uppercase',
+                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)'
+              }}
+            >
+              YAY!
             </button>
           </div>
         </div>
