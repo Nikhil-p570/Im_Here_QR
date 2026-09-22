@@ -232,6 +232,8 @@ export default function PaymentStatus() {
                 ? "We are preparing your I'm Here QR keychains and will dispatch them soon. You'll pay on delivery."
                 : "We are preparing your I'm Here QR keychains. You will receive shipping updates shortly."
               }
+              <br/><br/>
+              <strong>Note:</strong> Please check your spam or junk folder for the order confirmation email if you don't see it in your inbox.
             </p>
 
             <button className="payment-status-btn btn-success" onClick={handleGoHome}>

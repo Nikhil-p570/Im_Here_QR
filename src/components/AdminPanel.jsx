@@ -1449,7 +1449,38 @@ const AdminPanel = ({
   const [lastAssignedBox, setLastAssignedBox] = useState(null);
   const [packingBoxesData, setPackingBoxesData] = useState({});
   const [showExportModal, setShowExportModal] = useState(false);
+  const [sendingEmails, setSendingEmails] = useState(false);
   const [packingHistory, setPackingHistory] = useState([]);
+
+  const handleSendPackedEmails = async () => {
+    if (Object.keys(packingBoxesData).length === 0) return;
+    
+    const boxes = Object.entries(packingBoxesData).map(([boxNum, data]) => ({
+      boxNum,
+      orderId: data.orderId,
+      customerName: data.customerName,
+      orderedEmail: data.orderedEmail
+    }));
+
+    setSendingEmails(true);
+    try {
+      const response = await fetch('/api/send-packed-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boxes })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("Emails sent successfully!");
+      } else {
+        alert("Failed to send emails: " + (data.error || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Error sending emails: " + err.message);
+    } finally {
+      setSendingEmails(false);
+    }
+  };
 
   const packingBoxesDataRef = useRef(packingBoxesData);
   useEffect(() => {
@@ -1949,7 +1980,8 @@ const AdminPanel = ({
       pdf.addImage(qrUrl, "PNG", x + 4.0, y + 4.0, 49, 49);
     }
 
-    pdf.save("qr-print-sheet.pdf");
+    const timestamp = new Date().toLocaleString('en-GB', { hour12: false }).replace(/[\/:]/g, '-').replace(', ', '_');
+    pdf.save(`qr-print-sheet_${timestamp}.pdf`);
     setShipmentActionProgress({ active: false, message: "" });
   };
 
@@ -2044,7 +2076,8 @@ const AdminPanel = ({
 
     }
 
-    pdf.save("logo-print-sheet.pdf");
+    const timestamp = new Date().toLocaleString('en-GB', { hour12: false }).replace(/[\/:]/g, '-').replace(', ', '_');
+    pdf.save(`logo-print-sheet_${timestamp}.pdf`);
     setShipmentActionProgress({ active: false, message: "" });
   };
 
@@ -4168,14 +4201,27 @@ const AdminPanel = ({
                   📄 PDF Sheets Preview
                 </h3>
                 {appendedQrs.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearPdfSheet}
-                    className="btn btn-danger-outline"
-                    style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
-                  >
-                    <Trash2 size={10} /> Clear Sheet
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await handleDownloadPdf();
+                        await handleDownloadLogoPdf();
+                      }}
+                      className="btn btn-primary"
+                      style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Download size={10} /> Download Both PDFs
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearPdfSheet}
+                      className="btn btn-danger-outline"
+                      style={{ padding: '4px 10px', fontSize: '0.72rem', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                    >
+                      <Trash2 size={10} /> Clear Sheet
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -5357,11 +5403,12 @@ const AdminPanel = ({
                               <strong style={{ color: 'var(--text-secondary)', display: 'block', marginBottom: '8px' }}>Customer Uploaded Images:</strong>
                               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                                 {data.orderItems.map((item, idx) => {
-                                  const imgSource = item.imageUrl || item.tempBase64Image || item.image || item.productImage;
+                                  const imgSource = item.imageUrl || item.tempBase64Image || item.image || item.productImage || item.thumbnailUrl;
                                   return imgSource ? (
                                     <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                       <img src={imgSource} alt={`Item ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '4px' }} />
                                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e2e8f0' }}>Qty: {item.quantity || 1}</span>
+                                      {item.version && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>V: {item.version}</span>}
                                     </div>
                                   ) : null;
                                 })}
@@ -5396,6 +5443,15 @@ Tags in box: ${data.tags.join(', ')}
                     style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
                   >
                     Copy to Clipboard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendPackedEmails}
+                    disabled={sendingEmails}
+                    className="btn btn-secondary"
+                    style={{ padding: '10px 20px', fontSize: '0.85rem', fontWeight: 700 }}
+                  >
+                    {sendingEmails ? "Sending..." : "Send emails to customers"}
                   </button>
                   <button
                     type="button"

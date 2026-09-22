@@ -264,7 +264,7 @@ const KeychainCard = ({ tagId, base64Image, label, version, isActive, hideUI }) 
             {isFlipped ? 'See QR Side' : 'Flip to Back'}
           </button>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', letterSpacing: '0.03em', fontWeight: 500 }}>
-            50 mm × 50 mm
+            40 mm × 40 mm
           </span>
         </div>
       )}
@@ -406,7 +406,7 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
   const [isMobile, setIsMobile] = useState(false);
   const touchStartX = useRef(null);
 
-  const [activeVersion, setActiveVersion] = useState(1);
+  const [activeVersion, setActiveVersion] = useState(2);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -438,19 +438,19 @@ const ProductCarousel = ({ landingQrs, fetchingLandingQrs }) => {
       <div className="lp-version-toggle">
         <div
           className="lp-version-toggle-bg"
-          style={{ transform: `translateX(${activeVersion === 1 ? '0%' : '100%'})` }}
+          style={{ transform: `translateX(${activeVersion === 2 ? '0%' : '100%'})` }}
         />
-        <button
-          className={`lp-version-toggle-btn ${activeVersion === 1 ? 'active' : ''}`}
-          onClick={() => setActiveVersion(1)}
-        >
-          Photo-Front
-        </button>
         <button
           className={`lp-version-toggle-btn ${activeVersion === 2 ? 'active' : ''}`}
           onClick={() => setActiveVersion(2)}
         >
           Photo-Back
+        </button>
+        <button
+          className={`lp-version-toggle-btn ${activeVersion === 1 ? 'active' : ''}`}
+          onClick={() => setActiveVersion(1)}
+        >
+          Photo-Front
         </button>
       </div>
     </div>

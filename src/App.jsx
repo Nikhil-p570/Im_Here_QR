@@ -239,7 +239,7 @@ function App() {
 
     // Fallback for local development
     if (!apiSuccess) {
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.') || import.meta.env.DEV;
       if (isLocal) {
         const localPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'Nikhil@2006';
         if (password === localPassword) {

@@ -301,7 +301,7 @@ const OrderPage = () => {
   useEffect(() => {
     const initFirebase = async () => {
       try {
-        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.') || import.meta.env.DEV;
         let config = null;
         if (isLocal) {
           config = {
@@ -1088,6 +1088,11 @@ const OrderPage = () => {
         })
       });
 
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error('Payment server is unreachable. Please ensure the backend API is running (e.g., using vercel dev).');
+      }
+
       const data = await response.json();
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to initiate payment transaction.');
@@ -1200,34 +1205,34 @@ const OrderPage = () => {
       if (personalisedCount >= 1) {
         setAppliedCoupon('STARTUP');
         setCouponInput('STARTUP');
-        setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.' });
+        setCouponMessage({ type: 'success', text: 'STARTUP applied! Flat ₹30 Off on every personalised tag.', code: 'STARTUP' });
         triggerConfetti();
         setShowCouponPopup({ code: 'STARTUP', savings: 30 * personalisedCount });
       } else {
-        setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.' });
+        setCouponMessage({ type: 'error', text: 'Add at least 1 personalised tag to use this offer.', code: 'STARTUP' });
       }
     } else if (code === 'BUY2GET1') {
       if (personalisedCount >= 3) {
         setAppliedCoupon('BUY2GET1');
         setCouponInput('BUY2GET1');
-        setCouponMessage({ type: 'success', text: 'BUY2GET1 applied! You got 1 tag free.' });
+        setCouponMessage({ type: 'success', text: 'BUY2GET1 applied! You got 1 tag free.', code: 'BUY2GET1' });
         triggerConfetti();
         setShowCouponPopup({ code: 'BUY2GET1', savings: 199 });
       } else {
-        setCouponMessage({ type: 'error', text: 'Add at least 3 personalised tags to use this offer.' });
+        setCouponMessage({ type: 'error', text: 'Add at least 3 personalised tags to use this offer.', code: 'BUY2GET1' });
       }
     } else if (code === 'BUY3GET2') {
       if (personalisedCount >= 5) {
         setAppliedCoupon('BUY3GET2');
         setCouponInput('BUY3GET2');
-        setCouponMessage({ type: 'success', text: 'BUY3GET2 applied! You got 2 tags free.' });
+        setCouponMessage({ type: 'success', text: 'BUY3GET2 applied! You got 2 tags free.', code: 'BUY3GET2' });
         triggerConfetti();
         setShowCouponPopup({ code: 'BUY3GET2', savings: 398 });
       } else {
-        setCouponMessage({ type: 'error', text: 'Add at least 5 personalised tags to use this offer.' });
+        setCouponMessage({ type: 'error', text: 'Add at least 5 personalised tags to use this offer.', code: 'BUY3GET2' });
       }
     } else {
-      setCouponMessage({ type: 'error', text: 'Invalid coupon code.' });
+      setCouponMessage({ type: 'error', text: 'Invalid coupon code.', code: 'INVALID' });
     }
   };
 
@@ -1461,7 +1466,7 @@ const OrderPage = () => {
                       Apply
                     </button>
                   </div>
-                  {couponMessage && (
+                  {couponMessage && (!['STARTUP', 'BUY2GET1', 'BUY3GET2'].includes(couponMessage.code) || couponMessage.type !== 'error') && (
                     <div className={`coupon-message ${couponMessage.type}`}>
                       {couponMessage.text}
                     </div>
@@ -1471,69 +1476,84 @@ const OrderPage = () => {
                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>Available Offers</div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>STARTUP</div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹30 Off on every personalised tag</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>STARTUP</div>
+                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Flat ₹30 Off on every personalised tag</div>
+                          </div>
+                          {appliedCoupon === 'STARTUP' ? (
+                            <button
+                              onClick={handleRemoveCoupon}
+                              style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Check size={14} /> APPLIED
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleApplyCoupon('STARTUP')}
+                              style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              APPLY
+                            </button>
+                          )}
                         </div>
-                        {appliedCoupon === 'STARTUP' ? (
-                          <button
-                            onClick={handleRemoveCoupon}
-                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          >
-                            <Check size={14} /> APPLIED
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleApplyCoupon('STARTUP')}
-                            style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            APPLY
-                          </button>
+                        {couponMessage && couponMessage.code === 'STARTUP' && couponMessage.type === 'error' && (
+                          <div style={{ fontSize: '0.75rem', color: '#ef4444', textAlign: 'right', marginTop: '4px' }}>{couponMessage.text}</div>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>BUY2GET1</div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 2 Get 1 Free on Personalised Tags</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>BUY2GET1</div>
+                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 2 Get 1 Free on Personalised Tags</div>
+                          </div>
+                          {appliedCoupon === 'BUY2GET1' ? (
+                            <button
+                              onClick={handleRemoveCoupon}
+                              style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Check size={14} /> APPLIED
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleApplyCoupon('BUY2GET1')}
+                              style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              APPLY
+                            </button>
+                          )}
                         </div>
-                        {appliedCoupon === 'BUY2GET1' ? (
-                          <button
-                            onClick={handleRemoveCoupon}
-                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          >
-                            <Check size={14} /> APPLIED
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleApplyCoupon('BUY2GET1')}
-                            style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            APPLY
-                          </button>
+                        {couponMessage && couponMessage.code === 'BUY2GET1' && couponMessage.type === 'error' && (
+                          <div style={{ fontSize: '0.75rem', color: '#ef4444', textAlign: 'right', marginTop: '4px' }}>{couponMessage.text}</div>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
-                        <div>
-                          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>BUY3GET2</div>
-                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 3 Get 2 Free on Personalised Tags</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#fff', padding: '8px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4F46E5' }}>BUY3GET2</div>
+                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>Buy 3 Get 2 Free on Personalised Tags</div>
+                          </div>
+                          {appliedCoupon === 'BUY3GET2' ? (
+                            <button
+                              onClick={handleRemoveCoupon}
+                              style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Check size={14} /> APPLIED
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleApplyCoupon('BUY3GET2')}
+                              style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                            >
+                              APPLY
+                            </button>
+                          )}
                         </div>
-                        {appliedCoupon === 'BUY3GET2' ? (
-                          <button
-                            onClick={handleRemoveCoupon}
-                            style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-                          >
-                            <Check size={14} /> APPLIED
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleApplyCoupon('BUY3GET2')}
-                            style={{ fontSize: '0.75rem', fontWeight: 600, color: '#4F46E5', background: 'rgba(79, 70, 229, 0.1)', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                          >
-                            APPLY
-                          </button>
+                        {couponMessage && couponMessage.code === 'BUY3GET2' && couponMessage.type === 'error' && (
+                          <div style={{ fontSize: '0.75rem', color: '#ef4444', textAlign: 'right', marginTop: '4px' }}>{couponMessage.text}</div>
                         )}
                       </div>
                     </div>
@@ -1792,7 +1812,7 @@ const OrderPage = () => {
                       >
                         <RotateCw size={14} /> Flip Tag
                       </button>
-                      <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
+                      <p style={{ margin: '6px 0 0', fontSize: '0.7rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>40 mm × 40 mm</p>
                     </div>
                   </div>
 
@@ -1992,7 +2012,7 @@ const OrderPage = () => {
                     >
                       <RotateCw size={12} /> Flip Tag
                     </button>
-                    <p style={{ margin: '2px 0 6px', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
+                    <p style={{ margin: '2px 0 6px', fontSize: '0.65rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>40 mm × 40 mm</p>
 
                     <div className="classic-preset-name" style={{ color: '#0f172a', marginTop: '0' }}>
                       {preset.name}
@@ -2431,7 +2451,7 @@ const OrderPage = () => {
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '20px', alignItems: 'center', width: '100%' }}>
-              <p style={{ margin: '0', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>50 mm × 50 mm</p>
+              <p style={{ margin: '0', fontSize: '0.75rem', color: '#9ca3af', textAlign: 'center', letterSpacing: '0.03em' }}>40 mm × 40 mm</p>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', width: '100%' }}>
                 <button
                   onClick={() => setIsModalFlipped(f => !f)}
