@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef } from 'react';
 import './AdminPanel.css';
 import { jsPDF } from 'jspdf';
+import * as pdfjsLib from 'pdfjs-dist/build/pdf.mjs';
+try { pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString(); } catch(e){}
 import { Html5Qrcode } from 'html5-qrcode';
 import {
   collection,
@@ -147,6 +149,12 @@ const AdminPanel = ({
   const [appendProgress, setAppendProgress] = useState({ active: false, total: 0, done: 0, message: '' });
   const [ordersError, setOrdersError] = useState('');
   const [expandedOrders, setExpandedOrders] = useState({});
+
+  // AWB Mapping States
+  const [awbPdfFile, setAwbPdfFile] = useState(null);
+  const [boxInfoText, setBoxInfoText] = useState("");
+  const [awbMappingResults, setAwbMappingResults] = useState(null);
+  const [isMappingAwb, setIsMappingAwb] = useState(false);
 
   // Dynamic Pricing states
   const [personalisedOriginal, setPersonalisedOriginal] = useState(299);
@@ -1452,6 +1460,70 @@ const AdminPanel = ({
   const [sendingEmails, setSendingEmails] = useState(false);
   const [packingHistory, setPackingHistory] = useState([]);
 
+  const handleMapAwbToPdf = async () => {
+    if (!awbPdfFile || !boxInfoText) {
+      alert("Please upload the AWB PDF and paste the Box Information.");
+      return;
+    }
+    
+    setIsMappingAwb(true);
+    try {
+      const boxToAwb = [];
+      const boxes = boxInfoText.split('BOX ').filter(b => b.trim() !== '');
+      for (const boxStr of boxes) {
+        const boxNumMatch = boxStr.match(/^(\d+)/);
+        const awbMatch = boxStr.match(/AWB:\s*([A-Z0-9]+)/i);
+        if (boxNumMatch && awbMatch) {
+          boxToAwb.push({ box: boxNumMatch[1], awb: awbMatch[1], page: 'Not found' });
+        }
+      }
+      
+      const arrayBuffer = await awbPdfFile.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1.0 });
+        const width = viewport.width;
+        const height = viewport.height;
+        
+        const pageText = textContent.items.map(tItem => tItem.str).join(' ');
+        
+        for (const item of boxToAwb) {
+          if (item.page !== 'Not found') continue;
+
+          if (pageText.includes(item.awb)) {
+            const matchedTextItem = textContent.items.find(tItem => tItem.str && tItem.str.includes(item.awb));
+            if (matchedTextItem) {
+              const x = matchedTextItem.transform[4];
+              const y = matchedTextItem.transform[5];
+              
+              const isLeft = x < (width / 2);
+              const isTop = y > (height / 2);
+              
+              let positionStr = '';
+              if (isTop && isLeft) positionStr = 'Top Left';
+              else if (isTop && !isLeft) positionStr = 'Top Right';
+              else if (!isTop && isLeft) positionStr = 'Bottom Left';
+              else positionStr = 'Bottom Right';
+              
+              item.page = `Page ${i} (${positionStr})`;
+            } else {
+              item.page = `Page ${i}`;
+            }
+          }
+        }
+      }
+      
+      setAwbMappingResults(boxToAwb);
+    } catch (err) {
+      console.error(err);
+      alert("Error mapping PDF: " + err.message);
+    }
+    setIsMappingAwb(false);
+  };
+
   const handleSendPackedEmails = async () => {
     if (Object.keys(packingBoxesData).length === 0) return;
     
@@ -1459,7 +1531,8 @@ const AdminPanel = ({
       boxNum,
       orderId: data.orderId,
       customerName: data.customerName,
-      orderedEmail: data.orderedEmail
+      orderedEmail: data.orderedEmail,
+      awbNumber: data.awbNumber
     }));
 
     setSendingEmails(true);
@@ -1746,6 +1819,7 @@ const AdminPanel = ({
             orderedEmail: lookupObj.orderedEmail,
             address: lookupObj.shippingAddress,
             orderId: lookupObj.firestoreOrderId,
+            awbNumber: lookupObj.awbNumber || null,
             orderItems: orderData?.items || [],
             tags: []
           };
@@ -4189,6 +4263,65 @@ const AdminPanel = ({
                     })}
                   </div>
                 )}
+
+                {/* AWB PDF Mapper Section */}
+                <div style={{ marginTop: '30px', padding: '20px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                  <h3 style={{ marginTop: 0, color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Package size={20} /> AWB Label Mapper
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                    Upload the NimbusPost PDF containing all shipping labels, and paste the Box Information from the Packing step. We will match each box to its specific page number in the PDF!
+                  </p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>1. Upload AWB PDF</label>
+                      <input 
+                        type="file" 
+                        accept="application/pdf"
+                        onChange={(e) => setAwbPdfFile(e.target.files[0])}
+                        style={{ padding: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', width: '100%' }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.9rem' }}>2. Paste Box Information</label>
+                      <textarea
+                        rows={6}
+                        placeholder="Paste the copied box info here... (e.g. BOX 1 \n AWB: 123456...)"
+                        value={boxInfoText}
+                        onChange={(e) => setBoxInfoText(e.target.value)}
+                        style={{ width: '100%', padding: '12px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontFamily: 'monospace', resize: 'vertical' }}
+                      />
+                    </div>
+                    
+                    <button 
+                      onClick={handleMapAwbToPdf}
+                      disabled={isMappingAwb}
+                      className="btn btn-primary"
+                      style={{ padding: '12px', fontSize: '1rem', fontWeight: 600 }}
+                    >
+                      {isMappingAwb ? "Mapping Pages..." : "Map Boxes to Pages"}
+                    </button>
+                  </div>
+                  
+                  {awbMappingResults && (
+                    <div style={{ marginTop: '24px', padding: '16px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '8px' }}>
+                      <h4 style={{ margin: '0 0 12px 0', color: '#10b981' }}>Mapping Results</h4>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {awbMappingResults.map((res, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                            <span style={{ fontWeight: 600 }}>Box {res.box}</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>AWB: {res.awb}</span>
+                            <span style={{ fontWeight: 700, color: (res.page && res.page !== 'Not found') ? '#10b981' : '#ef4444' }}>
+                              {res.page}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -5393,6 +5526,7 @@ const AdminPanel = ({
                         </h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                           <div><strong style={{ color: 'var(--text-secondary)' }}>Order ID:</strong> {data.orderId || 'N/A'}</div>
+                          {data.awbNumber && <div><strong style={{ color: 'var(--text-secondary)' }}>AWB:</strong> <span style={{ color: 'var(--accent-cyan)' }}>{data.awbNumber}</span></div>}
                           <div><strong style={{ color: 'var(--text-secondary)' }}>Name:</strong> {data.customerName}</div>
                           <div><strong style={{ color: 'var(--text-secondary)' }}>Phone:</strong> {data.orderedPhoneNumber}</div>
                           <div><strong style={{ color: 'var(--text-secondary)' }}>Address:</strong> {data.address}</div>
@@ -5428,7 +5562,7 @@ const AdminPanel = ({
                         .sort(([a], [b]) => parseInt(a) - parseInt(b))
                         .map(([boxNum, data]) => {
                           return `BOX ${boxNum}
-Order ID: ${data.orderId || 'N/A'}
+Order ID: ${data.orderId || 'N/A'}${data.awbNumber ? `\nAWB: ${data.awbNumber}` : ''}
 Name: ${data.customerName}
 Phone: ${data.orderedPhoneNumber}
 Address: ${data.address}

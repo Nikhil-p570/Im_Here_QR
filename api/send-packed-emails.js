@@ -50,7 +50,7 @@ export default async function handler(req, res) {
 
     for (const box of boxes) {
       const customerEmail = box.orderedEmail || 'nikhil.pabbisetti2006@gmail.com'; // fallback if needed
-      
+
       const mailOptions = {
         from: `"I'm Here" <${getEnv('GMAIL_USER')}>`,
         to: customerEmail,
@@ -62,16 +62,24 @@ export default async function handler(req, res) {
             <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 10px;">Your Order is Ready to Ship!</h1>
             <p style="font-size: 16px; color: #475569; line-height: 1.6;">
               Hi ${box.customerName || 'there'},<br/>
-              Great news! Your premium tags have been packed in Box ${box.boxNum} and are ready.
+              Great news! Your premium tags have been packed in and are ready.
             </p>
             
             <div style="background-color: #f8fafc; border-radius: 12px; padding: 20px; margin: 30px 0; border: 1px solid #e2e8f0;">
               <h2 style="font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 15px;">Order Details</h2>
               <p style="margin: 5px 0;"><strong>Order ID:</strong> ${box.orderId || 'N/A'}</p>
+              ${box.awbNumber ? `
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+                <p style="margin: 5px 0 10px 0;"><strong>Tracking Number (AWB):</strong> ${box.awbNumber}</p>
+                <a href="https://ship.nimbuspost.com/shipping/tracking/${box.awbNumber}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                  Track Your Package Here
+                </a>
+              </div>
+              ` : ''}
             </div>
 
             <p style="font-size: 16px; color: #475569; line-height: 1.6;">
-              A delivery pickup person will collect your package from our warehouse soon. You will receive another update with tracking details once it's on the way!
+              A delivery pickup person will collect your package from our warehouse soon. ${!box.awbNumber ? "You will receive another update with tracking details once it's on the way!" : "You can use the tracking link above to monitor its journey to your doorstep!"}
             </p>
 
             <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 30px 0;" />
