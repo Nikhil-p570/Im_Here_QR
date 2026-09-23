@@ -342,9 +342,6 @@ const HeroVisual = () => {
             </div>
             <div style={{ textAlign: 'center', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '0.9rem', fontWeight: 800, margin: '0 0 6px', color: '#0f172a' }}>Hey there! Looking for me? 👀</h3>
-              <p style={{ fontSize: '0.6rem', color: '#64748b', margin: 0, lineHeight: 1.4 }}>
-                You just scanned a piece of my physical world. Want to get in touch or return a lost item?
-              </p>
             </div>
 
             <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
